@@ -1,0 +1,30 @@
+{
+  "projectName": "lucien",
+  "mode": "file-router",
+  "typescript": true,
+  "packageManager": "pnpm",
+  "includeExamples": false,
+  "tailwind": true,
+  "addOnOptions": {},
+  "envVarValues": {
+    "CONVEX_DEPLOYMENT": "pleasant-manatee-27",
+    "VITE_CONVEX_URL": "https://pleasant-manatee-27.eu-west-1.convex.cloud"
+  },
+  "git": true,
+  "routerOnly": false,
+  "version": 1,
+  "framework": "react",
+  "chosenAddOns": [
+    "convex",
+    "sentry",
+    "ai",
+    "compiler",
+    "db",
+    "form",
+    "shadcn",
+    "better-auth",
+    "posthog",
+    "store",
+    "tanstack-query"
+  ]
+}
