@@ -1,16 +1,18 @@
-import type { QueryClient } from "@tanstack/react-query";
+import type { QueryClient } from '@tanstack/react-query';
 
-import { TanStackDevtools } from "@tanstack/react-devtools";
-import { HeadContent, Scripts, createRootRouteWithContext } from "@tanstack/react-router";
-import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
+import { TanStackDevtools } from '@tanstack/react-devtools';
+import {
+  HeadContent,
+  Scripts,
+  createRootRouteWithContext,
+} from '@tanstack/react-router';
+import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools';
 
-import Footer from "../components/Footer";
-import Header from "../components/Header";
-import ConvexProvider from "../integrations/convex/provider";
-import PostHogProvider from "../integrations/posthog/provider";
-import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
-import TanStackQueryProvider from "../integrations/tanstack-query/root-provider";
-import appCss from "../styles.css?url";
+import ConvexProvider from '../integrations/convex/provider';
+import PostHogProvider from '../integrations/posthog/provider';
+import TanStackQueryDevtools from '../integrations/tanstack-query/devtools';
+import TanStackQueryProvider from '../integrations/tanstack-query/root-provider';
+import appCss from '../styles.css?url';
 
 interface MyRouterContext {
   queryClient: QueryClient;
@@ -22,19 +24,19 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
   head: () => ({
     meta: [
       {
-        charSet: "utf-8",
+        charSet: 'utf-8',
       },
       {
-        name: "viewport",
-        content: "width=device-width, initial-scale=1",
+        name: 'viewport',
+        content: 'width=device-width, initial-scale=1',
       },
       {
-        title: "Lucien",
+        title: 'Lucien George',
       },
     ],
     links: [
       {
-        rel: "stylesheet",
+        rel: 'stylesheet',
         href: appCss,
       },
     ],
@@ -44,25 +46,23 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang='en' suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <HeadContent />
       </head>
-      <body className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-[rgba(79,184,178,0.24)]">
+      <body className='font-sans antialiased wrap-anywhere'>
         <ConvexProvider>
           <PostHogProvider>
             <TanStackQueryProvider>
-              <Header />
               {children}
-              <Footer />
               <TanStackDevtools
                 config={{
-                  position: "bottom-right",
+                  position: 'bottom-right',
                 }}
                 plugins={[
                   {
-                    name: "Tanstack Router",
+                    name: 'Tanstack Router',
                     render: <TanStackRouterDevtoolsPanel />,
                   },
                   TanStackQueryDevtools,

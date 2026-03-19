@@ -1,6 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { authClient } from "#/lib/auth-client";
+import { Button } from "#/components/ui/button";
+import { Input } from "#/components/ui/input";
+import { Label } from "#/components/ui/label";
 
 // ─── ROUTING ───────────────────────────────────────────────
 // src/routes/signup.tsx → /signup route.
@@ -37,11 +40,7 @@ function SignupPage() {
     setError("");
     setLoading(true);
 
-    const result = await authClient.signUp.email({
-      name,
-      email,
-      password,
-    });
+    const result = await authClient.signUp.email({ name, email, password });
 
     setLoading(false);
 
@@ -55,69 +54,70 @@ function SignupPage() {
 
   return (
     <main className="page-wrap flex min-h-[60vh] items-center justify-center px-4 pb-8 pt-14">
-      <section className="island-shell w-full max-w-sm rounded-2xl p-6 sm:p-8">
-        <h1 className="display-title mb-6 text-2xl font-bold text-[var(--sea-ink)]">
-          Create account
-        </h1>
+      <div className="w-full max-w-sm">
+        <div className="mb-8 text-center">
+          <h1 className="display-title text-2xl font-bold tracking-tight text-foreground">
+            Create account
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Get started with Lucien
+          </p>
+        </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium text-[var(--sea-ink)]">Name</span>
-            <input
-              type="text"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Your name"
-              className="rounded-lg border border-[var(--line)] bg-[var(--chip-bg)] px-3 py-2 text-sm text-[var(--sea-ink)] outline-none transition focus:border-[rgba(79,184,178,0.5)] focus:ring-2 focus:ring-[rgba(79,184,178,0.2)]"
-            />
-          </label>
+        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                type="text"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Your name"
+              />
+            </div>
 
-          <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium text-[var(--sea-ink)]">Email</span>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              className="rounded-lg border border-[var(--line)] bg-[var(--chip-bg)] px-3 py-2 text-sm text-[var(--sea-ink)] outline-none transition focus:border-[rgba(79,184,178,0.5)] focus:ring-2 focus:ring-[rgba(79,184,178,0.2)]"
-            />
-          </label>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+              />
+            </div>
 
-          <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium text-[var(--sea-ink)]">Password</span>
-            <input
-              type="password"
-              required
-              minLength={8}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              className="rounded-lg border border-[var(--line)] bg-[var(--chip-bg)] px-3 py-2 text-sm text-[var(--sea-ink)] outline-none transition focus:border-[rgba(79,184,178,0.5)] focus:ring-2 focus:ring-[rgba(79,184,178,0.2)]"
-            />
-          </label>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                required
+                minLength={8}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+              />
+            </div>
 
-          {error && (
-            <p className="text-sm text-red-500">{error}</p>
-          )}
+            {error && <p className="text-sm text-destructive">{error}</p>}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="mt-2 rounded-full bg-[rgba(79,184,178,0.14)] border border-[rgba(50,143,151,0.3)] px-5 py-2.5 text-sm font-semibold text-[var(--lagoon-deep)] transition hover:-translate-y-0.5 hover:bg-[rgba(79,184,178,0.24)] disabled:opacity-50 disabled:hover:translate-y-0"
-          >
-            {loading ? "Creating account…" : "Sign up"}
-          </button>
-        </form>
+            <Button type="submit" disabled={loading} size="lg" className="mt-1 w-full">
+              {loading ? "Creating account…" : "Sign up"}
+            </Button>
+          </form>
+        </div>
 
-        <p className="mt-6 text-center text-sm text-[var(--sea-ink-soft)]">
+        <p className="mt-6 text-center text-sm text-muted-foreground">
           Already have an account?{" "}
-          <Link to="/login" className="font-medium text-[var(--lagoon-deep)] underline">
+          <Link to="/login" className="font-medium text-primary underline underline-offset-4">
             Sign in
           </Link>
         </p>
-      </section>
+      </div>
     </main>
   );
 }

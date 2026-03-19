@@ -1,6 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { authClient } from "#/lib/auth-client";
+import { Button } from "#/components/ui/button";
+import { Input } from "#/components/ui/input";
+import { Label } from "#/components/ui/label";
 
 // ─── ROUTING ───────────────────────────────────────────────
 // TanStack Start uses file-based routing. This file at
@@ -16,8 +19,6 @@ function LoginPage() {
   const navigate = useNavigate();
 
   // ─── FORM STATE ────────────────────────────────────────────
-  // Simple React state for the form. No form library needed
-  // for a two-field form.
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -39,10 +40,7 @@ function LoginPage() {
     setError("");
     setLoading(true);
 
-    const result = await authClient.signIn.email({
-      email,
-      password,
-    });
+    const result = await authClient.signIn.email({ email, password });
 
     setLoading(false);
 
@@ -51,66 +49,66 @@ function LoginPage() {
       return;
     }
 
-    // Navigate to home after successful login
     navigate({ to: "/" });
   }
 
   return (
     <main className="page-wrap flex min-h-[60vh] items-center justify-center px-4 pb-8 pt-14">
-      <section className="island-shell w-full max-w-sm rounded-2xl p-6 sm:p-8">
-        <h1 className="display-title mb-6 text-2xl font-bold text-[var(--sea-ink)]">
-          Sign in
-        </h1>
+      <div className="w-full max-w-sm">
+        <div className="mb-8 text-center">
+          <h1 className="display-title text-2xl font-bold tracking-tight text-foreground">
+            Welcome back
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Sign in to your account
+          </p>
+        </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium text-[var(--sea-ink)]">Email</span>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              className="rounded-lg border border-[var(--line)] bg-[var(--chip-bg)] px-3 py-2 text-sm text-[var(--sea-ink)] outline-none transition focus:border-[rgba(79,184,178,0.5)] focus:ring-2 focus:ring-[rgba(79,184,178,0.2)]"
-            />
-          </label>
+        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+              />
+            </div>
 
-          <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium text-[var(--sea-ink)]">Password</span>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              className="rounded-lg border border-[var(--line)] bg-[var(--chip-bg)] px-3 py-2 text-sm text-[var(--sea-ink)] outline-none transition focus:border-[rgba(79,184,178,0.5)] focus:ring-2 focus:ring-[rgba(79,184,178,0.2)]"
-            />
-          </label>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+              />
+            </div>
 
-          {error && (
-            <p className="text-sm text-red-500">{error}</p>
-          )}
+            {error && <p className="text-sm text-destructive">{error}</p>}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="mt-2 rounded-full bg-[rgba(79,184,178,0.14)] border border-[rgba(50,143,151,0.3)] px-5 py-2.5 text-sm font-semibold text-[var(--lagoon-deep)] transition hover:-translate-y-0.5 hover:bg-[rgba(79,184,178,0.24)] disabled:opacity-50 disabled:hover:translate-y-0"
-          >
-            {loading ? "Signing in…" : "Sign in"}
-          </button>
-        </form>
+            <Button type="submit" disabled={loading} size="lg" className="mt-1 w-full">
+              {loading ? "Signing in…" : "Sign in"}
+            </Button>
+          </form>
+        </div>
 
         {/* ─── LINKING BETWEEN ROUTES ─────────────────────────── */}
         {/* <Link> is TanStack Router's client-side navigation.   */}
         {/* It prefetches on hover (defaultPreload: 'intent')     */}
         {/* and doesn't cause a full page reload like <a>.        */}
-        <p className="mt-6 text-center text-sm text-[var(--sea-ink-soft)]">
+        <p className="mt-6 text-center text-sm text-muted-foreground">
           Don&apos;t have an account?{" "}
-          <Link to="/signup" className="font-medium text-[var(--lagoon-deep)] underline">
+          <Link to="/signup" className="font-medium text-primary underline underline-offset-4">
             Sign up
           </Link>
         </p>
-      </section>
+      </div>
     </main>
   );
 }
