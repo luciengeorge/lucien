@@ -1,9 +1,9 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
-import { authClient } from "#/lib/auth-client";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
+import { authClient } from "#/lib/auth-client";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
 
 // ─── ROUTING ───────────────────────────────────────────────
 // TanStack Start uses file-based routing. This file at
@@ -35,7 +35,7 @@ function LoginPage() {
   // 4. Better Auth validates credentials via the Convex adapter
   // 5. On success, a session cookie is set (tanstackStartCookies plugin)
   // 6. authClient.useSession() in Header reactively updates
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.SubmitEvent) {
     e.preventDefault();
     setError("");
     setLoading(true);
@@ -56,12 +56,8 @@ function LoginPage() {
     <main className="page-wrap flex min-h-[60vh] items-center justify-center px-4 pb-8 pt-14">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <h1 className="display-title text-2xl font-bold tracking-tight text-foreground">
-            Welcome back
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Sign in to your account
-          </p>
+          <h1 className="display-title text-2xl font-bold tracking-tight text-foreground">Welcome back</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Sign in to your account</p>
         </div>
 
         <div className="rounded-xl border border-border bg-card p-6 shadow-sm">

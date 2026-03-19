@@ -1,9 +1,9 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
-import { authClient } from "#/lib/auth-client";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
+import { authClient } from "#/lib/auth-client";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
 
 // ─── ROUTING ───────────────────────────────────────────────
 // src/routes/signup.tsx → /signup route.
@@ -56,12 +56,8 @@ function SignupPage() {
     <main className="page-wrap flex min-h-[60vh] items-center justify-center px-4 pb-8 pt-14">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <h1 className="display-title text-2xl font-bold tracking-tight text-foreground">
-            Create account
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Get started with Lucien
-          </p>
+          <h1 className="display-title text-2xl font-bold tracking-tight text-foreground">Create account</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Get started with Lucien</p>
         </div>
 
         <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
