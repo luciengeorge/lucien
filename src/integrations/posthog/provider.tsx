@@ -3,8 +3,10 @@ import type { ReactNode } from "react";
 import { PostHogProvider as BasePostHogProvider } from "@posthog/react";
 import posthog from "posthog-js";
 
-if (typeof window !== "undefined" && import.meta.env.VITE_POSTHOG_KEY) {
-  posthog.init(import.meta.env.VITE_POSTHOG_KEY, {
+const posthogKey = import.meta.env.VITE_POSTHOG_KEY;
+
+if (typeof window !== "undefined" && posthogKey) {
+  posthog.init(posthogKey, {
     api_host: import.meta.env.VITE_POSTHOG_HOST || "https://us.i.posthog.com",
     person_profiles: "identified_only",
     capture_pageview: false,
@@ -17,5 +19,9 @@ interface PostHogProviderProps {
 }
 
 export default function PostHogProvider({ children }: PostHogProviderProps) {
+  if (!posthogKey) {
+    return <>{children}</>;
+  }
+
   return <BasePostHogProvider client={posthog}>{children}</BasePostHogProvider>;
 }
