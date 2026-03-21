@@ -13,7 +13,10 @@ import {
   FieldLabel,
 } from '#/components/ui/field';
 import { Input } from '#/components/ui/input';
+import { authClient } from '#/lib/auth-client';
+import { useForm } from '@tanstack/react-form';
 import { createFileRoute, Link } from '@tanstack/react-router';
+import z from 'zod';
 
 // ─── ROUTING ───────────────────────────────────────────────
 // src/routes/signup.tsx → /signup route.
@@ -23,9 +26,38 @@ export const Route = createFileRoute('/_auth/signup')({
   component: SignupPage,
 });
 
+const SignupFormSchema = z
+  .object({
+    name: z.string(),
+    email: z.email(),
+    password: z.string(),
+    confirmPassword: z.string(),
+  })
+  .superRefine((val, ctx) => {
+    if (val.password !== val.confirmPassword) {
+      ctx.addIssue({
+        path: ['confirmPassword'],
+        code: 'custom',
+        message: 'Passwords do not match',
+      });
+    }
+  });
+
 function SignupPage() {
-  // ─── SIGN UP FLOW ──────────────────────────────────────────
-  // authClient.signUp.email() POSTs to /api/auth/sign-up/email.
+  const form = useForm({
+    defaultValues: {
+      name: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+    },
+    validators: {
+      onChange: SignupFormSchema,
+      onSubmitAsync: async ({ value: { name, email, password } }) => {
+        const result = await authClient.signUp.email({ name, email, password });
+      },
+    },
+  });
 
   return (
     <Card>
