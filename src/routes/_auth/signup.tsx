@@ -9,6 +9,7 @@ import {
 import {
   Field,
   FieldDescription,
+  FieldError,
   FieldGroup,
   FieldLabel,
 } from '#/components/ui/field';
@@ -55,9 +56,20 @@ function SignupPage() {
       onChange: SignupFormSchema,
       onSubmitAsync: async ({ value: { name, email, password } }) => {
         const result = await authClient.signUp.email({ name, email, password });
+        if (result.error) {
+          return {
+            form: result.error.message,
+          };
+        }
       },
     },
   });
+
+  const onSubmit = (e: React.SubmitEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    form.handleSubmit();
+  };
 
   return (
     <Card>
@@ -68,25 +80,52 @@ function SignupPage() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form>
+        <form onSubmit={onSubmit}>
           <FieldGroup>
-            <Field>
-              <FieldLabel htmlFor='name'>Full Name</FieldLabel>
-              <Input id='name' type='text' placeholder='John Doe' required />
-            </Field>
-            <Field>
-              <FieldLabel htmlFor='email'>Email</FieldLabel>
-              <Input
-                id='email'
-                type='email'
-                placeholder='m@example.com'
-                required
-              />
-              <FieldDescription>
-                We&apos;ll use this to contact you. We will not share your email
-                with anyone else.
-              </FieldDescription>
-            </Field>
+            <form.Field name='name'>
+              {(field) => (
+                <Field>
+                  <FieldLabel htmlFor={field.name}>Full Name</FieldLabel>
+                  <Input
+                    id={field.name}
+                    type='text'
+                    placeholder='Enter your name'
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    required
+                  />
+                  {field.state.meta.isValid ? null : (
+                    <FieldError>
+                      {field.state.meta.errors.join(', ')}
+                    </FieldError>
+                  )}
+                </Field>
+              )}
+            </form.Field>
+            <form.Field name='email'>
+              {(field) => (
+                <Field>
+                  <FieldLabel htmlFor={field.name}>Email</FieldLabel>
+                  <Input
+                    id={field.name}
+                    type='email'
+                    placeholder='m@example.com'
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    required
+                  />
+                  <FieldDescription>
+                    We&apos;ll use this to contact you. We will not share your
+                    email with anyone else.
+                  </FieldDescription>
+                  {field.state.meta.isValid ? null : (
+                    <FieldError>
+                      {field.state.meta.errors.join(', ')}
+                    </FieldError>
+                  )}
+                </Field>
+              )}
+            </form.Field>
             <Field>
               <FieldLabel htmlFor='password'>Password</FieldLabel>
               <Input id='password' type='password' required />
