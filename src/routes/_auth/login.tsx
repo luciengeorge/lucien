@@ -81,9 +81,7 @@ function LoginPage() {
                       required
                     />
                     {field.state.meta.isValid ? null : (
-                      <FieldError>
-                        {field.state.meta.errors.join(', ')}
-                      </FieldError>
+                      <FieldError errors={field.state.meta.errors} />
                     )}
                   </Field>
                 )}
@@ -110,9 +108,7 @@ function LoginPage() {
                       required
                     />
                     {field.state.meta.isValid ? null : (
-                      <FieldError>
-                        {field.state.meta.errors.join(', ')}
-                      </FieldError>
+                      <FieldError errors={field.state.meta.errors} />
                     )}
                   </Field>
                 )}

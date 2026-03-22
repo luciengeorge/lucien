@@ -86,9 +86,7 @@ function SignupPage() {
                     required
                   />
                   {field.state.meta.isValid ? null : (
-                    <FieldError>
-                      {field.state.meta.errors.join(', ')}
-                    </FieldError>
+                    <FieldError errors={field.state.meta.errors} />
                   )}
                 </Field>
               )}
@@ -110,9 +108,7 @@ function SignupPage() {
                     email with anyone else.
                   </FieldDescription>
                   {field.state.meta.isValid ? null : (
-                    <FieldError>
-                      {field.state.meta.errors.join(', ')}
-                    </FieldError>
+                    <FieldError errors={field.state.meta.errors} />
                   )}
                 </Field>
               )}
@@ -125,15 +121,15 @@ function SignupPage() {
                     id={field.name}
                     type='password'
                     placeholder='Enter your password'
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
                     required
                   />
                   <FieldDescription>
                     Must be at least 8 characters long.
                   </FieldDescription>
                   {field.state.meta.isValid ? null : (
-                    <FieldError>
-                      {field.state.meta.errors.join(', ')}
-                    </FieldError>
+                    <FieldError errors={field.state.meta.errors} />
                   )}
                 </Field>
               )}
@@ -152,9 +148,7 @@ function SignupPage() {
                     Please confirm your password.
                   </FieldDescription>
                   {field.state.meta.isValid ? null : (
-                    <FieldError>
-                      {field.state.meta.errors.join(', ')}
-                    </FieldError>
+                    <FieldError errors={field.state.meta.errors} />
                   )}
                 </Field>
               )}

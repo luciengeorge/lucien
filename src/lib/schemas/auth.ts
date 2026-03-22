@@ -13,11 +13,11 @@ const NameSchema = z
 
 const PasswordSchema = z
   .string({ error: 'Please enter a password' })
-  .min(12, { error: 'Password is too short' })
+  .min(8, { error: 'Password is too short' })
   .max(100, { error: 'Password is too long' })
-  .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{12,}$/, {
+  .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/, {
     error:
-      'Password should be at least 12 characters and must contain at least one uppercase letter, one lowercase letter, and one number',
+      'Password should be at least 8 characters and must contain at least one uppercase letter, one lowercase letter, and one number',
   });
 
 export const LoginFormSchema = z.object({
