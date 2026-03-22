@@ -3,15 +3,13 @@ import type { ReactNode } from 'react';
 import { PostHogProvider as BasePostHogProvider } from '@posthog/react';
 import posthog from 'posthog-js';
 
-const posthogKey = import.meta.env.VITE_POSTHOG_KEY;
+const posthogKey = import.meta.env.VITE_PUBLIC_POSTHOG_KEY;
+const posthogHost = import.meta.env.VITE_PUBLIC_POSTHOG_HOST;
 
 if (typeof window !== 'undefined' && posthogKey) {
   posthog.init(posthogKey, {
-    api_host: import.meta.env.VITE_POSTHOG_HOST || 'https://us.i.posthog.com',
-    person_profiles: 'always',
-    capture_pageview: true,
-    defaults: '2025-11-30',
-    autocapture: true,
+    api_host: posthogHost || 'https://eu.i.posthog.com',
+    defaults: '2026-01-30',
   });
 }
 

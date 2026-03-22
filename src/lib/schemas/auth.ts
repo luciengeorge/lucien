@@ -1,17 +1,17 @@
 import { capitalCase } from 'change-case';
 import z from 'zod';
 
-const EmailSchema = z
+export const EmailSchema = z
   .email({ error: 'Please enter a valid email address' })
   .transform((value) => value.toLowerCase().trim());
 
-const NameSchema = z
+export const NameSchema = z
   .string({ error: 'Name is required' })
   .min(2, { error: 'Name is too short' })
   .max(40, { error: 'Name is too long' })
   .transform((value) => capitalCase(value.trim()));
 
-const PasswordSchema = z
+export const PasswordSchema = z
   .string({ error: 'Please enter a password' })
   .min(8, { error: 'Password is too short' })
   .max(100, { error: 'Password is too long' })
