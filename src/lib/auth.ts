@@ -1,11 +1,9 @@
 import { betterAuth } from "better-auth";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 
+import { sharedAuthConfig } from "./auth-config";
+
 export const auth = betterAuth({
-  baseURL: process.env.SITE_URL || "http://localhost:3000",
-  secret: process.env.BETTER_AUTH_SECRET,
-  emailAndPassword: {
-    enabled: true,
-  },
+  ...sharedAuthConfig,
   plugins: [tanstackStartCookies()],
 });

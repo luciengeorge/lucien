@@ -15,18 +15,16 @@ import {
 } from '#/components/ui/field';
 import { Input } from '#/components/ui/input';
 import { authClient } from '#/lib/auth-client';
+import { LoginFormSchema } from '#/lib/schemas/auth';
 import { useForm } from '@tanstack/react-form';
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { z } from 'zod';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { toast } from 'sonner';
 
 export const Route = createFileRoute('/_auth/login')({ component: LoginPage });
 
-const LoginFormSchema = z.object({
-  email: z.email(),
-  password: z.string(),
-});
-
 function LoginPage() {
+  const navigate = useNavigate();
+
   const form = useForm({
     formId: 'login',
     defaultValues: {
@@ -42,6 +40,11 @@ function LoginPage() {
             form: result.error.message,
           };
         }
+
+        toast.success('Welcome back!', {
+          description: 'Login successful',
+        });
+        navigate({ to: '/' });
       },
     },
   });

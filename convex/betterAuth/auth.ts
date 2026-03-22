@@ -7,6 +7,7 @@ import { betterAuth } from 'better-auth';
 
 import type { DataModel } from '../_generated/dataModel';
 
+import { sharedAuthConfig } from '../../src/lib/auth-config';
 import { components } from '../_generated/api';
 import authConfig from '../auth.config';
 import schema from '../schema';
@@ -23,13 +24,8 @@ export const authComponent = createClient<DataModel, typeof schema>(
 // Better Auth Options
 export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
   return {
-    appName: 'Lucien',
-    baseURL: process.env.SITE_URL,
-    secret: process.env.BETTER_AUTH_SECRET,
+    ...sharedAuthConfig,
     database: authComponent.adapter(ctx),
-    emailAndPassword: {
-      enabled: true,
-    },
     plugins: [convex({ authConfig })],
   } satisfies BetterAuthOptions;
 };

@@ -15,9 +15,10 @@ import {
 } from '#/components/ui/field';
 import { Input } from '#/components/ui/input';
 import { authClient } from '#/lib/auth-client';
+import { SignupFormSchema } from '#/lib/schemas/auth';
 import { useForm } from '@tanstack/react-form';
-import { createFileRoute, Link } from '@tanstack/react-router';
-import z from 'zod';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { toast } from 'sonner';
 
 // ─── ROUTING ───────────────────────────────────────────────
 // src/routes/signup.tsx → /signup route.
@@ -27,24 +28,9 @@ export const Route = createFileRoute('/_auth/signup')({
   component: SignupPage,
 });
 
-const SignupFormSchema = z
-  .object({
-    name: z.string(),
-    email: z.email(),
-    password: z.string(),
-    confirmPassword: z.string(),
-  })
-  .superRefine((val, ctx) => {
-    if (val.password !== val.confirmPassword) {
-      ctx.addIssue({
-        path: ['confirmPassword'],
-        code: 'custom',
-        message: 'Passwords do not match',
-      });
-    }
-  });
-
 function SignupPage() {
+  const navigate = useNavigate();
+
   const form = useForm({
     defaultValues: {
       name: '',
@@ -61,6 +47,11 @@ function SignupPage() {
             form: result.error.message,
           };
         }
+
+        toast.success('Account created', {
+          description: 'You signed up successfully',
+        });
+        navigate({ to: '/' });
       },
     },
   });
@@ -109,7 +100,7 @@ function SignupPage() {
                   <Input
                     id={field.name}
                     type='email'
-                    placeholder='m@example.com'
+                    placeholder='Enter your email'
                     onChange={(e) => field.handleChange(e.target.value)}
                     onBlur={field.handleBlur}
                     required
@@ -126,27 +117,70 @@ function SignupPage() {
                 </Field>
               )}
             </form.Field>
-            <Field>
-              <FieldLabel htmlFor='password'>Password</FieldLabel>
-              <Input id='password' type='password' required />
-              <FieldDescription>
-                Must be at least 8 characters long.
-              </FieldDescription>
-            </Field>
-            <Field>
-              <FieldLabel htmlFor='confirm-password'>
-                Confirm Password
-              </FieldLabel>
-              <Input id='confirm-password' type='password' required />
-              <FieldDescription>Please confirm your password.</FieldDescription>
-            </Field>
+            <form.Field name='password'>
+              {(field) => (
+                <Field>
+                  <FieldLabel htmlFor={field.name}>Password</FieldLabel>
+                  <Input
+                    id={field.name}
+                    type='password'
+                    placeholder='Enter your password'
+                    required
+                  />
+                  <FieldDescription>
+                    Must be at least 8 characters long.
+                  </FieldDescription>
+                  {field.state.meta.isValid ? null : (
+                    <FieldError>
+                      {field.state.meta.errors.join(', ')}
+                    </FieldError>
+                  )}
+                </Field>
+              )}
+            </form.Field>
+            <form.Field name='confirmPassword'>
+              {(field) => (
+                <Field>
+                  <FieldLabel htmlFor={field.name}>Confirm Password</FieldLabel>
+                  <Input
+                    id={field.name}
+                    type='password'
+                    placeholder='Confirm your password'
+                    required
+                  />
+                  <FieldDescription>
+                    Please confirm your password.
+                  </FieldDescription>
+                  {field.state.meta.isValid ? null : (
+                    <FieldError>
+                      {field.state.meta.errors.join(', ')}
+                    </FieldError>
+                  )}
+                </Field>
+              )}
+            </form.Field>
             <FieldGroup>
-              <Field>
-                <Button type='submit'>Create Account</Button>
-                <FieldDescription className='px-6 text-center'>
-                  Already have an account? <Link to='/login'>Sign in</Link>
-                </FieldDescription>
-              </Field>
+              <form.Subscribe
+                selector={(state) => ({
+                  canSubmit: state.canSubmit,
+                  isSubmitting: state.isSubmitting,
+                  errorMap: state.errorMap,
+                })}
+              >
+                {({ canSubmit, isSubmitting, errorMap }) => (
+                  <Field>
+                    <Button type='submit' disabled={!canSubmit || isSubmitting}>
+                      Create Account
+                    </Button>
+                    {errorMap.onSubmit?.form ? (
+                      <FieldError>{errorMap.onSubmit.form}</FieldError>
+                    ) : null}
+                    <FieldDescription className='px-6 text-center'>
+                      Already have an account? <Link to='/login'>Sign in</Link>
+                    </FieldDescription>
+                  </Field>
+                )}
+              </form.Subscribe>
             </FieldGroup>
           </FieldGroup>
         </form>
