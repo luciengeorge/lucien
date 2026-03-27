@@ -1,20 +1,20 @@
-import { sentryTanstackStart } from "@sentry/tanstackstart-react/vite";
-import tailwindcss from "@tailwindcss/vite";
-import { devtools } from "@tanstack/devtools-vite";
-import { tanstackStart } from "@tanstack/react-start/plugin/vite";
-import viteReact from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
-import tsconfigPaths from "vite-tsconfig-paths";
+import { sentryTanstackStart } from '@sentry/tanstackstart-react/vite';
+import tailwindcss from '@tailwindcss/vite';
+import { devtools } from '@tanstack/devtools-vite';
+import { tanstackStart } from '@tanstack/react-start/plugin/vite';
+import viteReact from '@vitejs/plugin-react';
+import { defineConfig } from 'vite';
+import tsconfigPaths from 'vite-tsconfig-paths';
 
 const config = defineConfig({
   plugins: [
     devtools(),
-    tsconfigPaths({ projects: ["./tsconfig.json"] }),
+    tsconfigPaths({ projects: ['./tsconfig.json'] }),
     tailwindcss(),
     tanstackStart(),
     viteReact({
       babel: {
-        plugins: ["babel-plugin-react-compiler"],
+        plugins: ['babel-plugin-react-compiler'],
       },
     }),
     sentryTanstackStart({
@@ -23,6 +23,7 @@ const config = defineConfig({
       authToken: process.env.SENTRY_AUTH_TOKEN,
     }),
   ],
+  clearScreen: false,
 });
 
 export default config;

@@ -1,14 +1,13 @@
-import { createServerFn } from "@tanstack/react-start";
-import { getRequestHeader, setResponseHeader } from "@tanstack/react-start/server";
+import { createServerFn } from '@tanstack/react-start';
+import { deleteCookie, getCookie } from '@tanstack/react-start/server';
 
-import { parseToastCookie, TOAST_COOKIE } from "../toast";
+import { parseToastCookie, TOAST_COOKIE } from '../toast';
 
-export const getToast = createServerFn({ method: "GET" }).handler(async () => {
-  const cookies = getRequestHeader("cookie");
-  const toast = parseToastCookie(cookies ?? null);
-
+export const getToast = createServerFn({ method: 'GET' }).handler(async () => {
+  const toastCookie = getCookie(TOAST_COOKIE);
+  const toast = parseToastCookie(toastCookie ?? null);
   if (toast) {
-    setResponseHeader("Set-Cookie", `${TOAST_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`);
+    deleteCookie(TOAST_COOKIE);
   }
 
   return toast;
