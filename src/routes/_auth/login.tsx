@@ -1,38 +1,27 @@
-import { Button } from '#/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '#/components/ui/card';
-import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-} from '#/components/ui/field';
-import { Input } from '#/components/ui/input';
-import { authClient } from '#/lib/auth-client';
-import { LoginFormSchema } from '#/lib/schemas/auth';
-import { useForm } from '@tanstack/react-form';
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { toast } from 'sonner';
+import { Button } from "#/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "#/components/ui/card";
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "#/components/ui/field";
+import { Input } from "#/components/ui/input";
+import { Spinner } from "#/components/ui/spinner";
+import { authClient } from "#/lib/auth-client";
+import { LoginFormSchema } from "#/lib/schemas/auth";
+import { useForm } from "@tanstack/react-form";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { toast } from "sonner";
 
-export const Route = createFileRoute('/_auth/login')({ component: LoginPage });
+export const Route = createFileRoute("/_auth/login")({ component: LoginPage });
 
 function LoginPage() {
   const navigate = useNavigate();
 
   const form = useForm({
-    formId: 'login',
+    formId: "login",
     defaultValues: {
-      email: '',
-      password: '',
+      email: "",
+      password: "",
     },
     validators: {
-      onChange: LoginFormSchema,
+      onSubmit: LoginFormSchema,
       onSubmitAsync: async ({ value: { email, password } }) => {
         const result = await authClient.signIn.email({ email, password });
         if (result.error) {
@@ -41,10 +30,10 @@ function LoginPage() {
           };
         }
 
-        toast.success('Welcome back!', {
-          description: 'Login successful',
+        toast.success("Welcome back!", {
+          description: "Login successful",
         });
-        navigate({ to: '/' });
+        navigate({ to: "/" });
       },
     },
   });
@@ -56,18 +45,16 @@ function LoginPage() {
   };
 
   return (
-    <div className='flex flex-col gap-6'>
+    <div className="flex flex-col gap-6">
       <Card>
         <CardHeader>
           <CardTitle>Login to your account</CardTitle>
-          <CardDescription>
-            Enter your email below to login to your account
-          </CardDescription>
+          <CardDescription>Enter your email below to login to your account</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={onSubmit}>
             <FieldGroup>
-              <form.Field name='email'>
+              <form.Field name="email">
                 {(field) => (
                   <Field>
                     <FieldLabel htmlFor={field.name}>Email</FieldLabel>
@@ -76,24 +63,22 @@ function LoginPage() {
                       name={field.name}
                       onBlur={field.handleBlur}
                       onChange={(e) => field.handleChange(e.target.value)}
-                      type='email'
-                      placeholder='Enter your email'
+                      type="email"
+                      placeholder="Enter your email"
                       required
                     />
-                    {field.state.meta.isValid ? null : (
-                      <FieldError errors={field.state.meta.errors} />
-                    )}
+                    {field.state.meta.isValid ? null : <FieldError errors={field.state.meta.errors} />}
                   </Field>
                 )}
               </form.Field>
-              <form.Field name='password'>
+              <form.Field name="password">
                 {(field) => (
                   <Field>
-                    <div className='flex items-center'>
+                    <div className="flex items-center">
                       <FieldLabel htmlFor={field.name}>Password</FieldLabel>
                       <Link
-                        to='/api/auth/$'
-                        className='ml-auto inline-block text-sm underline-offset-4 hover:underline'
+                        to="/api/auth/$"
+                        className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
                       >
                         Forgot your password?
                       </Link>
@@ -103,13 +88,11 @@ function LoginPage() {
                       name={field.name}
                       onChange={(e) => field.handleChange(e.target.value)}
                       onBlur={field.handleBlur}
-                      type='password'
-                      placeholder='Enter your password'
+                      type="password"
+                      placeholder="Enter your password"
                       required
                     />
-                    {field.state.meta.isValid ? null : (
-                      <FieldError errors={field.state.meta.errors} />
-                    )}
+                    {field.state.meta.isValid ? null : <FieldError errors={field.state.meta.errors} />}
                   </Field>
                 )}
               </form.Field>
@@ -122,14 +105,13 @@ function LoginPage() {
               >
                 {({ canSubmit, isSubmitting, errorMap }) => (
                   <Field>
-                    <Button type='submit' disabled={!canSubmit || isSubmitting}>
-                      Login
+                    <Button type="submit" disabled={!canSubmit || isSubmitting}>
+                      {isSubmitting ? <Spinner /> : null}
+                      {isSubmitting ? "Logging in" : "Login"}
                     </Button>
-                    {errorMap.onSubmit?.form ? (
-                      <FieldError>{String(errorMap.onSubmit.form)}</FieldError>
-                    ) : null}
-                    <FieldDescription className='text-center'>
-                      Don't have an account? <Link to='/signup'>Sign up</Link>
+                    {errorMap.onSubmit?.form ? <FieldError>{String(errorMap.onSubmit.form)}</FieldError> : null}
+                    <FieldDescription className="text-center">
+                      Don't have an account? <Link to="/signup">Sign up</Link>
                     </FieldDescription>
                   </Field>
                 )}
