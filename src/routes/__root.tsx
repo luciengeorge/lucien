@@ -1,6 +1,5 @@
 import type { QueryClient } from "@tanstack/react-query";
 
-import { Navbar } from "#/components/navbar";
 import { Toaster } from "#/components/ui/sonner";
 import { useToast } from "#/hooks/use-toast";
 import { getToast } from "#/lib/functions/get-toast";
@@ -65,10 +64,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           <PostHogProvider>
             <TanStackQueryProvider>
               <Toaster closeButton />
-              <main className="w-full max-w-6xl mx-auto">
-                <Navbar />
-                {children}
-              </main>
+              {children}
               <TanStackDevtools
                 config={{
                   position: "bottom-right",

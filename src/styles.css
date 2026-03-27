@@ -174,3 +174,9 @@ body {
     @apply text-base font-bold tracking-tight sm:text-xl;
   }
 }
+
+@layer components {
+  .narrative-text .sd-caret-circle {
+    @apply text-primary opacity-60;
+  }
+}
