@@ -1,12 +1,12 @@
 "use client";
 
 import {
+  Alert02Icon,
   CheckmarkCircle02Icon,
   InformationCircleIcon,
-  Alert02Icon,
-  MultiplicationSignCircleIcon,
   Loading03Icon,
-} from "@hugeicons/core-free-icons";
+  MultiplicationSignCircleIcon,
+} from "@hugeicons-pro/core-stroke-rounded";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useTheme } from "next-themes";
 import { Toaster as Sonner, type ToasterProps } from "sonner";

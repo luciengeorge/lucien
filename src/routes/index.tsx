@@ -1,75 +1,114 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { useEffect, useRef } from 'react';
-import { Streamdown } from 'streamdown';
-import 'streamdown/styles.css';
+import { Button } from "#/components/ui/button";
+import { Input } from "#/components/ui/input";
+import { Label } from "#/components/ui/label";
+import { ScrollArea } from "#/components/ui/scroll-area";
+import { Spinner } from "#/components/ui/spinner";
+import { cn } from "#/lib/utils";
+import { Navigation03Icon } from "@hugeicons-pro/core-stroke-rounded";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { fetchServerSentEvents, useChat } from "@tanstack/ai-react";
+import { useForm } from "@tanstack/react-form";
+import { createFileRoute } from "@tanstack/react-router";
+import { Streamdown } from "streamdown";
+import "streamdown/styles.css";
+import z from "zod";
 
-import { ChatInput } from '#/components/chat-input';
-import { ScrollArea } from '#/components/ui/scroll-area';
-import { Separator } from '#/components/ui/separator';
-import { useMockStream } from '#/hooks/use-mock-stream';
+export const Route = createFileRoute("/")({ component: ChatPage });
 
-export const Route = createFileRoute('/')({ component: ChatPage });
+const FormSchema = z.object({
+  message: z.string().min(1),
+});
 
 function ChatPage() {
-  const { messages, streamingContent, isStreaming, startIntro, sendMessage } =
-    useMockStream();
-  const bottomRef = useRef<HTMLDivElement>(null);
-  const hasStarted = useRef(false);
+  const { messages, status, sendMessage } = useChat({
+    connection: fetchServerSentEvents("/api/chat"),
+  });
+  const form = useForm({
+    defaultValues: {
+      message: "",
+    },
+    validators: {
+      onSubmit: FormSchema,
+      onSubmitAsync: async ({ value }) => {
+        await sendMessage(value.message);
+        form.reset();
+      },
+    },
+  });
 
-  useEffect(() => {
-    if (hasStarted.current) return;
-    hasStarted.current = true;
-    const timer = setTimeout(() => startIntro(), 600);
-    return () => clearTimeout(timer);
-  }, [startIntro]);
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-  }, [streamingContent, messages]);
-
-  const showInput = messages.length > 0 && !isStreaming;
+  const onSubmit = (event: React.SubmitEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    form.handleSubmit();
+  };
 
   return (
-    <div className='flex min-h-svh flex-col'>
-      <ScrollArea className='flex-1'>
-        <div className='mx-auto max-w-2xl px-6 pt-[25vh] pb-40'>
-          <div className='space-y-6'>
-            {messages.map((msg, i) => (
-              <div key={i}>
-                {msg.role === 'user' ? (
-                  <>
-                    <Separator className='my-8 opacity-30' />
-                    <p className='font-sans text-sm font-medium text-primary'>
-                      {msg.content}
-                    </p>
-                    <Separator className='my-8 opacity-30' />
-                  </>
-                ) : (
-                  <div className='narrative-text font-sans text-base leading-relaxed text-foreground prose prose-zinc max-w-none [&_strong]:font-semibold [&_strong]:text-primary [&_p]:mb-4'>
-                    <Streamdown>{msg.content}</Streamdown>
+    <>
+      <ScrollArea className="min-h-0 grow">
+        {messages.map((message) => (
+          <div
+            key={message.id}
+            className={cn(message.role === "user" ? "bg-accent text-accent-foreground" : "bg-primary text-white")}
+          >
+            {message.parts.map((part) => {
+              if (part.type === "thinking") {
+                return (
+                  <div key={message.id} className="mb-2 text-sm text-gray-500 italic">
+                    💭 Thinking: {part.content}
                   </div>
-                )}
-              </div>
-            ))}
-
-            {streamingContent ? (
-              <div className='narrative-text font-sans text-base leading-relaxed text-foreground prose prose-zinc max-w-none [&_strong]:font-semibold [&_strong]:text-primary [&_p]:mb-4'>
-                <Streamdown animated isAnimating={isStreaming} caret='circle'>
-                  {streamingContent}
-                </Streamdown>
-              </div>
-            ) : null}
+                );
+              } else if (part.type === "text") {
+                return (
+                  <Streamdown key={message.id} isAnimating={status === "streaming"}>
+                    {part.content}
+                  </Streamdown>
+                );
+              }
+              return null;
+            })}
           </div>
-
-          <div ref={bottomRef} />
-        </div>
+        ))}
       </ScrollArea>
 
-      <ChatInput
-        onSend={sendMessage}
-        disabled={isStreaming}
-        visible={showInput}
-      />
-    </div>
+      <form
+        className="flex shrink-0 rounded-lg border border-input bg-transparent focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50"
+        onSubmit={onSubmit}
+      >
+        <form.Subscribe
+          selector={(state) => ({
+            canSubmit: state.canSubmit,
+            isSubmitting: state.isSubmitting,
+            errorMap: state.errorMap,
+          })}
+        >
+          {({ isSubmitting, canSubmit }) => (
+            <>
+              <form.Field name="message">
+                {(field) => (
+                  <>
+                    <Label className="sr-only" htmlFor={field.name}>
+                      message
+                    </Label>
+                    <Input
+                      name={field.name}
+                      id={field.name}
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      disabled={isSubmitting}
+                      onBlur={field.handleBlur}
+                      className="border-0! border-transparent! ring-0!"
+                    />
+                  </>
+                )}
+              </form.Field>
+              <Button size="icon" disabled={status === "streaming" || isSubmitting || !canSubmit}>
+                {isSubmitting ? <Spinner /> : <HugeiconsIcon icon={Navigation03Icon} />}
+                <span className="sr-only">send</span>
+              </Button>
+            </>
+          )}
+        </form.Subscribe>
+      </form>
+    </>
   );
 }

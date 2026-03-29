@@ -3,6 +3,7 @@
   "trailingComma": "all",
   "semi": true,
   "singleQuote": false,
+  "jsxSingleQuote": false,
   "printWidth": 120,
   "tabWidth": 2,
   "useTabs": false,
@@ -15,14 +16,14 @@
       "value-internal",
       ["type-parent", "type-sibling", "type-index"],
       ["value-parent", "value-sibling", "value-index"],
-      "unknown"
-    ]
+      "unknown",
+    ],
   },
-  "tailwindcss": {
+  "sortTailwindcss": {
     "stylesheet": "./src/styles.css",
     "attributes": ["class", "className"],
     "functions": ["clsx", "cn"],
-    "preserveWhitespace": true
+    "preserveWhitespace": true,
   },
-  "experimentalSortPackageJson": true
+  "sortPackageJson": true,
 }

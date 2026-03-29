@@ -59,12 +59,12 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <head>
         <HeadContent />
       </head>
-      <body className="font-sans antialiased wrap-anywhere">
+      <body className="font-sans wrap-anywhere antialiased">
         <ConvexProvider>
           <PostHogProvider>
             <TanStackQueryProvider>
-              <Toaster closeButton />
-              {children}
+              <Toaster closeButton richColors />
+              <main className="mx-auto flex h-dvh w-full max-w-4xl flex-col py-6">{children}</main>
               <TanStackDevtools
                 config={{
                   position: "bottom-right",

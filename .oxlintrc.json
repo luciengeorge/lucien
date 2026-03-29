@@ -57,34 +57,34 @@
         "paths": [
           {
             "name": "@/lib/zod",
-            "message": "Import from a specific zod module path (e.g. @/lib/zod/permissions)."
+            "message": "Import from a specific zod module path (e.g. @/lib/zod/permissions).",
           },
           {
             "name": "./zod",
-            "message": "Import from a specific zod module path."
+            "message": "Import from a specific zod module path.",
           },
           {
             "name": "../zod",
-            "message": "Import from a specific zod module path."
+            "message": "Import from a specific zod module path.",
           },
           {
             "name": "@/lib/main/sdk",
-            "message": "Import from concrete sdk modules (e.g. @/lib/main/sdk/sdk-state)."
+            "message": "Import from concrete sdk modules (e.g. @/lib/main/sdk/sdk-state).",
           },
           {
             "name": "@/lib/main/sdk/handlers",
-            "message": "Import from specific sdk handler modules."
+            "message": "Import from specific sdk handler modules.",
           },
           {
             "name": "./sdk",
-            "message": "Import from concrete sdk modules."
+            "message": "Import from concrete sdk modules.",
           },
           {
             "name": "./sdk/handlers",
-            "message": "Import from specific sdk handler modules."
-          }
-        ]
-      }
+            "message": "Import from specific sdk handler modules.",
+          },
+        ],
+      },
     ],
     "no-with": "warn",
     "require-yield": "warn",
@@ -143,20 +143,20 @@
     "unicorn/no-useless-length-check": "warn",
     "unicorn/no-useless-spread": "warn",
     "unicorn/prefer-set-size": "warn",
-    "unicorn/prefer-string-starts-ends-with": "off"
+    "unicorn/prefer-string-starts-ends-with": "off",
   },
   "settings": {
     "jsx-a11y": {
       "polymorphicPropName": null,
       "components": {},
-      "attributes": {}
+      "attributes": {},
     },
     "next": {
-      "rootDir": []
+      "rootDir": [],
     },
     "react": {
       "formComponents": [],
-      "linkComponents": []
+      "linkComponents": [],
     },
     "jsdoc": {
       "ignorePrivate": false,
@@ -166,12 +166,12 @@
       "augmentsExtendsReplacesDocs": false,
       "implementsReplacesDocs": false,
       "exemptDestructuredRootsFromChecks": false,
-      "tagNamePreference": {}
-    }
+      "tagNamePreference": {},
+    },
   },
   "env": {
-    "builtin": true
+    "builtin": true,
   },
   "globals": {},
-  "ignorePatterns": []
+  "ignorePatterns": [],
 }

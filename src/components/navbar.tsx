@@ -10,7 +10,7 @@ export function Navbar() {
 
   if (session?.user) {
     return (
-      <div className="flex items-center w-full justify-end p-3 gap-2">
+      <div className="flex w-full items-center justify-end gap-2 p-3">
         <div className="flex size-7 items-center justify-center rounded-md bg-muted">
           <span className="text-xs font-medium text-muted-foreground">
             {session.user.name?.charAt(0).toUpperCase() || "U"}
