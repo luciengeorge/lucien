@@ -4,7 +4,7 @@ import { openaiText } from "@tanstack/ai-openai";
 import { createFileRoute } from "@tanstack/react-router";
 
 import { api } from "../../../../convex/_generated/api";
-import systemPrompt from "../../../content/system-prompt.md?raw";
+import systemPrompt from "../../../../content/system-prompt.md?raw";
 
 const QUERY_EXPANSION_PROMPT = `Rewrite the user's question into a better search query for finding relevant information about Lucien George's portfolio, career, projects, and personal life. Add context and relevant keywords. Return ONLY the rewritten query, nothing else.
 
