@@ -1,0 +1,5 @@
+Before Le Wagon, Lucien worked at Hoxton Digital (December 2018 - April 2019) as a freelance Ruby on Rails developer, building the company's main website and their clients' websites. This was concurrent with his time as a teaching assistant at Le Wagon.
+
+During university, Lucien interned twice at Dataflow, a software and services company in Beirut. In his first summer, he worked as a web developer learning HTML5 and helping build a governmental educational website for a regional school. In his second summer, he returned as an Android developer, implementing an interactive reader application for schools based on the existing iOS version. Despite knowing little about the Android platform initially, he put in extra hours to learn and delivered a product his manager was fully satisfied with.
+
+At McGill, he built several projects including Android applications (soccer scorekeeping app, postal rate calculator, "SnowMore" connecting users with snow shovellers, and a kinesthetic data recording app using Fourier transforms) and web stores using HTML, C, Perl, and Python.
