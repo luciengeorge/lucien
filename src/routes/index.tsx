@@ -1,17 +1,19 @@
+import { useChat } from "@ai-sdk/react";
+import { Navigation03Icon } from "@hugeicons-pro/core-stroke-rounded";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { useForm } from "@tanstack/react-form";
+import { createFileRoute } from "@tanstack/react-router";
+import { DefaultChatTransport } from "ai";
+import { Streamdown } from "streamdown";
+import "streamdown/styles.css";
+import z from "zod";
+
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
 import { ScrollArea } from "#/components/ui/scroll-area";
 import { Spinner } from "#/components/ui/spinner";
 import { cn } from "#/lib/utils";
-import { Navigation03Icon } from "@hugeicons-pro/core-stroke-rounded";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { fetchServerSentEvents, useChat } from "@tanstack/ai-react";
-import { useForm } from "@tanstack/react-form";
-import { createFileRoute } from "@tanstack/react-router";
-import { Streamdown } from "streamdown";
-import "streamdown/styles.css";
-import z from "zod";
 
 export const Route = createFileRoute("/")({ component: ChatPage });
 
@@ -20,9 +22,10 @@ const FormSchema = z.object({
 });
 
 function ChatPage() {
-  const { messages, status, sendMessage } = useChat({
-    connection: fetchServerSentEvents("/api/chat"),
+  const { messages, sendMessage, status } = useChat({
+    transport: new DefaultChatTransport({ api: "/api/chat" }),
   });
+
   const form = useForm({
     defaultValues: {
       message: "",
@@ -30,7 +33,7 @@ function ChatPage() {
     validators: {
       onSubmit: FormSchema,
       onSubmitAsync: async ({ value }) => {
-        await sendMessage(value.message);
+        sendMessage({ text: value.message });
         form.reset();
       },
     },
@@ -50,17 +53,18 @@ function ChatPage() {
             key={message.id}
             className={cn(message.role === "user" ? "bg-accent text-accent-foreground" : "bg-primary text-white")}
           >
-            {message.parts.map((part) => {
-              if (part.type === "thinking") {
+            {message.parts.map((part, idx) => {
+              if (part.type === "reasoning") {
                 return (
-                  <div key={message.id} className="mb-2 text-sm text-gray-500 italic">
-                    💭 Thinking: {part.content}
+                  <div key={idx} className="mb-2 text-sm text-gray-500 italic">
+                    Thinking: {part.text}
                   </div>
                 );
-              } else if (part.type === "text") {
+              }
+              if (part.type === "text") {
                 return (
-                  <Streamdown key={message.id} isAnimating={status === "streaming"}>
-                    {part.content}
+                  <Streamdown key={idx} isAnimating={status === "streaming"}>
+                    {part.text}
                   </Streamdown>
                 );
               }
@@ -78,7 +82,6 @@ function ChatPage() {
           selector={(state) => ({
             canSubmit: state.canSubmit,
             isSubmitting: state.isSubmitting,
-            errorMap: state.errorMap,
           })}
         >
           {({ isSubmitting, canSubmit }) => (

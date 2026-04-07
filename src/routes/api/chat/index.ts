@@ -1,10 +1,10 @@
 import { fetchAuthAction } from "#/lib/auth-server";
-import { chat, streamToText, toServerSentEventsResponse } from "@tanstack/ai";
-import { openaiText } from "@tanstack/ai-openai";
+import { openai } from "@ai-sdk/openai";
 import { createFileRoute } from "@tanstack/react-router";
+import { convertToModelMessages, generateText, streamText } from "ai";
 
-import { api } from "../../../../convex/_generated/api";
 import systemPrompt from "../../../../content/system-prompt.md?raw";
+import { api } from "../../../../convex/_generated/api";
 
 const QUERY_EXPANSION_PROMPT = `Rewrite the user's question into a better search query for finding relevant information about Lucien George's portfolio, career, projects, and personal life. Add context and relevant keywords. Return ONLY the rewritten query, nothing else.
 
@@ -17,12 +17,12 @@ Examples:
 
 async function expandQuery(query: string): Promise<string> {
   try {
-    const stream = chat({
-      adapter: openaiText("gpt-5.2-chat-latest"),
-      messages: [{ role: "user", content: query }],
-      systemPrompts: [QUERY_EXPANSION_PROMPT],
+    const { text } = await generateText({
+      model: openai("gpt-5.4-nano"),
+      system: QUERY_EXPANSION_PROMPT,
+      prompt: query,
     });
-    return await streamToText(stream);
+    return text;
   } catch {
     return query;
   }
@@ -32,14 +32,10 @@ export const Route = createFileRoute("/api/chat/")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        if (!process.env.OPENAI_API_KEY) {
-          return new Response(JSON.stringify({ error: "OPENAI_API_KEY is not set" }), { status: 500 });
-        }
-
-        const { messages, conversationId } = await request.json();
+        const { messages } = await request.json();
 
         const lastUserMessage = [...messages].reverse().find((m: { role: string }) => m.role === "user");
-        const query = lastUserMessage?.content ?? lastUserMessage?.parts?.[0]?.content ?? "";
+        const query = lastUserMessage?.content ?? lastUserMessage?.parts?.[0]?.text ?? "";
 
         const expandedQuery = await expandQuery(query);
         console.log(`Query: "${query}" → Expanded: "${expandedQuery}"`);
@@ -53,22 +49,13 @@ export const Route = createFileRoute("/api/chat/")({
 
         const prompt = systemPrompt.replace("{retrieved_context}", context);
 
-        try {
-          const stream = chat({
-            adapter: openaiText("gpt-5.2-chat-latest"),
-            messages,
-            conversationId,
-            systemPrompts: [prompt],
-          });
-          return toServerSentEventsResponse(stream);
-        } catch (error) {
-          return new Response(
-            JSON.stringify({
-              error: error instanceof Error ? error.message : "An error occurred",
-            }),
-            { status: 500, headers: { "Content-Type": "application/json" } },
-          );
-        }
+        const result = streamText({
+          model: openai("gpt-5.4-mini"),
+          system: prompt,
+          messages: await convertToModelMessages(messages),
+        });
+
+        return result.toUIMessageStreamResponse();
       },
     },
   },
