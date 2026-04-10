@@ -64,7 +64,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           <PostHogProvider>
             <TanStackQueryProvider>
               <Toaster closeButton richColors />
-              <main className="mx-auto flex h-dvh w-full max-w-4xl flex-col py-6">{children}</main>
+              <main className="isolate flex h-dvh min-h-0 w-full flex-col overflow-hidden py-6">{children}</main>
               <TanStackDevtools
                 config={{
                   position: "bottom-right",
