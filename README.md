@@ -1,283 +1,229 @@
-Welcome to your new TanStack Start app!
+# Lucien
 
-# Getting Started
+Lucien's personal site and AI portfolio assistant.
 
-To run this application:
+The app is a small TanStack Start full-stack app with a public chat UI, Better Auth auth flows, and Convex-backed RAG search over markdown content about Lucien.
+
+## What it does
+
+- Serves a public chat page at `/`
+- Answers questions about Lucien using retrieved markdown context from `content/`
+- Uses OpenAI for query expansion and final streamed responses
+- Supports email/password signup and login with Better Auth
+- Stores auth data in Convex and content embeddings in Convex RAG
+
+## Stack
+
+- TanStack Start
+- TanStack Router
+- React 19
+- Tailwind CSS v4
+- shadcn-style UI components
+- TanStack Form
+- Convex
+- `@convex-dev/rag`
+- Better Auth + `@convex-dev/better-auth`
+- Vercel AI SDK + OpenAI
+- Sentry
+- PostHog
+- Vitest
+
+## App structure
+
+```text
+src/
+  routes/                 Pages and API routes
+  components/ui/          Shared UI primitives
+  integrations/           Convex, PostHog, React Query providers
+  lib/                    Auth, schemas, server helpers, utils
+convex/
+  betterAuth/             Better Auth Convex component
+  search.ts               RAG search action
+  seed.ts                 Content seed action
+content/                  Markdown knowledge base for Lucien
+scripts/seed.ts           Seeds markdown into Convex RAG
+```
+
+## Current routes
+
+- `/` chat page
+- `/login` login page
+- `/signup` signup page
+- `/api/chat` streamed chat API
+- `/api/auth/$` Better Auth handler
+
+## How chat works
+
+1. User sends a message from `src/routes/index.tsx`
+2. Frontend posts to `/api/chat`
+3. Server expands the query with OpenAI
+4. Server calls Convex RAG search in namespace `portfolio`
+5. Retrieved context is injected into `content/system-prompt.md`
+6. Server streams the final answer back to the UI
+
+Key files:
+
+- `src/routes/index.tsx`
+- `src/routes/api/chat/index.ts`
+- `convex/search.ts`
+- `content/system-prompt.md`
+
+## Local setup
+
+### 1. Install deps
 
 ```bash
 pnpm install
+```
+
+### 2. Create `.env.local`
+
+Minimum local env:
+
+```bash
+VITE_CONVEX_URL=
+VITE_CONVEX_SITE_URL=
+BETTER_AUTH_SECRET=
+TOAST_SECRET=
+OPENAI_API_KEY=
+SITE_URL=http://localhost:3000
+```
+
+Optional:
+
+```bash
+VITE_POSTHOG_KEY=
+VITE_POSTHOG_HOST=
+VITE_SENTRY_DSN=
+RESEND_API_KEY=
+RESEND_FROM_EMAIL=
+SENTRY_ORG=
+SENTRY_PROJECT=
+SENTRY_AUTH_TOKEN=
+```
+
+Notes:
+
+- `RESEND_API_KEY` and `RESEND_FROM_EMAIL` are needed for email verification
+- PostHog is optional and safely no-ops if unset
+- Sentry build upload vars are only needed if you want release uploads/source maps
+
+### 3. Start Convex
+
+```bash
+pnpm dlx convex dev
+```
+
+If needed, initialize Convex first:
+
+```bash
+pnpm dlx convex init
+```
+
+### 4. Seed portfolio content
+
+This reads markdown files from `content/` and uploads them to Convex RAG.
+
+```bash
+pnpm seed
+```
+
+### 5. Run the app
+
+```bash
 pnpm dev
 ```
 
-# Building For Production
+App runs on `http://localhost:3000`.
 
-To build this application for production:
+## Auth
+
+- Better Auth is configured in `src/lib/auth-config.ts`
+- Auth HTTP handler lives at `src/routes/api/auth/$.ts`
+- Convex auth integration lives under `convex/betterAuth/`
+- Email/password auth is enabled
+- Email verification is required
+
+Current route protection is minimal:
+
+- logged-in users are redirected away from `/login` and `/signup`
+- `/` and `/api/chat` are public
+
+## Database / persistence
+
+There is no custom app schema yet.
+
+Current persisted data is mostly:
+
+- Better Auth tables in `convex/betterAuth/schema.ts`
+  - `user`
+  - `session`
+  - `account`
+  - `verification`
+  - `jwks`
+- RAG-managed content/indexes from `@convex-dev/rag`
+
+The root Convex schema in `convex/schema.ts` is currently empty.
+
+## Useful commands
 
 ```bash
+pnpm dev
 pnpm build
+pnpm start
+pnpm test
+pnpm typecheck
+pnpm lint
+pnpm format
+pnpm seed
 ```
+
+## Conventions
+
+- TypeScript strict mode
+- File-based routing in `src/routes`
+- Forms use TanStack Form + Zod
+- Styling uses Tailwind utilities and shared UI primitives
+- Use `#/` import alias for app code
+- Generated files should not be edited manually:
+  - `src/routeTree.gen.ts`
+  - `convex/betterAuth/schema.ts`
+
+Formatting/linting:
+
+- `oxfmt`
+- `oxlint`
+
+## Observability
+
+- Sentry is wired for client and server
+- PostHog provider is mounted globally
+
+Relevant files:
+
+- `src/start.ts`
+- `src/server.ts`
+- `vite.config.ts`
+- `src/integrations/posthog/provider.tsx`
 
 ## Testing
 
-This project uses [Vitest](https://vitest.dev/) for testing. You can run the tests with:
+Vitest is installed and `pnpm test` is available, but there are currently no test files in the repo.
 
-```bash
-pnpm test
-```
+## Known limitations
 
-## Styling
+- README used to be starter-template content; this file now reflects the current app
+- Chat history is not persisted
+- No role/permission system yet
+- Very small route surface today
+- Convex is used mainly for auth + RAG, not broader app data yet
 
-This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
+## Adding content
 
-### Removing Tailwind CSS
+To update Lucien's knowledge base:
 
-If you prefer not to use Tailwind CSS:
+1. Add or edit markdown files in `content/`
+2. Keep `content/system-prompt.md` for prompt instructions only
+3. Run `pnpm seed`
 
-1. Remove the demo pages in `src/routes/demo/`
-2. Replace the Tailwind import in `src/styles.css` with your own styles
-3. Remove `tailwindcss()` from the plugins array in `vite.config.ts`
-4. Uninstall the packages: `pnpm add @tailwindcss/vite tailwindcss --dev`
-
-## Setting up Convex
-
-- Set the `VITE_CONVEX_URL` and `CONVEX_DEPLOYMENT` environment variables in your `.env.local`. (Or run `pnpm dlx convex init` to set them automatically.)
-- Run `pnpm dlx convex dev` to start the Convex server.
-
-# TanStack Chat Application
-
-Am example chat application built with TanStack Start, TanStack Store, and Claude AI.
-
-## ✨ Features
-
-### AI Capabilities
-
-- 🤖 Powered by Claude 3.5 Sonnet
-- 📝 Rich markdown formatting with syntax highlighting
-- 🎯 Customizable system prompts for tailored AI behavior
-- 🔄 Real-time message updates and streaming responses (coming soon)
-
-### User Experience
-
-- 🎨 Modern UI with Tailwind CSS and Lucide icons
-- 🔍 Conversation management and history
-- 🔐 Secure API key management
-- 📋 Markdown rendering with code highlighting
-
-### Technical Features
-
-- 📦 Centralized state management with TanStack Store
-- 🔌 Extensible architecture for multiple AI providers
-- 🛠️ TypeScript for type safety
-
-## Architecture
-
-### Tech Stack
-
-- **Frontend Framework**: TanStack Start
-- **Routing**: TanStack Router
-- **State Management**: TanStack Store
-- **Styling**: Tailwind CSS
-- **AI Integration**: Anthropic's Claude API
-
-## Shadcn
-
-Add components using the latest version of [Shadcn](https://ui.shadcn.com/).
-
-```bash
-pnpm dlx shadcn@latest add button
-```
-
-## Setting up Better Auth
-
-1. Generate and set the `BETTER_AUTH_SECRET` environment variable in your `.env.local`:
-
-   ```bash
-   pnpm dlx @better-auth/cli secret
-   ```
-
-2. Visit the [Better Auth documentation](https://www.better-auth.com) to unlock the full potential of authentication in your app.
-
-### Adding a Database (Optional)
-
-Better Auth can work in stateless mode, but to persist user data, add a database:
-
-```typescript
-// src/lib/auth.ts
-import { betterAuth } from 'better-auth';
-import { Pool } from 'pg';
-
-export const auth = betterAuth({
-  database: new Pool({
-    connectionString: process.env.DATABASE_URL,
-  }),
-  // ... rest of config
-});
-```
-
-Then run migrations:
-
-```bash
-pnpm dlx @better-auth/cli migrate
-```
-
-## Setting up PostHog
-
-1. Create a PostHog account at [posthog.com](https://posthog.com)
-2. Get your Project API Key from [Project Settings](https://app.posthog.com/project/settings)
-3. Set `VITE_POSTHOG_KEY` in your `.env.local`
-
-### Optional Configuration
-
-- `VITE_POSTHOG_HOST` - Set this if you're using PostHog Cloud EU (`https://eu.i.posthog.com`) or self-hosting
-
-## Routing
-
-This project uses [TanStack Router](https://tanstack.com/router) with file-based routing. Routes are managed as files in `src/routes`.
-
-### Adding A Route
-
-To add a new route to your application just add a new file in the `./src/routes` directory.
-
-TanStack will automatically generate the content of the route file for you.
-
-Now that you have two routes you can use a `Link` component to navigate between them.
-
-### Adding Links
-
-To use SPA (Single Page Application) navigation you will need to import the `Link` component from `@tanstack/react-router`.
-
-```tsx
-import { Link } from '@tanstack/react-router';
-```
-
-Then anywhere in your JSX you can use it like so:
-
-```tsx
-<Link to='/about'>About</Link>
-```
-
-This will create a link that will navigate to the `/about` route.
-
-More information on the `Link` component can be found in the [Link documentation](https://tanstack.com/router/v1/docs/framework/react/api/router/linkComponent).
-
-### Using A Layout
-
-In the File Based Routing setup the layout is located in `src/routes/__root.tsx`. Anything you add to the root route will appear in all the routes. The route content will appear in the JSX where you render `{children}` in the `shellComponent`.
-
-Here is an example layout that includes a header:
-
-```tsx
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router';
-
-export const Route = createRootRoute({
-  head: () => ({
-    meta: [
-      { charSet: 'utf-8' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'My App' },
-    ],
-  }),
-  shellComponent: ({ children }) => (
-    <html lang='en'>
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        <header>
-          <nav>
-            <Link to='/'>Home</Link>
-            <Link to='/about'>About</Link>
-          </nav>
-        </header>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  ),
-});
-```
-
-More information on layouts can be found in the [Layouts documentation](https://tanstack.com/router/latest/docs/framework/react/guide/routing-concepts#layouts).
-
-## Server Functions
-
-TanStack Start provides server functions that allow you to write server-side code that seamlessly integrates with your client components.
-
-```tsx
-import { createServerFn } from '@tanstack/react-start';
-
-const getServerTime = createServerFn({
-  method: 'GET',
-}).handler(async () => {
-  return new Date().toISOString();
-});
-
-// Use in a component
-function MyComponent() {
-  const [time, setTime] = useState('');
-
-  useEffect(() => {
-    getServerTime().then(setTime);
-  }, []);
-
-  return <div>Server time: {time}</div>;
-}
-```
-
-## API Routes
-
-You can create API routes by using the `server` property in your route definitions:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router';
-import { json } from '@tanstack/react-start';
-
-export const Route = createFileRoute('/api/hello')({
-  server: {
-    handlers: {
-      GET: () => json({ message: 'Hello, World!' }),
-    },
-  },
-});
-```
-
-## Data Fetching
-
-There are multiple ways to fetch data in your application. You can use TanStack Query to fetch data from a server. But you can also use the `loader` functionality built into TanStack Router to load the data for a route before it's rendered.
-
-For example:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router';
-
-export const Route = createFileRoute('/people')({
-  loader: async () => {
-    const response = await fetch('https://swapi.dev/api/people');
-    return response.json();
-  },
-  component: PeopleComponent,
-});
-
-function PeopleComponent() {
-  const data = Route.useLoaderData();
-  return (
-    <ul>
-      {data.results.map((person) => (
-        <li key={person.name}>{person.name}</li>
-      ))}
-    </ul>
-  );
-}
-```
-
-Loaders simplify your data fetching logic dramatically. Check out more information in the [Loader documentation](https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#loader-parameters).
-
-# Demo files
-
-Files prefixed with `demo` can be safely deleted. They are there to provide a starting point for you to play around with the features you've installed.
-
-# Learn More
-
-You can learn more about all of the offerings from TanStack in the [TanStack documentation](https://tanstack.com).
-
-For TanStack Start specific documentation, visit [TanStack Start](https://tanstack.com/start).
+`system-prompt.md` is skipped by the seed script on purpose.
