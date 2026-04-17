@@ -6,6 +6,7 @@ import { getToast } from "#/lib/functions/get-toast";
 import { TanStackDevtools } from "@tanstack/react-devtools";
 import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 
 import ConvexProvider from "../integrations/convex/provider";
 import PostHogProvider from "../integrations/posthog/provider";
@@ -60,6 +61,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body className="font-sans wrap-anywhere antialiased">
+        <SpeedInsights />
         <ConvexProvider>
           <PostHogProvider>
             <TanStackQueryProvider>
