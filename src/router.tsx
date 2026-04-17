@@ -15,7 +15,7 @@ export function getRouter() {
     defaultPreloadStaleTime: 0,
   });
 
-  if (!router.isServer) {
+  if (!router.isServer && import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
     Sentry.init({
       dsn: import.meta.env.VITE_SENTRY_DSN,
       environment: import.meta.env.MODE,
