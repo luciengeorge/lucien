@@ -20,6 +20,10 @@ async function main() {
 
   console.log(`Found ${mdFiles.length} content files to seed\n`);
 
+  console.log("Clearing existing portfolio vectors");
+  const resetResult = await client.action(api.seed.resetNamespace, {});
+  console.log(`Deleted ${resetResult.deletedEntries} existing entries\n`);
+
   for (const file of mdFiles) {
     const filePath = join(CONTENT_DIR, file);
     const text = await readFile(filePath, "utf-8");
