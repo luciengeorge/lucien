@@ -21,6 +21,7 @@ export default defineSchema({
     uiMessageId: v.string(),
   })
     .index("by_conversation_id", ["conversationId", "createdAt"])
+    .index("by_conversation_and_ui_message_id", ["conversationId", "uiMessageId"])
     .index("by_created_at", ["createdAt"]),
   messageParts: defineTable({
     messageId: v.id("messages"),

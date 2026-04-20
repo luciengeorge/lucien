@@ -41,6 +41,42 @@ function deriveConversationTitle(messages: PersistedMessage[]) {
   return firstUserText.slice(0, 120);
 }
 
+function deriveConversationTitleFromMessage(message: PersistedMessage) {
+  return deriveConversationTitle([message]);
+}
+
+async function replaceMessageParts(ctx: any, messageId: Id<"messages">, parts: PersistedMessage["parts"]) {
+  const existingParts = await ctx.db
+    .query("messageParts")
+    .withIndex("by_message_id", (q: any) => q.eq("messageId", messageId))
+    .collect();
+
+  for (const part of existingParts) {
+    await ctx.db.delete(part._id);
+  }
+
+  for (const [order, part] of (parts ?? []).entries()) {
+    const typedPart = part as {
+      text?: string;
+      toolCallId?: string;
+      toolName?: string;
+      state?: string;
+      type?: string;
+    };
+
+    await ctx.db.insert("messageParts", {
+      messageId,
+      order,
+      partJson: serializeJson(part),
+      textPreview: typeof typedPart.text === "string" ? typedPart.text.slice(0, 160) : undefined,
+      toolCallId: typedPart.toolCallId,
+      toolName: typedPart.toolName,
+      toolState: typedPart.state,
+      type: typedPart.type ?? "unknown",
+    });
+  }
+}
+
 export const createConversation = mutation({
   args: { sessionId: v.string() },
   handler: async (ctx, { sessionId }) => {
@@ -99,38 +135,39 @@ export const getConversationById = query({
   },
 });
 
-export const syncConversationMessages = mutation({
+export const upsertConversationMessage = mutation({
   args: {
     conversationId: v.string(),
-    messagesJson: v.string(),
+    messageJson: v.string(),
   },
-  handler: async (ctx, { conversationId, messagesJson }) => {
+  handler: async (ctx, { conversationId, messageJson }) => {
     const conversationRecord = await ctx.db.get(toConversationId(conversationId));
     if (!conversationRecord) {
       throw new Error("Conversation not found");
     }
 
-    const messages = JSON.parse(messagesJson) as PersistedMessage[];
-    const existingMessages = await ctx.db
+    const message = JSON.parse(messageJson) as PersistedMessage;
+    const uiMessageId = message.id ?? crypto.randomUUID();
+    const existingMessage = await ctx.db
       .query("messages")
-      .withIndex("by_conversation_id", (q) => q.eq("conversationId", conversationRecord._id))
-      .collect();
+      .withIndex("by_conversation_and_ui_message_id", (q) =>
+        q.eq("conversationId", conversationRecord._id).eq("uiMessageId", uiMessageId),
+      )
+      .unique();
 
-    for (const existingMessage of existingMessages) {
-      const existingParts = await ctx.db
-        .query("messageParts")
-        .withIndex("by_message_id", (q) => q.eq("messageId", existingMessage._id))
-        .collect();
+    const createdAt = message.createdAt ?? Date.now();
 
-      for (const part of existingParts) {
-        await ctx.db.delete(part._id);
-      }
+    if (existingMessage) {
+      await ctx.db.patch(existingMessage._id, {
+        createdAt,
+        metadataJson: message.metadata ? serializeJson(message.metadata) : undefined,
+        modelId: message.modelId,
+        provider: message.provider,
+        role: message.role,
+      });
 
-      await ctx.db.delete(existingMessage._id);
-    }
-
-    for (const message of messages) {
-      const createdAt = message.createdAt ?? Date.now();
+      await replaceMessageParts(ctx, existingMessage._id, message.parts);
+    } else {
       const insertedMessageId = await ctx.db.insert("messages", {
         conversationId: conversationRecord._id,
         createdAt,
@@ -138,32 +175,15 @@ export const syncConversationMessages = mutation({
         modelId: message.modelId,
         provider: message.provider,
         role: message.role,
-        uiMessageId: message.id ?? crypto.randomUUID(),
+        uiMessageId,
       });
 
-      for (const [order, part] of (message.parts ?? []).entries()) {
-        const typedPart = part as {
-          text?: string;
-          toolCallId?: string;
-          toolName?: string;
-          state?: string;
-          type?: string;
-        };
-        await ctx.db.insert("messageParts", {
-          messageId: insertedMessageId,
-          order,
-          partJson: serializeJson(part),
-          textPreview: typeof typedPart.text === "string" ? typedPart.text.slice(0, 160) : undefined,
-          toolCallId: typedPart.toolCallId,
-          toolName: typedPart.toolName,
-          toolState: typedPart.state,
-          type: typedPart.type ?? "unknown",
-        });
-      }
+      await replaceMessageParts(ctx, insertedMessageId, message.parts);
     }
 
+    const nextTitle = conversationRecord.title ?? deriveConversationTitleFromMessage(message);
     await ctx.db.patch(conversationRecord._id, {
-      title: deriveConversationTitle(messages),
+      title: nextTitle,
       updatedAt: Date.now(),
     });
   },

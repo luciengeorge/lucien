@@ -94,9 +94,9 @@ export const Route = createFileRoute("/api/chat/")({
           logger.error("rag search failed", { error: e, requestId });
         }
 
-        await fetchAuthMutation(api.conversations.syncConversationMessages, {
+        await fetchAuthMutation(api.conversations.upsertConversationMessage, {
           conversationId: id,
-          messagesJson: JSON.stringify(messages),
+          messageJson: JSON.stringify(message),
         });
 
         const prompt = systemPrompt.replace("{retrieved_context}", context);
@@ -115,10 +115,10 @@ export const Route = createFileRoute("/api/chat/")({
 
         return result.toUIMessageStreamResponse({
           generateMessageId: generateId,
-          onFinish: async ({ messages: finalMessages, responseMessage }) => {
-            await fetchAuthMutation(api.conversations.syncConversationMessages, {
+          onFinish: async ({ responseMessage }) => {
+            await fetchAuthMutation(api.conversations.upsertConversationMessage, {
               conversationId: id,
-              messagesJson: JSON.stringify(finalMessages),
+              messageJson: JSON.stringify(responseMessage),
             });
             logger.info("chat response completed", {
               assistantMessageId: responseMessage.id,
