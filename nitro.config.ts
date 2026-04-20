@@ -6,6 +6,7 @@ const securityHeaders = {
     "base-uri 'self'",
     "form-action 'self'",
     "frame-ancestors 'none'",
+    "frame-src 'self' https://vercel.live",
     "object-src 'none'",
     "img-src 'self' data: blob: https:",
     "font-src 'self' data: https://fonts.gstatic.com https:",
