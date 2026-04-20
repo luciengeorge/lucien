@@ -1,10 +1,11 @@
 import type { ChatConversationState } from "#/lib/chat-types";
-import { parseSerializedMessages } from "#/lib/chat-types";
+
 import { ScrollArea } from "#/components/ui/scroll-area";
 import { AnalyticsEvent, useAnalytics } from "#/lib/analytics";
+import { parseSerializedMessages } from "#/lib/chat-types";
 import { startNewConversation } from "#/lib/functions/start-new-conversation";
 import { useChat } from "@ai-sdk/react";
-import { ArrowDown04Icon } from "@hugeicons-pro/core-solid-rounded";
+import { ArrowDown04Icon } from "@hugeicons-pro/core-stroke-rounded";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useForm } from "@tanstack/react-form";
 import { DefaultChatTransport } from "ai";
@@ -42,7 +43,13 @@ export function ChatPage({ initialChatState }: { initialChatState: ChatConversat
     }
   }, [capture, initialChatState.conversation, initialChatState.serializedMessages.length]);
 
-  return <ChatConversation key={chatState.conversation?.id ?? "new-conversation"} chatState={chatState} onConversationChange={setChatState} />;
+  return (
+    <ChatConversation
+      key={chatState.conversation?.id ?? "new-conversation"}
+      chatState={chatState}
+      onConversationChange={setChatState}
+    />
+  );
 }
 
 function ChatConversation({
@@ -59,7 +66,10 @@ function ChatConversation({
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const shouldFollowRef = useRef(true);
   const [isAtBottom, setIsAtBottom] = useState(true);
-  const initialMessages = useMemo(() => parseSerializedMessages(chatState.serializedMessages), [chatState.serializedMessages]);
+  const initialMessages = useMemo(
+    () => parseSerializedMessages(chatState.serializedMessages),
+    [chatState.serializedMessages],
+  );
 
   const { messages, sendMessage, status } = useChat({
     id: chatState.conversation?.id ?? "new-conversation",
@@ -101,7 +111,14 @@ function ChatConversation({
       source: "bootstrap",
     });
     void sendMessage({ text: INTRO_PROMPT });
-  }, [capture, chatState.conversation, chatState.serializedMessages.length, messages.length, onConversationChange, sendMessage]);
+  }, [
+    capture,
+    chatState.conversation,
+    chatState.serializedMessages.length,
+    messages.length,
+    onConversationChange,
+    sendMessage,
+  ]);
 
   const visibleMessages = useMemo(() => messages.filter((message) => !isBootstrapMessage(message)), [messages]);
   const hasVisibleUserMessage = visibleMessages.some((message) => message.role === "user");
@@ -252,8 +269,8 @@ function ChatConversation({
   const isBusy = status === "submitted" || status === "streaming" || !chatState.conversation;
 
   return (
-    <section className="flex min-h-0 grow overflow-hidden bg-background py-2 sm:py-6">
-      <div className="flex min-h-0 w-full grow flex-col gap-2 py-1 sm:gap-5 sm:py-6">
+    <section className="flex min-h-0 grow overflow-hidden bg-background">
+      <div className="flex min-h-0 w-full grow flex-col gap-2 sm:gap-5">
         <div className="mx-auto flex w-full max-w-3xl justify-end px-4 sm:px-6">
           <Button variant="link" type="button" onClick={() => void handleNewConversation()}>
             New conversation
