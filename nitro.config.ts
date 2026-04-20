@@ -10,7 +10,7 @@ const securityHeaders = {
     "img-src 'self' data: blob: https:",
     "font-src 'self' data: https://fonts.gstatic.com https:",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com https://eu-assets.i.posthog.com https://us-assets.i.posthog.com",
+    "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com https://vercel.live https://eu-assets.i.posthog.com https://us-assets.i.posthog.com",
     "connect-src 'self' https: wss:",
     "worker-src 'self' blob:",
     "media-src 'self' blob: data: https:",
