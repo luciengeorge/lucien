@@ -1,5 +1,6 @@
 import { cn } from "#/lib/utils";
 import { Streamdown } from "streamdown";
+import { match } from "ts-pattern";
 
 import type { ChatMessage, ChatStatus } from "./chat.types";
 
@@ -16,8 +17,26 @@ export function ChatTimelineMessage({
   status: ChatStatus;
 }) {
   const role = message.role === "user" ? "user" : "assistant";
-  const reasoningParts = message.parts.filter((part) => part.type === "reasoning");
-  const textParts = message.parts.filter((part) => part.type === "text");
+  const reasoningParts = message.parts.flatMap((part, index) =>
+    match(part)
+      .with({ type: "reasoning" }, (reasoningPart) => [
+        {
+          key: `${message.id}-reasoning-${index}`,
+          text: reasoningPart.text,
+        },
+      ])
+      .otherwise(() => []),
+  );
+  const textParts = message.parts.flatMap((part, index) =>
+    match(part)
+      .with({ type: "text" }, (textPart) => [
+        {
+          key: `${message.id}-text-${index}`,
+          text: textPart.text,
+        },
+      ])
+      .otherwise(() => []),
+  );
 
   return (
     <li className={entryItemClassName(isFirst)}>
@@ -35,10 +54,7 @@ export function ChatTimelineMessage({
           <div className="space-y-2 border-l border-neutral-950/8 pl-4">
             <p className="font-mono text-sm tracking-wide text-neutral-400 uppercase">Thinking</p>
             {reasoningParts.map((part) => (
-              <p
-                key={`${message.id}-reasoning-${part.text}`}
-                className="max-w-[62ch] text-sm text-pretty text-neutral-500 italic"
-              >
+              <p key={part.key} className="max-w-[62ch] text-sm text-pretty text-neutral-500 italic">
                 {part.text}
               </p>
             ))}
@@ -55,7 +71,7 @@ export function ChatTimelineMessage({
             )}
           >
             {textParts.map((part) => (
-              <Streamdown key={`${message.id}-text-${part.text}`} isAnimating={status === "streaming"}>
+              <Streamdown key={part.key} isAnimating={status === "streaming"}>
                 {part.text}
               </Streamdown>
             ))}

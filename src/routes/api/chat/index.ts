@@ -1,6 +1,7 @@
 import type { UIMessage } from "ai";
 
 import { fetchAuthAction, fetchAuthMutation, fetchAuthQuery } from "#/lib/auth-server";
+import { parseSerializedMessages } from "#/lib/chat-types";
 import { getConversationSession } from "#/lib/conversation-session.server";
 import { createLogger } from "#/lib/logger";
 import { openai } from "@ai-sdk/openai";
@@ -92,7 +93,7 @@ export const Route = createFileRoute("/api/chat/")({
         }
 
         const messages = await validateUIMessages({
-          messages: [...conversation.messages, message],
+          messages: [...parseSerializedMessages(conversation.serializedMessages), message],
         });
         logger.info("chat request received", {
           conversationId: id,

@@ -1,6 +1,5 @@
 import type { ChatConversationState } from "#/lib/chat-types";
-import type { UIMessage } from "ai";
-
+import { parseSerializedMessages } from "#/lib/chat-types";
 import { ScrollArea } from "#/components/ui/scroll-area";
 import { AnalyticsEvent, useAnalytics } from "#/lib/analytics";
 import { startNewConversation } from "#/lib/functions/start-new-conversation";
@@ -25,14 +24,6 @@ import { isBootstrapMessage } from "./chat.utils";
 const FormSchema = z.object({
   message: z.string().min(1),
 });
-const UIMessagePartShapeSchema = z.object({ type: z.string() }).catchall(z.any());
-const UIMessageShapeSchema = z.object({
-  id: z.string().min(1),
-  parts: z.array(UIMessagePartShapeSchema),
-  role: z.enum(["assistant", "system", "user"]),
-});
-const InitialMessagesSchema = z.array(z.custom<UIMessage>((value) => UIMessageShapeSchema.safeParse(value).success));
-
 const AUTO_SCROLL_THRESHOLD_PX = 96;
 
 export function ChatPage({ initialChatState }: { initialChatState: ChatConversationState }) {
@@ -44,12 +35,12 @@ export function ChatPage({ initialChatState }: { initialChatState: ChatConversat
       entrypoint: "homepage",
     });
 
-    if (initialChatState.conversation && initialChatState.messages.length > 0) {
+    if (initialChatState.conversation && initialChatState.serializedMessages.length > 0) {
       capture(AnalyticsEvent.conversationResumed, {
-        message_count: initialChatState.messages.length,
+        message_count: initialChatState.serializedMessages.length,
       });
     }
-  }, [capture, initialChatState.conversation, initialChatState.messages.length]);
+  }, [capture, initialChatState.conversation, initialChatState.serializedMessages.length]);
 
   return <ChatConversation key={chatState.conversation?.id ?? "new-conversation"} chatState={chatState} onConversationChange={setChatState} />;
 }
@@ -68,7 +59,7 @@ function ChatConversation({
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const shouldFollowRef = useRef(true);
   const [isAtBottom, setIsAtBottom] = useState(true);
-  const initialMessages = useMemo(() => InitialMessagesSchema.parse(chatState.messages), [chatState.messages]);
+  const initialMessages = useMemo(() => parseSerializedMessages(chatState.serializedMessages), [chatState.serializedMessages]);
 
   const { messages, sendMessage, status } = useChat({
     id: chatState.conversation?.id ?? "new-conversation",
@@ -85,7 +76,7 @@ function ChatConversation({
   });
 
   useEffect(() => {
-    if (chatState.messages.length > 0 || messages.length > 0) return;
+    if (chatState.serializedMessages.length > 0 || messages.length > 0) return;
 
     if (!chatState.conversation) {
       if (isCreatingConversationRef.current) return;
@@ -110,7 +101,7 @@ function ChatConversation({
       source: "bootstrap",
     });
     void sendMessage({ text: INTRO_PROMPT });
-  }, [capture, chatState.conversation, chatState.messages.length, messages.length, onConversationChange, sendMessage]);
+  }, [capture, chatState.conversation, chatState.serializedMessages.length, messages.length, onConversationChange, sendMessage]);
 
   const visibleMessages = useMemo(() => messages.filter((message) => !isBootstrapMessage(message)), [messages]);
   const hasVisibleUserMessage = visibleMessages.some((message) => message.role === "user");

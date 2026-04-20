@@ -12,7 +12,7 @@ import { createLogger } from "../logger";
 const logger = createLogger("conversation.get-state");
 const ConversationIdSchema = z.custom<Id<"conversations">>((value) => typeof value === "string" && value.length > 0);
 
-export const getChatState = createServerFn({ method: "GET" }).handler(async () => {
+export const getChatState = createServerFn({ method: "GET" }).handler(async (): Promise<ChatConversationState> => {
   const session = await getConversationSession();
   const sessionId = session.data.sessionId ?? crypto.randomUUID();
   let conversationId = session.data.conversationId;
@@ -33,7 +33,7 @@ export const getChatState = createServerFn({ method: "GET" }).handler(async () =
     if (existingConversation) {
       logger.info("conversation resumed", {
         conversationId,
-        messageCount: existingConversation.messages.length,
+        messageCount: existingConversation.serializedMessages.length,
       });
       return existingConversation;
     }
@@ -41,6 +41,6 @@ export const getChatState = createServerFn({ method: "GET" }).handler(async () =
 
   return {
     conversation: null,
-    messages: [],
+    serializedMessages: [],
   } satisfies ChatConversationState;
 });

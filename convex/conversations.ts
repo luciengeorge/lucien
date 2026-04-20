@@ -5,18 +5,17 @@ import { z } from "zod";
 import { mutation, query } from "./_generated/server";
 
 const SerializableValueSchema: z.ZodTypeAny = z.lazy(() =>
-  z.union([z.string(), z.number(), z.boolean(), z.array(SerializableValueSchema), z.record(z.string(), SerializableValueSchema)]),
+  z.union([z.string(), z.number(), z.boolean(), z.null(), z.array(SerializableValueSchema), z.record(z.string(), SerializableValueSchema)]),
 );
 const MessagePartShapeSchema = z.object({
   type: z.string(),
 }).catchall(SerializableValueSchema);
-const MessagePartSchema = MessagePartShapeSchema;
 const PersistedMessageSchema = z.object({
   createdAt: z.number().optional(),
   id: z.string().optional(),
   metadata: z.record(z.string(), SerializableValueSchema).nullable().optional(),
   modelId: z.string().optional(),
-  parts: z.array(MessagePartSchema).optional(),
+  parts: z.array(MessagePartShapeSchema).optional(),
   provider: z.string().optional(),
   role: z.enum(["assistant", "system", "user"]),
 });
@@ -104,16 +103,13 @@ export const getConversationById = query({
           .withIndex("by_message_id", (q) => q.eq("messageId", message._id))
           .collect();
 
-        return {
-          createdAt: message.createdAt,
+        return serializeJson({
           id: message.uiMessageId,
-          modelId: message.modelId,
           parts: parts
-            .map((part) => MessagePartSchema.safeParse(deserializeJson(part.partJson)).data)
-            .filter((part): part is { type: string } & Record<string, {}> => Boolean(part)),
-          provider: message.provider,
+            .map((part) => MessagePartShapeSchema.safeParse(deserializeJson(part.partJson)).data)
+            .filter(Boolean),
           role: message.role,
-        };
+        });
       }),
     );
 
@@ -125,7 +121,7 @@ export const getConversationById = query({
         title: conversation.title,
         updatedAt: conversation.updatedAt,
       },
-      messages: hydratedMessages,
+      serializedMessages: hydratedMessages,
     };
   },
 });
@@ -175,7 +171,7 @@ export const upsertConversationMessage = mutation({
       }
 
       for (const [order, part] of (message.parts ?? []).entries()) {
-        const parsedPart = MessagePartSchema.parse(part);
+        const parsedPart = MessagePartShapeSchema.parse(part);
         const textValue = getPartText(parsedPart);
         const toolCallId = getPartToolCallId(parsedPart);
         const toolName = getPartToolName(parsedPart);
@@ -205,7 +201,7 @@ export const upsertConversationMessage = mutation({
       });
 
       for (const [order, part] of (message.parts ?? []).entries()) {
-        const parsedPart = MessagePartSchema.parse(part);
+        const parsedPart = MessagePartShapeSchema.parse(part);
         const textValue = getPartText(parsedPart);
         const toolCallId = getPartToolCallId(parsedPart);
         const toolName = getPartToolName(parsedPart);
