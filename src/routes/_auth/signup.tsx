@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "#/com
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "#/components/ui/field";
 import { Input } from "#/components/ui/input";
 import { Spinner } from "#/components/ui/spinner";
+import { AnalyticsEvent, useAnalytics } from "#/lib/analytics";
 import { authClient } from "#/lib/auth-client";
 import { EmailSchema, NameSchema, PasswordSchema } from "#/lib/schemas/auth";
 import { useForm } from "@tanstack/react-form";
@@ -14,6 +15,7 @@ export const Route = createFileRoute("/_auth/signup")({
 });
 
 function SignupPage() {
+  const { capture } = useAnalytics();
   const navigate = useNavigate();
 
   const form = useForm({
@@ -25,9 +27,30 @@ function SignupPage() {
     },
     validators: {
       onSubmitAsync: async ({ value: { name, email, password } }) => {
-        const result = await authClient.signUp.email({ name, email, password });
-        if (result.error) {
-          return { form: result.error.message };
+        capture(AnalyticsEvent.userSignupSubmitted, {
+          signup_method: "email",
+        });
+
+        try {
+          const result = await authClient.signUp.email({ name, email, password });
+          if (result.error) {
+            capture(AnalyticsEvent.userSignupFailed, {
+              error_message: result.error.message,
+              signup_method: "email",
+            });
+            return { form: result.error.message };
+          }
+
+          capture(AnalyticsEvent.userSignedUp, {
+            signup_method: "email",
+          });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Unknown signup error";
+          capture(AnalyticsEvent.userSignupFailed, {
+            error_message: message,
+            signup_method: "email",
+          });
+          return { form: message };
         }
 
         toast.success("Account created", {

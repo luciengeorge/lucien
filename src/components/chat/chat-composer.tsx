@@ -23,14 +23,17 @@ export function ChatComposer({
   onSubmit: React.SubmitEventHandler<HTMLFormElement>;
 }) {
   return (
-    <form className="flex items-end gap-2.5 border-t border-neutral-950/8 pt-4 pb-3" onSubmit={onSubmit}>
+    <form
+      className="flex items-end gap-2 border-t border-neutral-950/8 pt-2.5 pb-2 sm:gap-2.5 sm:pt-4 sm:pb-3"
+      onSubmit={onSubmit}
+    >
       <div className="grow">
         <Label className="sr-only" htmlFor="message">
           Ask Poof about Lucien
         </Label>
         <Input
           aria-label="Ask Poof about Lucien"
-          className="h-11 rounded-full border-transparent bg-neutral-950/3 px-4 text-base shadow-none ring-1 ring-neutral-950/10 placeholder:text-neutral-500 focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-neutral-950/15 max-sm:text-base"
+          className="h-10 rounded-full border-transparent bg-neutral-950/3 px-3.5 text-base shadow-none ring-1 ring-neutral-950/10 placeholder:text-neutral-500 focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-neutral-950/15 max-sm:text-[15px] sm:h-11 sm:px-4 sm:text-base"
           disabled={isSubmitting}
           id="message"
           name="message"
@@ -44,8 +47,8 @@ export function ChatComposer({
       <Button
         size="icon"
         type="submit"
-        className="size-11 rounded-full bg-neutral-950 text-white hover:bg-neutral-800"
-        disabled={disabled || isSubmitting || !canSubmit}
+        className="size-10 rounded-full  sm:size-11"
+        disabled={disabled || isSubmitting || !canSubmit || message.length === 0}
       >
         {isSubmitting ? <Spinner /> : <HugeiconsIcon icon={Navigation03Icon} />}
         <span className="sr-only">Send</span>

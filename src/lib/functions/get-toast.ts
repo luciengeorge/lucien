@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
-import { useToastSession } from "../toast-session.server";
 import { ToastSchema } from "../toast";
+import { useToastSession } from "../toast-session.server";
 
 export const getToast = createServerFn({ method: "GET" }).handler(async () => {
   const session = await useToastSession();

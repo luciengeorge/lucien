@@ -1,4 +1,5 @@
 import type { QueryClient } from "@tanstack/react-query";
+import type { ReactNode } from "react";
 
 import { Toaster } from "#/components/ui/sonner";
 import { useToast } from "#/hooks/use-toast";
@@ -19,6 +20,41 @@ interface MyRouterContext {
   queryClient: QueryClient;
 }
 
+const SITE_URL = "https://www.luciengeorge.com";
+const TITLE = "Lucien George | Senior Product Engineer at Fyxer AI";
+const DESCRIPTION =
+  "Lucien George is a Senior Product Engineer at Fyxer AI. Explore his work, background, projects, and interests through Poof, his AI-powered portfolio assistant.";
+const OG_IMAGE_URL = `${SITE_URL}/cover.png`;
+const TWITTER_HANDLE = "@luciengeorge16";
+
+const structuredData = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Person",
+      name: "Lucien George",
+      jobTitle: "Senior Product Engineer",
+      sameAs: [
+        "https://github.com/luciengeorge",
+        "https://www.linkedin.com/in/luciengeorge/",
+        "https://x.com/luciengeorge16",
+      ],
+      url: SITE_URL,
+      worksFor: {
+        "@type": "Organization",
+        name: "Fyxer AI",
+      },
+    },
+    {
+      "@type": "WebSite",
+      description: DESCRIPTION,
+      image: OG_IMAGE_URL,
+      name: "Lucien George",
+      url: SITE_URL,
+    },
+  ],
+};
+
 export const Route = createRootRouteWithContext<MyRouterContext>()({
   beforeLoad: async () => {
     const serverToast = await getToast();
@@ -35,13 +71,98 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         content: "width=device-width, initial-scale=1",
       },
       {
-        title: "Lucien George",
+        title: TITLE,
+      },
+      {
+        name: "description",
+        content: DESCRIPTION,
+      },
+      {
+        name: "robots",
+        content: "index, follow",
+      },
+      {
+        name: "theme-color",
+        content: "#131a2b",
+      },
+      {
+        property: "og:title",
+        content: TITLE,
+      },
+      {
+        property: "og:description",
+        content: DESCRIPTION,
+      },
+      {
+        property: "og:type",
+        content: "website",
+      },
+      {
+        property: "og:url",
+        content: SITE_URL,
+      },
+      {
+        property: "og:image",
+        content: OG_IMAGE_URL,
+      },
+      {
+        property: "og:image:width",
+        content: "4800",
+      },
+      {
+        property: "og:image:height",
+        content: "2520",
+      },
+      {
+        property: "og:site_name",
+        content: "Lucien George",
+      },
+      {
+        name: "twitter:card",
+        content: "summary_large_image",
+      },
+      {
+        name: "twitter:site",
+        content: TWITTER_HANDLE,
+      },
+      {
+        name: "twitter:creator",
+        content: TWITTER_HANDLE,
+      },
+      {
+        name: "twitter:title",
+        content: TITLE,
+      },
+      {
+        name: "twitter:description",
+        content: DESCRIPTION,
+      },
+      {
+        name: "twitter:image",
+        content: OG_IMAGE_URL,
       },
     ],
     links: [
       {
         rel: "stylesheet",
         href: appCss,
+      },
+      {
+        rel: "canonical",
+        href: SITE_URL,
+      },
+      {
+        rel: "icon",
+        type: "image/png",
+        href: "/favicon.png",
+      },
+      {
+        rel: "apple-touch-icon",
+        href: "/favicon.png",
+      },
+      {
+        rel: "manifest",
+        href: "/manifest.json",
       },
     ],
   }),
@@ -55,11 +176,12 @@ function RootComponent() {
   return <Outlet />;
 }
 
-function RootDocument({ children }: { children: React.ReactNode }) {
+function RootDocument({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
+        <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
       </head>
       <body className="font-sans wrap-anywhere antialiased">
         <Analytics />
