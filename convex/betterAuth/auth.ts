@@ -1,25 +1,22 @@
-import type { GenericCtx } from '@convex-dev/better-auth/utils';
-import type { BetterAuthOptions } from 'better-auth';
+import type { GenericCtx } from "@convex-dev/better-auth/utils";
+import type { BetterAuthOptions } from "better-auth";
 
-import { createClient } from '@convex-dev/better-auth';
-import { convex } from '@convex-dev/better-auth/plugins';
-import { betterAuth } from 'better-auth';
+import { createClient } from "@convex-dev/better-auth";
+import { convex } from "@convex-dev/better-auth/plugins";
+import { betterAuth } from "better-auth";
 
-import type { DataModel } from '../_generated/dataModel';
+import type { DataModel } from "../_generated/dataModel";
 
-import { sharedAuthConfig } from '../../src/lib/auth-config';
-import { components } from '../_generated/api';
-import authConfig from '../auth.config';
-import schema from '../schema';
+import { sharedAuthConfig } from "../../src/lib/auth-config";
+import { components } from "../_generated/api";
+import authConfig from "../auth.config";
+import schema from "../schema";
 
 // Better Auth Component
-export const authComponent = createClient<DataModel, typeof schema>(
-  components.betterAuth,
-  {
-    local: { schema },
-    verbose: false,
-  },
-);
+export const authComponent = createClient<DataModel, typeof schema>(components.betterAuth, {
+  local: { schema },
+  verbose: false,
+});
 
 // Better Auth Options
 export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {

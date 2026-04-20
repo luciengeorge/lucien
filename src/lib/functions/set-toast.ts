@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
-import { useToastSession } from "../toast-session.server";
 import { ToastSchema } from "../toast";
+import { useToastSession } from "../toast-session.server";
 
 export const setToast = createServerFn({ method: "POST" })
   .inputValidator(ToastSchema)

@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as conversations from "../conversations.js";
 import type * as http from "../http.js";
 import type * as rag from "../rag.js";
 import type * as search from "../search.js";
@@ -20,6 +21,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  conversations: typeof conversations;
   http: typeof http;
   rag: typeof rag;
   search: typeof search;

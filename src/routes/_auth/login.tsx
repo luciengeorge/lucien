@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "#/com
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "#/components/ui/field";
 import { Input } from "#/components/ui/input";
 import { Spinner } from "#/components/ui/spinner";
+import { AnalyticsEvent, useAnalytics } from "#/lib/analytics";
 import { authClient } from "#/lib/auth-client";
 import { LoginFormSchema } from "#/lib/schemas/auth";
 import { useForm } from "@tanstack/react-form";
@@ -12,6 +13,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/_auth/login")({ component: LoginPage });
 
 function LoginPage() {
+  const { capture } = useAnalytics();
   const navigate = useNavigate();
 
   const form = useForm({
@@ -23,10 +25,33 @@ function LoginPage() {
     validators: {
       onSubmit: LoginFormSchema,
       onSubmitAsync: async ({ value: { email, password } }) => {
-        const result = await authClient.signIn.email({ email, password });
-        if (result.error) {
+        capture(AnalyticsEvent.userLoginSubmitted, {
+          login_method: "email",
+        });
+
+        try {
+          const result = await authClient.signIn.email({ email, password });
+          if (result.error) {
+            capture(AnalyticsEvent.userLoginFailed, {
+              error_message: result.error.message,
+              login_method: "email",
+            });
+            return {
+              form: result.error.message,
+            };
+          }
+
+          capture(AnalyticsEvent.userLoggedIn, {
+            login_method: "email",
+          });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Unknown login error";
+          capture(AnalyticsEvent.userLoginFailed, {
+            error_message: message,
+            login_method: "email",
+          });
           return {
-            form: result.error.message,
+            form: message,
           };
         }
 
