@@ -21,9 +21,9 @@ interface MyRouterContext {
 }
 
 const SITE_URL = "https://www.luciengeorge.com";
-const TITLE = "Lucien George | Senior Product Engineer at Fyxer AI";
+const TITLE = "Lucien George | Senior Product Engineer at Fyxer";
 const DESCRIPTION =
-  "Lucien George is a Senior Product Engineer at Fyxer AI. Explore his work, background, projects, and interests through Poof, his AI-powered portfolio assistant.";
+  "Lucien George is a Senior Product Engineer at Fyxer. Explore his work, background, projects, and interests through Poof, his AI-powered portfolio assistant.";
 const OG_IMAGE_URL = `${SITE_URL}/cover.png`;
 const TWITTER_HANDLE = "@luciengeorge16";
 
