@@ -25,6 +25,13 @@ import { isBootstrapMessage } from "./chat.utils";
 const FormSchema = z.object({
   message: z.string().min(1),
 });
+const UIMessagePartShapeSchema = z.object({ type: z.string() }).catchall(z.any());
+const UIMessageShapeSchema = z.object({
+  id: z.string().min(1),
+  parts: z.array(UIMessagePartShapeSchema),
+  role: z.enum(["assistant", "system", "user"]),
+});
+const InitialMessagesSchema = z.array(z.custom<UIMessage>((value) => UIMessageShapeSchema.safeParse(value).success));
 
 const AUTO_SCROLL_THRESHOLD_PX = 96;
 
@@ -34,19 +41,17 @@ export function ChatPage({ initialChatState }: { initialChatState: ChatConversat
 
   useEffect(() => {
     capture(AnalyticsEvent.portfolioViewed, {
-      conversation_id: initialChatState.conversation.id,
       entrypoint: "homepage",
     });
 
-    if (initialChatState.messages.length > 0) {
+    if (initialChatState.conversation && initialChatState.messages.length > 0) {
       capture(AnalyticsEvent.conversationResumed, {
-        conversation_id: initialChatState.conversation.id,
         message_count: initialChatState.messages.length,
       });
     }
-  }, [capture, initialChatState.conversation.id, initialChatState.messages.length]);
+  }, [capture, initialChatState.conversation, initialChatState.messages.length]);
 
-  return <ChatConversation key={chatState.conversation.id} chatState={chatState} onConversationChange={setChatState} />;
+  return <ChatConversation key={chatState.conversation?.id ?? "new-conversation"} chatState={chatState} onConversationChange={setChatState} />;
 }
 
 function ChatConversation({
@@ -57,15 +62,17 @@ function ChatConversation({
   onConversationChange: (state: ChatConversationState) => void;
 }) {
   const { capture } = useAnalytics();
-  const hasBootstrappedRef = useRef(false);
+  const isCreatingConversationRef = useRef(false);
+  const bootstrappedConversationIdRef = useRef<string | null>(null);
   const lastCompletedMessageIdRef = useRef<string | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const shouldFollowRef = useRef(true);
   const [isAtBottom, setIsAtBottom] = useState(true);
+  const initialMessages = useMemo(() => InitialMessagesSchema.parse(chatState.messages), [chatState.messages]);
 
   const { messages, sendMessage, status } = useChat({
-    id: chatState.conversation.id,
-    messages: chatState.messages as unknown as UIMessage[],
+    id: chatState.conversation?.id ?? "new-conversation",
+    messages: initialMessages,
     transport: new DefaultChatTransport({
       api: "/api/chat",
       prepareSendMessagesRequest: ({ id, messages }) => ({
@@ -78,15 +85,32 @@ function ChatConversation({
   });
 
   useEffect(() => {
-    if (chatState.messages.length > 0 || messages.length > 0 || hasBootstrappedRef.current) return;
+    if (chatState.messages.length > 0 || messages.length > 0) return;
 
-    hasBootstrappedRef.current = true;
+    if (!chatState.conversation) {
+      if (isCreatingConversationRef.current) return;
+
+      isCreatingConversationRef.current = true;
+      void startNewConversation()
+        .then((nextConversation) => {
+          startTransition(() => {
+            onConversationChange(nextConversation);
+          });
+        })
+        .finally(() => {
+          isCreatingConversationRef.current = false;
+        });
+      return;
+    }
+
+    if (bootstrappedConversationIdRef.current === chatState.conversation.id) return;
+
+    bootstrappedConversationIdRef.current = chatState.conversation.id;
     capture(AnalyticsEvent.chatBootstrapRequested, {
-      conversation_id: chatState.conversation.id,
       source: "bootstrap",
     });
     void sendMessage({ text: INTRO_PROMPT });
-  }, [capture, chatState.conversation.id, chatState.messages.length, messages.length, sendMessage]);
+  }, [capture, chatState.conversation, chatState.messages.length, messages.length, onConversationChange, sendMessage]);
 
   const visibleMessages = useMemo(() => messages.filter((message) => !isBootstrapMessage(message)), [messages]);
   const hasVisibleUserMessage = visibleMessages.some((message) => message.role === "user");
@@ -104,7 +128,6 @@ function ChatConversation({
       onSubmitAsync: async ({ value }) => {
         shouldFollowRef.current = true;
         capture(AnalyticsEvent.chatMessageSubmitted, {
-          conversation_id: chatState.conversation.id,
           message_length: value.message.length,
           source: "composer",
         });
@@ -117,7 +140,6 @@ function ChatConversation({
   useEffect(() => {
     if (status === "error") {
       capture(AnalyticsEvent.chatResponseFailed, {
-        conversation_id: chatState.conversation.id,
         visible_message_count: visibleMessages.length,
       });
       return;
@@ -136,11 +158,10 @@ function ChatConversation({
     }, 0);
 
     capture(AnalyticsEvent.chatResponseCompleted, {
-      conversation_id: chatState.conversation.id,
       response_length: responseTextLength,
       visible_message_count: visibleMessages.length,
     });
-  }, [capture, chatState.conversation.id, status, visibleMessages]);
+  }, [capture, status, visibleMessages]);
 
   const syncScrollState = useCallback(() => {
     const viewport = viewportRef.current;
@@ -212,11 +233,9 @@ function ChatConversation({
   const handleStarterPrompt = async (prompt: string) => {
     shouldFollowRef.current = true;
     capture(AnalyticsEvent.starterPromptClicked, {
-      conversation_id: chatState.conversation.id,
       prompt,
     });
     capture(AnalyticsEvent.chatMessageSubmitted, {
-      conversation_id: chatState.conversation.id,
       message_length: prompt.length,
       source: "starter_prompt",
     });
@@ -225,7 +244,6 @@ function ChatConversation({
 
   const handleNewConversation = async () => {
     capture(AnalyticsEvent.newConversationClicked, {
-      conversation_id: chatState.conversation.id,
       source: "cta",
     });
 
@@ -240,7 +258,7 @@ function ChatConversation({
     });
   };
 
-  const isBusy = status === "submitted" || status === "streaming";
+  const isBusy = status === "submitted" || status === "streaming" || !chatState.conversation;
 
   return (
     <section className="flex min-h-0 grow overflow-hidden bg-background py-2 sm:py-6">

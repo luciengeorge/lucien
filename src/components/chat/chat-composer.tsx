@@ -34,7 +34,7 @@ export function ChatComposer({
         <Input
           aria-label="Ask Poof about Lucien"
           className="h-10 rounded-full border-transparent bg-neutral-950/3 px-3.5 text-base shadow-none ring-1 ring-neutral-950/10 placeholder:text-neutral-500 focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-neutral-950/15 max-sm:text-[15px] sm:h-11 sm:px-4 sm:text-base"
-          disabled={isSubmitting}
+          disabled={disabled || isSubmitting}
           id="message"
           name="message"
           onBlur={onBlur}

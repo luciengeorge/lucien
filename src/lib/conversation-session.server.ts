@@ -1,4 +1,4 @@
-import { useSession } from "@tanstack/react-start/server";
+import { useSession as createSession } from "@tanstack/react-start/server";
 
 const CONVERSATION_COOKIE = "lucien-conversation";
 
@@ -16,8 +16,8 @@ function getConversationSessionPassword() {
   return password;
 }
 
-export function useConversationSession() {
-  return useSession<ConversationSessionData>({
+export function getConversationSession() {
+  return createSession<ConversationSessionData>({
     name: CONVERSATION_COOKIE,
     password: getConversationSessionPassword(),
     cookie: {

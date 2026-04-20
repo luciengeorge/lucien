@@ -1,14 +1,19 @@
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+
+import type { Id } from "../../../convex/_generated/dataModel";
 
 import { api } from "../../../convex/_generated/api";
-import { fetchAuthMutation, fetchAuthQuery } from "../auth-server";
-import { useConversationSession } from "../conversation-session.server";
+import { fetchAuthQuery } from "../auth-server";
+import { getConversationSession } from "../conversation-session.server";
+import type { ChatConversationState } from "../chat-types";
 import { createLogger } from "../logger";
 
 const logger = createLogger("conversation.get-state");
+const ConversationIdSchema = z.custom<Id<"conversations">>((value) => typeof value === "string" && value.length > 0);
 
 export const getChatState = createServerFn({ method: "GET" }).handler(async () => {
-  const session = await useConversationSession();
+  const session = await getConversationSession();
   const sessionId = session.data.sessionId ?? crypto.randomUUID();
   let conversationId = session.data.conversationId;
 
@@ -21,7 +26,8 @@ export const getChatState = createServerFn({ method: "GET" }).handler(async () =
 
   if (conversationId) {
     const existingConversation = await fetchAuthQuery(api.conversations.getConversationById, {
-      conversationId,
+      conversationId: ConversationIdSchema.parse(conversationId),
+      sessionId,
     });
 
     if (existingConversation) {
@@ -33,25 +39,8 @@ export const getChatState = createServerFn({ method: "GET" }).handler(async () =
     }
   }
 
-  conversationId = await fetchAuthMutation(api.conversations.createConversation, { sessionId });
-  await session.update({
-    ...session.data,
-    conversationId,
-    sessionId,
-  });
-
-  const conversation = await fetchAuthQuery(api.conversations.getConversationById, {
-    conversationId,
-  });
-
-  logger.info("conversation created", {
-    conversationId,
-    sessionId,
-  });
-
-  if (!conversation) {
-    throw new Error("Conversation initialization failed");
-  }
-
-  return conversation;
+  return {
+    conversation: null,
+    messages: [],
+  } satisfies ChatConversationState;
 });

@@ -1,11 +1,8 @@
-export type PersistedChatMessagePart = Record<string, {}>;
-
 export interface PersistedChatMessage {
   createdAt: number;
   id: string;
-  metadata?: Record<string, {}> | null;
   modelId?: string;
-  parts: PersistedChatMessagePart[];
+  parts: Array<{ type: string } & Record<string, {}>>;
   provider?: string;
   role: "assistant" | "system" | "user";
 }
@@ -17,6 +14,6 @@ export interface ChatConversationState {
     sessionId?: string;
     title?: string;
     updatedAt: number;
-  };
+  } | null;
   messages: PersistedChatMessage[];
 }

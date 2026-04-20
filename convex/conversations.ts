@@ -1,37 +1,64 @@
-import { v } from "convex/values";
-
 import type { Id } from "./_generated/dataModel";
+import { v } from "convex/values";
+import { z } from "zod";
 
 import { mutation, query } from "./_generated/server";
 
-type PersistedMessage = {
-  createdAt?: number;
-  id?: string;
-  metadata?: unknown;
-  modelId?: string;
-  parts?: Array<Record<string, unknown>>;
-  provider?: string;
-  role: "assistant" | "system" | "user";
-};
+const SerializableValueSchema: z.ZodTypeAny = z.lazy(() =>
+  z.union([z.string(), z.number(), z.boolean(), z.array(SerializableValueSchema), z.record(z.string(), SerializableValueSchema)]),
+);
+const MessagePartShapeSchema = z.object({
+  type: z.string(),
+}).catchall(SerializableValueSchema);
+const MessagePartSchema = MessagePartShapeSchema;
+const PersistedMessageSchema = z.object({
+  createdAt: z.number().optional(),
+  id: z.string().optional(),
+  metadata: z.record(z.string(), SerializableValueSchema).nullable().optional(),
+  modelId: z.string().optional(),
+  parts: z.array(MessagePartSchema).optional(),
+  provider: z.string().optional(),
+  role: z.enum(["assistant", "system", "user"]),
+});
+const ConversationIdSchema = z.custom<Id<"conversations">>((value) => typeof value === "string" && value.length > 0);
 
-function toConversationId(value: string): Id<"conversations"> {
-  return value as Id<"conversations">;
-}
+type PersistedMessage = z.infer<typeof PersistedMessageSchema>;
 
 function serializeJson(value: unknown) {
   return JSON.stringify(value ?? null);
 }
 
-function deserializeJson<T>(value?: string): T | undefined {
+function deserializeJson(value?: string): unknown {
   if (!value) return undefined;
 
-  return JSON.parse(value) as T;
+  return JSON.parse(value);
+}
+
+function getPartText(part: Record<string, unknown>) {
+  if (!("text" in part)) return undefined;
+  return typeof part.text === "string" ? part.text : undefined;
+}
+
+function getPartToolCallId(part: Record<string, unknown>) {
+  if (!("toolCallId" in part)) return undefined;
+  return typeof part.toolCallId === "string" ? part.toolCallId : undefined;
+}
+
+function getPartToolName(part: Record<string, unknown>) {
+  if (!("toolName" in part)) return undefined;
+  return typeof part.toolName === "string" ? part.toolName : undefined;
+}
+
+function getPartState(part: Record<string, unknown>) {
+  if (!("state" in part)) return undefined;
+  return typeof part.state === "string" ? part.state : undefined;
 }
 
 function deriveConversationTitle(messages: PersistedMessage[]) {
   const firstUserText = messages
     .filter((message) => message.role === "user")
-    .map((message) => message.parts?.find((part) => part.type === "text" && typeof part.text === "string")?.text)
+    .map((message) => message.parts?.find((part) => part.type === "text"))
+    .map((part) => (part ? getPartText(part) : undefined))
     .find((text) => typeof text === "string" && !text.startsWith("Introduce yourself first as Poof"));
 
   if (typeof firstUserText !== "string") {
@@ -43,38 +70,6 @@ function deriveConversationTitle(messages: PersistedMessage[]) {
 
 function deriveConversationTitleFromMessage(message: PersistedMessage) {
   return deriveConversationTitle([message]);
-}
-
-async function replaceMessageParts(ctx: any, messageId: Id<"messages">, parts: PersistedMessage["parts"]) {
-  const existingParts = await ctx.db
-    .query("messageParts")
-    .withIndex("by_message_id", (q: any) => q.eq("messageId", messageId))
-    .collect();
-
-  for (const part of existingParts) {
-    await ctx.db.delete(part._id);
-  }
-
-  for (const [order, part] of (parts ?? []).entries()) {
-    const typedPart = part as {
-      text?: string;
-      toolCallId?: string;
-      toolName?: string;
-      state?: string;
-      type?: string;
-    };
-
-    await ctx.db.insert("messageParts", {
-      messageId,
-      order,
-      partJson: serializeJson(part),
-      textPreview: typeof typedPart.text === "string" ? typedPart.text.slice(0, 160) : undefined,
-      toolCallId: typedPart.toolCallId,
-      toolName: typedPart.toolName,
-      toolState: typedPart.state,
-      type: typedPart.type ?? "unknown",
-    });
-  }
 }
 
 export const createConversation = mutation({
@@ -91,10 +86,11 @@ export const createConversation = mutation({
 });
 
 export const getConversationById = query({
-  args: { conversationId: v.string() },
-  handler: async (ctx, { conversationId }) => {
-    const conversation = await ctx.db.get(toConversationId(conversationId));
+  args: { conversationId: v.id("conversations"), sessionId: v.string() },
+  handler: async (ctx, { conversationId, sessionId }) => {
+    const conversation = await ctx.db.get(conversationId);
     if (!conversation) return null;
+    if (conversation.sessionId !== sessionId) return null;
 
     const messages = await ctx.db
       .query("messages")
@@ -111,11 +107,10 @@ export const getConversationById = query({
         return {
           createdAt: message.createdAt,
           id: message.uiMessageId,
-          metadata: deserializeJson<Record<string, {}>>(message.metadataJson) ?? null,
           modelId: message.modelId,
           parts: parts
-            .map((part) => deserializeJson<Record<string, {}>>(part.partJson))
-            .filter((part): part is Record<string, {}> => Boolean(part)),
+            .map((part) => MessagePartSchema.safeParse(deserializeJson(part.partJson)).data)
+            .filter((part): part is { type: string } & Record<string, {}> => Boolean(part)),
           provider: message.provider,
           role: message.role,
         };
@@ -137,16 +132,20 @@ export const getConversationById = query({
 
 export const upsertConversationMessage = mutation({
   args: {
-    conversationId: v.string(),
+    conversationId: v.id("conversations"),
     messageJson: v.string(),
+    sessionId: v.string(),
   },
-  handler: async (ctx, { conversationId, messageJson }) => {
-    const conversationRecord = await ctx.db.get(toConversationId(conversationId));
+  handler: async (ctx, { conversationId, messageJson, sessionId }) => {
+    const conversationRecord = await ctx.db.get(ConversationIdSchema.parse(conversationId));
     if (!conversationRecord) {
       throw new Error("Conversation not found");
     }
+    if (conversationRecord.sessionId !== sessionId) {
+      throw new Error("Conversation access denied");
+    }
 
-    const message = JSON.parse(messageJson) as PersistedMessage;
+    const message = PersistedMessageSchema.parse(JSON.parse(messageJson));
     const uiMessageId = message.id ?? crypto.randomUUID();
     const existingMessage = await ctx.db
       .query("messages")
@@ -166,7 +165,34 @@ export const upsertConversationMessage = mutation({
         role: message.role,
       });
 
-      await replaceMessageParts(ctx, existingMessage._id, message.parts);
+      const existingParts = await ctx.db
+        .query("messageParts")
+        .withIndex("by_message_id", (q) => q.eq("messageId", existingMessage._id))
+        .collect();
+
+      for (const part of existingParts) {
+        await ctx.db.delete(part._id);
+      }
+
+      for (const [order, part] of (message.parts ?? []).entries()) {
+        const parsedPart = MessagePartSchema.parse(part);
+        const textValue = getPartText(parsedPart);
+        const toolCallId = getPartToolCallId(parsedPart);
+        const toolName = getPartToolName(parsedPart);
+        const toolState = getPartState(parsedPart);
+        const partType = parsedPart.type;
+
+        await ctx.db.insert("messageParts", {
+          messageId: existingMessage._id,
+          order,
+          partJson: serializeJson(parsedPart),
+          textPreview: textValue?.slice(0, 160),
+          toolCallId,
+          toolName,
+          toolState,
+          type: partType,
+        });
+      }
     } else {
       const insertedMessageId = await ctx.db.insert("messages", {
         conversationId: conversationRecord._id,
@@ -178,7 +204,25 @@ export const upsertConversationMessage = mutation({
         uiMessageId,
       });
 
-      await replaceMessageParts(ctx, insertedMessageId, message.parts);
+      for (const [order, part] of (message.parts ?? []).entries()) {
+        const parsedPart = MessagePartSchema.parse(part);
+        const textValue = getPartText(parsedPart);
+        const toolCallId = getPartToolCallId(parsedPart);
+        const toolName = getPartToolName(parsedPart);
+        const toolState = getPartState(parsedPart);
+        const partType = parsedPart.type;
+
+        await ctx.db.insert("messageParts", {
+          messageId: insertedMessageId,
+          order,
+          partJson: serializeJson(parsedPart),
+          textPreview: textValue?.slice(0, 160),
+          toolCallId,
+          toolName,
+          toolState,
+          type: partType,
+        });
+      }
     }
 
     const nextTitle = conversationRecord.title ?? deriveConversationTitleFromMessage(message);

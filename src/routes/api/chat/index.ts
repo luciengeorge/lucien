@@ -1,15 +1,30 @@
 import type { UIMessage } from "ai";
 
 import { fetchAuthAction, fetchAuthMutation, fetchAuthQuery } from "#/lib/auth-server";
+import { getConversationSession } from "#/lib/conversation-session.server";
 import { createLogger } from "#/lib/logger";
 import { openai } from "@ai-sdk/openai";
 import { createFileRoute } from "@tanstack/react-router";
 import { convertToModelMessages, generateId, generateText, streamText, validateUIMessages } from "ai";
+import { z } from "zod";
 
+import type { Id } from "../../../../convex/_generated/dataModel";
 import systemPrompt from "../../../../content/system-prompt.md?raw";
 import { api } from "../../../../convex/_generated/api";
 
 const logger = createLogger("chat.api");
+
+const BasicUIMessageSchema = z.object({
+  id: z.string().min(1),
+  parts: z.array(z.record(z.string(), z.unknown())),
+  role: z.enum(["assistant", "system", "user"]),
+});
+const ConversationIdSchema = z.custom<Id<"conversations">>((value) => typeof value === "string" && value.length > 0);
+
+const ChatRequestSchema = z.object({
+  id: ConversationIdSchema,
+  message: z.custom<UIMessage>((value) => BasicUIMessageSchema.safeParse(value).success),
+});
 
 function getTextFromMessage(message: UIMessage | undefined) {
   if (!message) return "";
@@ -53,14 +68,23 @@ export const Route = createFileRoute("/api/chat/")({
       POST: async ({ request }) => {
         const requestId = request.headers.get("x-vercel-id") ?? crypto.randomUUID();
         const startedAt = Date.now();
-        const { id, message } = (await request.json()) as { id?: string; message?: UIMessage };
-        if (!id || !message) {
-          logger.warn("chat request missing payload", { requestId });
+        const parsedBody = ChatRequestSchema.safeParse(await request.json());
+        if (!parsedBody.success) {
+          logger.warn("chat request invalid", { requestId });
           return new Response("Bad Request", { status: 400 });
+        }
+
+        const { id, message } = parsedBody.data;
+        const conversationSession = await getConversationSession();
+        const sessionId = conversationSession.data.sessionId;
+        if (!sessionId || conversationSession.data.conversationId !== id) {
+          logger.warn("chat request rejected", { requestId });
+          return new Response("Unauthorized", { status: 401 });
         }
 
         const conversation = await fetchAuthQuery(api.conversations.getConversationById, {
           conversationId: id,
+          sessionId,
         });
         if (!conversation) {
           logger.warn("conversation not found", { conversationId: id, requestId });
@@ -96,6 +120,7 @@ export const Route = createFileRoute("/api/chat/")({
         await fetchAuthMutation(api.conversations.upsertConversationMessage, {
           conversationId: id,
           messageJson: JSON.stringify(message),
+          sessionId,
         });
 
         const prompt = systemPrompt.replace("{retrieved_context}", context);
@@ -118,6 +143,7 @@ export const Route = createFileRoute("/api/chat/")({
             await fetchAuthMutation(api.conversations.upsertConversationMessage, {
               conversationId: id,
               messageJson: JSON.stringify(responseMessage),
+              sessionId,
             });
             logger.info("chat response completed", {
               assistantMessageId: responseMessage.id,
