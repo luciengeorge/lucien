@@ -11,7 +11,7 @@ export function ChatNewConversationButton({ isDisabled, onClick }: { isDisabled:
 
   return (
     <div className="mx-auto flex w-full max-w-3xl justify-end px-4 sm:px-6">
-      <Button variant="link" type="button" onClick={onClick} disabled={isLoading}>
+      <Button variant="link" type="button" onClick={onClick} disabled={isDisabled}>
         {isLoading ? <Spinner className="mr-1" /> : null}
         New conversation
       </Button>

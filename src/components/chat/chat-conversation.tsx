@@ -4,11 +4,10 @@ import { AnalyticsEvent, useAnalytics } from "#/lib/analytics";
 import { parseSerializedMessages } from "#/lib/chat-types";
 import { startNewConversation } from "#/lib/functions/start-new-conversation";
 import { useChat } from "@ai-sdk/react";
-import { useForm } from "@tanstack/react-form";
+import { useMutation } from "@tanstack/react-query";
 import { DefaultChatTransport } from "ai";
-import { startTransition, useEffect, useMemo, useRef, useState } from "react";
+import { startTransition, useEffect, useMemo, useRef } from "react";
 import { StickToBottom, useStickToBottom } from "use-stick-to-bottom";
-import z from "zod";
 
 import { ChatComposerBlock } from "./chat-composer-block";
 import { ChatIntroPlaceholder } from "./chat-intro-placeholder";
@@ -20,10 +19,6 @@ import { ChatTimelineMessage } from "./chat-timeline-message";
 import { INTRO_PROMPT } from "./chat.constants";
 import { isBootstrapMessage } from "./chat.utils";
 
-const FormSchema = z.object({
-  message: z.string().min(1),
-});
-
 export function ChatConversation({
   chatState,
   onConversationChange,
@@ -32,8 +27,6 @@ export function ChatConversation({
   onConversationChange: (state: ChatConversationState) => void;
 }) {
   const { capture } = useAnalytics();
-  const isCreatingConversationRef = useRef(false);
-  const [isStartingNewConversation, setIsStartingNewConversation] = useState(false);
   const bootstrappedConversationIdRef = useRef<string | null>(null);
   const lastCompletedMessageIdRef = useRef<string | null>(null);
   const initialMessages = useMemo(
@@ -44,6 +37,19 @@ export function ChatConversation({
     initial: "instant",
     resize: "smooth",
   });
+  const startConversationMutation = useMutation({
+    mutationFn: startNewConversation,
+    onSuccess(nextConversation) {
+      startTransition(() => {
+        onConversationChange(nextConversation);
+      });
+
+      requestAnimationFrame(() => {
+        void stickToBottom.scrollToBottom("auto");
+      });
+    },
+  });
+  const { isPending: isStartingNewConversation, mutateAsync: startConversation } = startConversationMutation;
 
   const { messages, sendMessage, status } = useChat({
     id: chatState.conversation?.id ?? "new-conversation",
@@ -63,18 +69,9 @@ export function ChatConversation({
     if (chatState.serializedMessages.length > 0 || messages.length > 0) return;
 
     if (!chatState.conversation) {
-      if (isCreatingConversationRef.current) return;
+      if (isStartingNewConversation) return;
 
-      isCreatingConversationRef.current = true;
-      void startNewConversation()
-        .then((nextConversation) => {
-          startTransition(() => {
-            onConversationChange(nextConversation);
-          });
-        })
-        .finally(() => {
-          isCreatingConversationRef.current = false;
-        });
+      void startConversation({});
       return;
     }
 
@@ -87,12 +84,14 @@ export function ChatConversation({
     void sendMessage({ text: INTRO_PROMPT });
   }, [
     capture,
-    chatState.conversation,
-    chatState.serializedMessages.length,
-    messages.length,
-    onConversationChange,
-    sendMessage,
-  ]);
+      chatState.conversation,
+      chatState.serializedMessages.length,
+      isStartingNewConversation,
+      messages.length,
+      onConversationChange,
+      sendMessage,
+      startConversation,
+    ]);
 
   const visibleMessages = useMemo(() => messages.filter((message) => !isBootstrapMessage(message)), [messages]);
   const hasVisibleUserMessage = visibleMessages.some((message) => message.role === "user");
@@ -100,24 +99,6 @@ export function ChatConversation({
   const showStarterPrompts = !hasVisibleUserMessage && !showIntroPlaceholder;
   const showPendingReply =
     !showIntroPlaceholder && status !== "ready" && status !== "error" && visibleMessages.at(-1)?.role === "user";
-
-  const form = useForm({
-    defaultValues: {
-      message: "",
-    },
-    validators: {
-      onSubmit: FormSchema,
-      onSubmitAsync: async ({ value }) => {
-        capture(AnalyticsEvent.chatMessageSubmitted, {
-          message_length: value.message.length,
-          source: "composer",
-        });
-        void stickToBottom.scrollToBottom({ animation: "smooth" });
-        await sendMessage({ text: value.message });
-        form.reset();
-      },
-    },
-  });
 
   useEffect(() => {
     if (status === "error") {
@@ -145,10 +126,13 @@ export function ChatConversation({
     });
   }, [capture, status, visibleMessages]);
 
-  const onSubmit: React.SubmitEventHandler<HTMLFormElement> = (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    form.handleSubmit();
+  const handleSend = async (message: string) => {
+    capture(AnalyticsEvent.chatMessageSubmitted, {
+      message_length: message.length,
+      source: "composer",
+    });
+    void stickToBottom.scrollToBottom({ animation: "smooth" });
+    await sendMessage({ text: message });
   };
 
   const handleStarterPrompt = async (prompt: string) => {
@@ -165,25 +149,11 @@ export function ChatConversation({
 
   const handleNewConversation = async () => {
     if (isStartingNewConversation) return;
-
-    setIsStartingNewConversation(true);
     capture(AnalyticsEvent.newConversationClicked, {
       source: "cta",
     });
 
-    try {
-      const nextConversation = await startNewConversation();
-
-      startTransition(() => {
-        onConversationChange(nextConversation);
-      });
-
-      requestAnimationFrame(() => {
-        void stickToBottom.scrollToBottom("auto");
-      });
-    } finally {
-      setIsStartingNewConversation(false);
-    }
+    await startConversation({});
   };
 
   const isBusy = status === "submitted" || status === "streaming" || !chatState.conversation;
@@ -224,7 +194,7 @@ export function ChatConversation({
               />
             ) : null}
             <div className="bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/75">
-              <ChatComposerBlock form={form} isBusy={isBusy} onSubmit={onSubmit} />
+              <ChatComposerBlock isBusy={isBusy} onSend={handleSend} />
             </div>
           </div>
         </div>

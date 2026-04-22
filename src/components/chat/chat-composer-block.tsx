@@ -1,27 +1,38 @@
+import { useForm } from "@tanstack/react-form";
+import z from "zod";
+
 import { ChatComposer } from "./chat-composer";
 
+const FormSchema = z.object({
+  message: z.string().min(1),
+});
+
 export function ChatComposerBlock({
-  form,
   isBusy,
-  onSubmit,
+  onSend,
 }: {
-  form: {
-    Field: React.ComponentType<{
-      children: (field: { handleBlur: () => void; handleChange: (value: string) => void }) => React.ReactNode;
-      name: "message";
-    }>;
-    Subscribe: React.ComponentType<{
-      children: (state: { canSubmit: boolean; isSubmitting: boolean; message: string }) => React.ReactNode;
-      selector: (state: { canSubmit: boolean; isSubmitting: boolean; values: { message: string } }) => {
-        canSubmit: boolean;
-        isSubmitting: boolean;
-        message: string;
-      };
-    }>;
-  };
   isBusy: boolean;
-  onSubmit: React.SubmitEventHandler<HTMLFormElement>;
+  onSend: (message: string) => Promise<void>;
 }) {
+  const form = useForm({
+    defaultValues: {
+      message: "",
+    },
+    validators: {
+      onSubmit: FormSchema,
+      onSubmitAsync: async ({ value }) => {
+        await onSend(value.message);
+        form.reset();
+      },
+    },
+  });
+
+  const onSubmit: React.SubmitEventHandler<HTMLFormElement> = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    form.handleSubmit();
+  };
+
   return (
     <form.Subscribe
       selector={(state) => ({
