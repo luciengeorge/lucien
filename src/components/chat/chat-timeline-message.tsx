@@ -1,9 +1,9 @@
 import { cn } from "#/lib/utils";
-import { Streamdown } from "streamdown";
 import { match } from "ts-pattern";
 
 import type { ChatMessage, ChatStatus } from "./chat.types";
 
+import { ChatMarkdown } from "./chat-markdown";
 import { ChatShimmerLine } from "./chat-shimmer-line";
 import { entryItemClassName } from "./chat.utils";
 
@@ -71,9 +71,7 @@ export function ChatTimelineMessage({
             )}
           >
             {textParts.map((part) => (
-              <Streamdown key={part.key} isAnimating={status === "streaming"}>
-                {part.text}
-              </Streamdown>
+              <ChatMarkdown key={part.key} isAnimating={status === "streaming"} text={part.text} />
             ))}
           </div>
         ) : role === "assistant" && status === "streaming" ? (
