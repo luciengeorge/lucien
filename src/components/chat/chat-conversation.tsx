@@ -1,12 +1,12 @@
 import type { ChatConversationState } from "#/lib/chat-types";
 
-import { parseSerializedMessages } from "#/lib/chat-types";
 import { AnalyticsEvent, useAnalytics } from "#/lib/analytics";
+import { parseSerializedMessages } from "#/lib/chat-types";
 import { startNewConversation } from "#/lib/functions/start-new-conversation";
 import { useChat } from "@ai-sdk/react";
 import { useForm } from "@tanstack/react-form";
 import { DefaultChatTransport } from "ai";
-import { startTransition, useEffect, useMemo, useRef } from "react";
+import { startTransition, useEffect, useMemo, useRef, useState } from "react";
 import { StickToBottom, useStickToBottom } from "use-stick-to-bottom";
 import z from "zod";
 
@@ -33,6 +33,7 @@ export function ChatConversation({
 }) {
   const { capture } = useAnalytics();
   const isCreatingConversationRef = useRef(false);
+  const [isStartingNewConversation, setIsStartingNewConversation] = useState(false);
   const bootstrappedConversationIdRef = useRef<string | null>(null);
   const lastCompletedMessageIdRef = useRef<string | null>(null);
   const initialMessages = useMemo(
@@ -163,19 +164,26 @@ export function ChatConversation({
   };
 
   const handleNewConversation = async () => {
+    if (isStartingNewConversation) return;
+
+    setIsStartingNewConversation(true);
     capture(AnalyticsEvent.newConversationClicked, {
       source: "cta",
     });
 
-    const nextConversation = await startNewConversation();
+    try {
+      const nextConversation = await startNewConversation();
 
-    startTransition(() => {
-      onConversationChange(nextConversation);
-    });
+      startTransition(() => {
+        onConversationChange(nextConversation);
+      });
 
-    requestAnimationFrame(() => {
-      void stickToBottom.scrollToBottom("auto");
-    });
+      requestAnimationFrame(() => {
+        void stickToBottom.scrollToBottom("auto");
+      });
+    } finally {
+      setIsStartingNewConversation(false);
+    }
   };
 
   const isBusy = status === "submitted" || status === "streaming" || !chatState.conversation;
@@ -183,7 +191,10 @@ export function ChatConversation({
   return (
     <section className="flex min-h-0 grow overflow-hidden bg-background">
       <div className="flex min-h-0 w-full grow flex-col gap-2 sm:gap-5">
-        <ChatNewConversationButton onClick={() => void handleNewConversation()} />
+        <ChatNewConversationButton
+          isDisabled={isStartingNewConversation}
+          onClick={() => void handleNewConversation()}
+        />
 
         <StickToBottom instance={stickToBottom} className="relative min-h-0 grow">
           <StickToBottom.Content className="mx-auto w-full max-w-3xl px-4 pb-20 sm:px-6 sm:pb-24">
