@@ -44,6 +44,7 @@ const QUERY_EXPANSION_PROMPT = `Rewrite the user's question into a better search
 Examples:
 - "what do you do?" → "Lucien George current role job position software engineer work"
 - "where does he work now?" → "Lucien George current company current role Fyxer Senior Product Engineer notetaker product"
+- "what's his github?" → "Lucien George GitHub LinkedIn Twitter X Instagram social links profiles"
 - "tell me about yourself" → "Lucien George bio background personal story origin education career"
 - "what's your stack?" → "Lucien George tech stack programming languages frameworks tools TypeScript React"
 - "any side projects?" → "Lucien George side projects startups co-founder Localista Skyla open source"
