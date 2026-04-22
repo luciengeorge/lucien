@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { Toaster } from "#/components/ui/sonner";
 import { useToast } from "#/hooks/use-toast";
 import { getToast } from "#/lib/functions/get-toast";
+import { SOCIAL_LINKS } from "#/lib/social-links";
 import { TanStackDevtools } from "@tanstack/react-devtools";
 import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
@@ -34,11 +35,7 @@ const structuredData = {
       "@type": "Person",
       name: "Lucien George",
       jobTitle: "Senior Product Engineer",
-      sameAs: [
-        "https://github.com/luciengeorge",
-        "https://www.linkedin.com/in/luciengeorge/",
-        "https://x.com/luciengeorge16",
-      ],
+      sameAs: SOCIAL_LINKS.map((link) => link.href),
       url: SITE_URL,
       worksFor: {
         "@type": "Organization",

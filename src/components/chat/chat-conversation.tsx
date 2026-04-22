@@ -11,11 +11,11 @@ import { StickToBottom, useStickToBottom } from "use-stick-to-bottom";
 
 import { ChatComposerBlock } from "./chat-composer-block";
 import { ChatIntroPlaceholder } from "./chat-intro-placeholder";
-import { ChatNewConversationButton } from "./chat-new-conversation-button";
 import { ChatPendingReply } from "./chat-pending-reply";
 import { ChatScrollToBottomButton } from "./chat-scroll-to-bottom-button";
 import { ChatStarterPrompts } from "./chat-starter-prompts";
 import { ChatTimelineMessage } from "./chat-timeline-message";
+import { ChatTopSocialLinks } from "./chat-top-social-links";
 import { INTRO_PROMPT } from "./chat.constants";
 import { isBootstrapMessage } from "./chat.utils";
 
@@ -84,14 +84,14 @@ export function ChatConversation({
     void sendMessage({ text: INTRO_PROMPT });
   }, [
     capture,
-      chatState.conversation,
-      chatState.serializedMessages.length,
-      isStartingNewConversation,
-      messages.length,
-      onConversationChange,
-      sendMessage,
-      startConversation,
-    ]);
+    chatState.conversation,
+    chatState.serializedMessages.length,
+    isStartingNewConversation,
+    messages.length,
+    onConversationChange,
+    sendMessage,
+    startConversation,
+  ]);
 
   const visibleMessages = useMemo(() => messages.filter((message) => !isBootstrapMessage(message)), [messages]);
   const hasVisibleUserMessage = visibleMessages.some((message) => message.role === "user");
@@ -161,10 +161,7 @@ export function ChatConversation({
   return (
     <section className="flex min-h-0 grow overflow-hidden bg-background">
       <div className="flex min-h-0 w-full grow flex-col gap-2 sm:gap-5">
-        <ChatNewConversationButton
-          isDisabled={isStartingNewConversation}
-          onClick={() => void handleNewConversation()}
-        />
+        <ChatTopSocialLinks isDisabled={isStartingNewConversation} onClick={() => void handleNewConversation()} />
 
         <StickToBottom instance={stickToBottom} className="relative min-h-0 grow">
           <StickToBottom.Content className="mx-auto w-full max-w-3xl px-4 pb-20 sm:px-6 sm:pb-24">
