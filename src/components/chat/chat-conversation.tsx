@@ -16,8 +16,6 @@ import { ChatScrollToBottomButton } from "./chat-scroll-to-bottom-button";
 import { ChatStarterPrompts } from "./chat-starter-prompts";
 import { ChatTimelineMessage } from "./chat-timeline-message";
 import { ChatTopSocialLinks } from "./chat-top-social-links";
-import { INTRO_PROMPT } from "./chat.constants";
-import { isBootstrapMessage } from "./chat.utils";
 
 export function ChatConversation({
   chatState,
@@ -27,7 +25,6 @@ export function ChatConversation({
   onConversationChange: (state: ChatConversationState) => void;
 }) {
   const { capture } = useAnalytics();
-  const bootstrappedConversationIdRef = useRef<string | null>(null);
   const lastCompletedMessageIdRef = useRef<string | null>(null);
   const initialMessages = useMemo(
     () => parseSerializedMessages(chatState.serializedMessages),
@@ -65,35 +62,7 @@ export function ChatConversation({
     }),
   });
 
-  useEffect(() => {
-    if (chatState.serializedMessages.length > 0 || messages.length > 0) return;
-
-    if (!chatState.conversation) {
-      if (isStartingNewConversation) return;
-
-      void startConversation({});
-      return;
-    }
-
-    if (bootstrappedConversationIdRef.current === chatState.conversation.id) return;
-
-    bootstrappedConversationIdRef.current = chatState.conversation.id;
-    capture(AnalyticsEvent.chatBootstrapRequested, {
-      source: "bootstrap",
-    });
-    void sendMessage({ text: INTRO_PROMPT });
-  }, [
-    capture,
-    chatState.conversation,
-    chatState.serializedMessages.length,
-    isStartingNewConversation,
-    messages.length,
-    onConversationChange,
-    sendMessage,
-    startConversation,
-  ]);
-
-  const visibleMessages = useMemo(() => messages.filter((message) => !isBootstrapMessage(message)), [messages]);
+  const visibleMessages = messages;
   const hasVisibleUserMessage = visibleMessages.some((message) => message.role === "user");
   const showIntroPlaceholder = visibleMessages.length === 0;
   const showStarterPrompts = !hasVisibleUserMessage && !showIntroPlaceholder;

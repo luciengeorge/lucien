@@ -10,6 +10,7 @@
 
 import type * as conversations from "../conversations.js";
 import type * as http from "../http.js";
+import type * as intro from "../intro.js";
 import type * as rag from "../rag.js";
 import type * as search from "../search.js";
 import type * as seed from "../seed.js";
@@ -23,6 +24,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   conversations: typeof conversations;
   http: typeof http;
+  intro: typeof intro;
   rag: typeof rag;
   search: typeof search;
   seed: typeof seed;
@@ -55,6 +57,7 @@ export declare const internal: FilterApi<
 >;
 
 export declare const components: {
+  actionCache: import("@convex-dev/action-cache/_generated/component.js").ComponentApi<"actionCache">;
   betterAuth: import("../betterAuth/_generated/component.js").ComponentApi<"betterAuth">;
   rag: import("@convex-dev/rag/_generated/component.js").ComponentApi<"rag">;
 };

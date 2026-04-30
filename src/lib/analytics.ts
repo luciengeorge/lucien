@@ -3,7 +3,6 @@ import { usePostHog } from "@posthog/react";
 import { useCallback } from "react";
 
 export const AnalyticsEvent = {
-  chatBootstrapRequested: "chat_bootstrap_requested",
   chatMessageSubmitted: "chat_message_submitted",
   chatResponseCompleted: "chat_response_completed",
   chatResponseFailed: "chat_response_failed",
