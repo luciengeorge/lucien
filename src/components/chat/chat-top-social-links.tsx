@@ -17,13 +17,13 @@ function SocialLink({ className, href, label }: { className: string; href: strin
 function SocialLinksRow() {
   return (
     <div className="min-w-0 flex-1 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      <div className="inline-flex min-w-max items-center gap-2 pr-2 text-[11px] text-neutral-400">
+      <div className="inline-flex min-w-max items-center gap-2 pr-2 text-[11px] text-muted-foreground">
         {SOCIAL_LINKS.map((link, index) => (
           <div key={link.label} className="flex items-center gap-2">
             {index === 0 ? null : <span>/</span>}
             <SocialLink
               {...link}
-              className="font-mono tracking-[0.12em] uppercase transition-colors hover:text-neutral-700"
+              className="font-mono tracking-[0.12em] uppercase transition-colors hover:text-primary"
             />
           </div>
         ))}
