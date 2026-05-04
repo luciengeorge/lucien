@@ -1,15 +1,25 @@
-import type { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 import { z } from "zod";
+
+import type { Id } from "./_generated/dataModel";
 
 import { mutation, query } from "./_generated/server";
 
 const SerializableValueSchema: z.ZodTypeAny = z.lazy(() =>
-  z.union([z.string(), z.number(), z.boolean(), z.null(), z.array(SerializableValueSchema), z.record(z.string(), SerializableValueSchema)]),
+  z.union([
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.null(),
+    z.array(SerializableValueSchema),
+    z.record(z.string(), SerializableValueSchema),
+  ]),
 );
-const MessagePartShapeSchema = z.object({
-  type: z.string(),
-}).catchall(SerializableValueSchema);
+const MessagePartShapeSchema = z
+  .object({
+    type: z.string(),
+  })
+  .catchall(SerializableValueSchema);
 const PersistedMessageSchema = z.object({
   createdAt: z.number().optional(),
   id: z.string().optional(),
@@ -51,6 +61,13 @@ function getPartToolName(part: Record<string, unknown>) {
 function getPartState(part: Record<string, unknown>) {
   if (!("state" in part)) return undefined;
   return typeof part.state === "string" ? part.state : undefined;
+}
+
+function isLegacyIntroBootstrapMessage(role: string, parts: { type: string; text?: string }[] | undefined) {
+  if (role !== "user") return false;
+  const firstText = parts?.find((part) => part.type === "text");
+  const text = firstText ? getPartText(firstText) : undefined;
+  return typeof text === "string" && text.startsWith("Introduce yourself first as Poof");
 }
 
 function deriveConversationTitle(messages: PersistedMessage[]) {
@@ -96,22 +113,30 @@ export const getConversationById = query({
       .withIndex("by_conversation_id", (q) => q.eq("conversationId", conversation._id))
       .collect();
 
-    const hydratedMessages = await Promise.all(
-      messages.map(async (message) => {
-        const parts = await ctx.db
-          .query("messageParts")
-          .withIndex("by_message_id", (q) => q.eq("messageId", message._id))
-          .collect();
+    const hydratedMessages = (
+      await Promise.all(
+        messages.map(async (message) => {
+          const parts = await ctx.db
+            .query("messageParts")
+            .withIndex("by_message_id", (q) => q.eq("messageId", message._id))
+            .collect();
 
-        return serializeJson({
-          id: message.uiMessageId,
-          parts: parts
+          const parsedParts = parts
             .map((part) => MessagePartShapeSchema.safeParse(deserializeJson(part.partJson)).data)
-            .filter(Boolean),
-          role: message.role,
-        });
-      }),
-    );
+            .filter(Boolean);
+
+          if (isLegacyIntroBootstrapMessage(message.role, parsedParts as { type: string; text?: string }[])) {
+            return null;
+          }
+
+          return serializeJson({
+            id: message.uiMessageId,
+            parts: parsedParts,
+            role: message.role,
+          });
+        }),
+      )
+    ).filter((value): value is string => typeof value === "string");
 
     return {
       conversation: {
