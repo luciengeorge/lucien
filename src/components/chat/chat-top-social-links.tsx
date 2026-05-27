@@ -1,10 +1,13 @@
 import { SOCIAL_LINKS } from "#/lib/social-links";
 import { PlusSignIcon } from "@hugeicons-pro/core-solid-rounded";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { Link } from "@tanstack/react-router";
 import { useSpinDelay } from "spin-delay";
 
 import { Button } from "../ui/button";
 import { Spinner } from "../ui/spinner";
+
+const LINK_CLASS = "font-mono tracking-[0.12em] uppercase transition-colors hover:text-primary";
 
 function SocialLink({ className, href, label }: { className: string; href: string; label: string }) {
   return (
@@ -21,12 +24,13 @@ function SocialLinksRow() {
         {SOCIAL_LINKS.map((link, index) => (
           <div key={link.label} className="flex items-center gap-2">
             {index === 0 ? null : <span>/</span>}
-            <SocialLink
-              {...link}
-              className="font-mono tracking-[0.12em] uppercase transition-colors hover:text-primary"
-            />
+            <SocialLink {...link} className={LINK_CLASS} />
           </div>
         ))}
+        <span>/</span>
+        <Link to="/resume" className={LINK_CLASS}>
+          Resume
+        </Link>
       </div>
     </div>
   );

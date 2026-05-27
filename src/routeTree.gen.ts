@@ -9,13 +9,20 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ResumeRouteImport } from './routes/resume'
 import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthSignupRouteImport } from './routes/_auth/signup'
 import { Route as AuthLoginRouteImport } from './routes/_auth/login'
 import { Route as ApiChatIndexRouteImport } from './routes/api/chat/index'
+import { Route as ApiResumePdfRouteImport } from './routes/api/resume/pdf'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
+const ResumeRoute = ResumeRouteImport.update({
+  id: '/resume',
+  path: '/resume',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/_auth',
   getParentRoute: () => rootRouteImport,
@@ -40,6 +47,11 @@ const ApiChatIndexRoute = ApiChatIndexRouteImport.update({
   path: '/api/chat/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiResumePdfRoute = ApiResumePdfRouteImport.update({
+  id: '/api/resume/pdf',
+  path: '/api/resume/pdf',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -48,51 +60,82 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/resume': typeof ResumeRoute
   '/login': typeof AuthLoginRoute
   '/signup': typeof AuthSignupRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/resume/pdf': typeof ApiResumePdfRoute
   '/api/chat/': typeof ApiChatIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/resume': typeof ResumeRoute
   '/login': typeof AuthLoginRoute
   '/signup': typeof AuthSignupRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/resume/pdf': typeof ApiResumePdfRoute
   '/api/chat': typeof ApiChatIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_auth': typeof AuthRouteWithChildren
+  '/resume': typeof ResumeRoute
   '/_auth/login': typeof AuthLoginRoute
   '/_auth/signup': typeof AuthSignupRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/resume/pdf': typeof ApiResumePdfRoute
   '/api/chat/': typeof ApiChatIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/signup' | '/api/auth/$' | '/api/chat/'
+  fullPaths:
+    | '/'
+    | '/resume'
+    | '/login'
+    | '/signup'
+    | '/api/auth/$'
+    | '/api/resume/pdf'
+    | '/api/chat/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/signup' | '/api/auth/$' | '/api/chat'
+  to:
+    | '/'
+    | '/resume'
+    | '/login'
+    | '/signup'
+    | '/api/auth/$'
+    | '/api/resume/pdf'
+    | '/api/chat'
   id:
     | '__root__'
     | '/'
     | '/_auth'
+    | '/resume'
     | '/_auth/login'
     | '/_auth/signup'
     | '/api/auth/$'
+    | '/api/resume/pdf'
     | '/api/chat/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRouteWithChildren
+  ResumeRoute: typeof ResumeRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiResumePdfRoute: typeof ApiResumePdfRoute
   ApiChatIndexRoute: typeof ApiChatIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/resume': {
+      id: '/resume'
+      path: '/resume'
+      fullPath: '/resume'
+      preLoaderRoute: typeof ResumeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_auth': {
       id: '/_auth'
       path: ''
@@ -128,6 +171,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/resume/pdf': {
+      id: '/api/resume/pdf'
+      path: '/api/resume/pdf'
+      fullPath: '/api/resume/pdf'
+      preLoaderRoute: typeof ApiResumePdfRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -153,7 +203,9 @@ const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRouteWithChildren,
+  ResumeRoute: ResumeRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiResumePdfRoute: ApiResumePdfRoute,
   ApiChatIndexRoute: ApiChatIndexRoute,
 }
 export const routeTree = rootRouteImport

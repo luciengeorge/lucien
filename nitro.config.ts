@@ -37,5 +37,14 @@ export default defineNitroConfig({
         ...securityHeaders,
       },
     },
+    "/api/resume/pdf": {
+      headers: {
+        "Cache-Control": "public, max-age=300, s-maxage=86400, stale-while-revalidate=604800",
+        ...securityHeaders,
+      },
+    },
+    "/resume.pdf": {
+      redirect: { status: 301, to: "/api/resume/pdf" },
+    },
   },
 });

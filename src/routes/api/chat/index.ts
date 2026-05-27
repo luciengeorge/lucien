@@ -148,7 +148,7 @@ export const Route = createFileRoute("/api/chat/")({
               inputSchema: z.object({}),
               execute: async () => ({
                 filename: "lucien-george-resume.pdf",
-                url: "/resume.pdf",
+                url: "/api/resume/pdf",
               }),
             }),
           },
