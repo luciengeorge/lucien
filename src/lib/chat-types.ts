@@ -1,9 +1,12 @@
 import type { UIMessage } from "ai";
+
 import { z } from "zod";
 
-export const UIMessagePartSchema = z.object({
-  type: z.string(),
-}).catchall(z.any());
+export const UIMessagePartSchema = z
+  .object({
+    type: z.string(),
+  })
+  .catchall(z.any());
 
 const StoredUIMessageShapeSchema = z.object({
   id: z.string().min(1),
@@ -11,7 +14,9 @@ const StoredUIMessageShapeSchema = z.object({
   role: z.enum(["assistant", "system", "user"]),
 });
 
-export const StoredUIMessageSchema = z.custom<UIMessage>((value) => StoredUIMessageShapeSchema.safeParse(value).success);
+export const StoredUIMessageSchema = z.custom<UIMessage>(
+  (value) => StoredUIMessageShapeSchema.safeParse(value).success,
+);
 
 export const StoredUIMessagesSchema = z.array(StoredUIMessageSchema);
 

@@ -5,7 +5,7 @@ import { parseSerializedMessages } from "#/lib/chat-types";
 import { getConversationSession } from "#/lib/conversation-session.server";
 import { createLogger } from "#/lib/logger";
 import { openai } from "@ai-sdk/openai";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, notFound } from "@tanstack/react-router";
 import {
   convertToModelMessages,
   generateId,
@@ -74,6 +74,9 @@ async function expandQuery(query: string): Promise<string> {
 }
 
 export const Route = createFileRoute("/api/chat/")({
+  beforeLoad: () => {
+    throw notFound();
+  },
   server: {
     handlers: {
       POST: async ({ request }) => {
