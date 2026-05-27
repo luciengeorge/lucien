@@ -6,10 +6,19 @@ import { getConversationSession } from "#/lib/conversation-session.server";
 import { createLogger } from "#/lib/logger";
 import { openai } from "@ai-sdk/openai";
 import { createFileRoute } from "@tanstack/react-router";
-import { convertToModelMessages, generateId, generateText, streamText, validateUIMessages } from "ai";
+import {
+  convertToModelMessages,
+  generateId,
+  generateText,
+  stepCountIs,
+  streamText,
+  tool,
+  validateUIMessages,
+} from "ai";
 import { z } from "zod";
 
 import type { Id } from "../../../../convex/_generated/dataModel";
+
 import systemPrompt from "../../../../content/system-prompt.md?raw";
 import { api } from "../../../../convex/_generated/api";
 
@@ -131,6 +140,18 @@ export const Route = createFileRoute("/api/chat/")({
           model: openai("gpt-5.4-mini"),
           system: prompt,
           messages: await convertToModelMessages(messages),
+          stopWhen: stepCountIs(3),
+          tools: {
+            download_resume: tool({
+              description:
+                "Provide Lucien's resume as a downloadable PDF. Call this when the user asks for Lucien's resume, CV, or PDF.",
+              inputSchema: z.object({}),
+              execute: async () => ({
+                filename: "lucien-george-resume.pdf",
+                url: "/resume.pdf",
+              }),
+            }),
+          },
         });
 
         logger.info("chat stream started", {

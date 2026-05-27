@@ -9,6 +9,8 @@ export const AnalyticsEvent = {
   conversationResumed: "conversation_resumed",
   newConversationClicked: "new_conversation_clicked",
   portfolioViewed: "portfolio_viewed",
+  resumeDownloaded: "resume_downloaded",
+  resumeRequested: "resume_requested",
   starterPromptClicked: "starter_prompt_clicked",
   userLoggedIn: "user_logged_in",
   userLoginFailed: "user_login_failed",

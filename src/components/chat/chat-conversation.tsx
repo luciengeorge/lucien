@@ -95,6 +95,8 @@ export function ChatConversation({
     });
   }, [capture, status, visibleMessages]);
 
+  const isBusy = status === "submitted" || status === "streaming" || !chatState.conversation;
+
   const handleSend = async (message: string) => {
     capture(AnalyticsEvent.chatMessageSubmitted, {
       message_length: message.length,
@@ -116,6 +118,18 @@ export function ChatConversation({
     await sendMessage({ text: prompt });
   };
 
+  const handleResumeRequest = () => {
+    if (isBusy) return;
+    const prompt = "Can I see Lucien's resume?";
+    capture(AnalyticsEvent.resumeRequested, { source: "composer_chip" });
+    capture(AnalyticsEvent.chatMessageSubmitted, {
+      message_length: prompt.length,
+      source: "resume_chip",
+    });
+    void stickToBottom.scrollToBottom({ animation: "smooth" });
+    void sendMessage({ text: prompt });
+  };
+
   const handleNewConversation = async () => {
     if (isStartingNewConversation) return;
     capture(AnalyticsEvent.newConversationClicked, {
@@ -124,8 +138,6 @@ export function ChatConversation({
 
     await startConversation({});
   };
-
-  const isBusy = status === "submitted" || status === "streaming" || !chatState.conversation;
 
   return (
     <section className="flex min-h-0 grow overflow-hidden bg-background">
@@ -160,7 +172,7 @@ export function ChatConversation({
               />
             ) : null}
             <div className="bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/75">
-              <ChatComposerBlock isBusy={isBusy} onSend={handleSend} />
+              <ChatComposerBlock isBusy={isBusy} onResumeRequest={handleResumeRequest} onSend={handleSend} />
             </div>
           </div>
         </div>

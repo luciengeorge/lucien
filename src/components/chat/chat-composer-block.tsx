@@ -9,9 +9,11 @@ const FormSchema = z.object({
 
 export function ChatComposerBlock({
   isBusy,
+  onResumeRequest,
   onSend,
 }: {
   isBusy: boolean;
+  onResumeRequest: () => void;
   onSend: (message: string) => Promise<void>;
 }) {
   const form = useForm({
@@ -51,6 +53,7 @@ export function ChatComposerBlock({
               message={String(message)}
               onBlur={() => field.handleBlur()}
               onChange={field.handleChange}
+              onResumeRequest={onResumeRequest}
               onSubmit={onSubmit}
             />
           )}
