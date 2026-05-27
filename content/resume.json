@@ -1,0 +1,206 @@
+{
+  "personal": {
+    "name": "Lucien George",
+    "title": "Fullstack Developer",
+    "email": "lucienkgeorge@gmail.com",
+    "phone": "+44 7 845 714513",
+    "location": "London, UK",
+    "website": "https://www.luciengeorge.com",
+    "links": {
+      "github": "https://github.com/luciengeorge",
+      "linkedin": "https://linkedin.com/in/luciengeorge"
+    }
+  },
+  "experiences": [
+    {
+      "company": "Fyxer",
+      "website": "https://www.fyxer.com",
+      "logo": "/companies/fyxer.png",
+      "color": "#0f172a",
+      "roles": [
+        {
+          "role": "Senior Product Engineer",
+          "employmentType": "Full-time",
+          "start": "2025-09",
+          "end": null,
+          "bullets": ["Senior product engineer in the notetaker team. Leading the development of the notetaker app."]
+        }
+      ]
+    },
+    {
+      "company": "Localista",
+      "website": null,
+      "logo": "/companies/localista.png",
+      "color": "#dc2626",
+      "roles": [
+        {
+          "role": "Co-Founder & CTO",
+          "employmentType": "Full-time",
+          "start": "2024-04",
+          "end": "2025-07",
+          "bullets": ["Co-Founder and CTO at Localista."]
+        }
+      ]
+    },
+    {
+      "company": "Skyla",
+      "website": null,
+      "logo": "/companies/skyla.png",
+      "color": "#7c3aed",
+      "roles": [
+        {
+          "role": "Co-Founder",
+          "employmentType": "Full-time",
+          "start": "2023-09",
+          "end": "2024-04",
+          "bullets": ["Co-Founder at Skyla."]
+        }
+      ]
+    },
+    {
+      "company": "Shopify",
+      "website": "https://www.shopify.com",
+      "logo": "/companies/shopify.png",
+      "color": "#5e8e3e",
+      "roles": [
+        {
+          "role": "Senior Developer",
+          "employmentType": "Full-time",
+          "start": "2023-05",
+          "end": "2023-09",
+          "bullets": [
+            "Worked in parallel on the Shopify Checkout, an SDK for marketplaces on both iOS and Android, and on the Shopify core application."
+          ]
+        },
+        {
+          "role": "Developer",
+          "employmentType": "Full-time",
+          "start": "2022-01",
+          "end": "2023-05",
+          "bullets": ["Worked on an API for marketplaces in the core Shopify application."]
+        }
+      ]
+    },
+    {
+      "company": "Impact Lebanon",
+      "website": "https://impactlebanon.org",
+      "logo": "/companies/impact-lebanon.png",
+      "color": "#b91c1c",
+      "roles": [
+        {
+          "role": "Co-Founder",
+          "employmentType": "Self-employed",
+          "start": "2019-10",
+          "end": null,
+          "bullets": ["Responsible for building our online presence by creating our two websites."]
+        }
+      ]
+    },
+    {
+      "company": "Le Wagon",
+      "website": "https://www.lewagon.com",
+      "logo": "/companies/le-wagon.png",
+      "color": "#e11d48",
+      "roles": [
+        {
+          "role": "Engineering Manager",
+          "employmentType": "Full-time",
+          "start": "2021-07",
+          "end": "2021-12",
+          "bullets": [
+            "Technical lead of the B2B platform and office management app.",
+            "Responsible for the growth of the London dev team."
+          ]
+        },
+        {
+          "role": "Lead Teacher and Software Engineer",
+          "employmentType": "Full-time",
+          "start": "2019-05",
+          "end": "2021-07",
+          "bullets": [
+            "Worked on the company's internal platforms.",
+            "Gave several lectures that are part of our 9-week long web development and data science bootcamps.",
+            "Managed the teaching team."
+          ]
+        },
+        {
+          "role": "Teaching Assistant",
+          "employmentType": "Freelance",
+          "start": "2019-01",
+          "end": "2019-04",
+          "bullets": ["Teaching assistant at Le Wagon for their full-time and part-time bootcamps."]
+        }
+      ]
+    },
+    {
+      "company": "Hoxton Digital",
+      "website": null,
+      "logo": "/companies/hoxton-digital.png",
+      "color": "#1d4ed8",
+      "roles": [
+        {
+          "role": "Ruby on Rails Developer",
+          "employmentType": "Freelance",
+          "start": "2018-12",
+          "end": "2019-04",
+          "bullets": ["Worked on the company's main website and their clients' websites."]
+        }
+      ]
+    }
+  ],
+  "education": [
+    {
+      "school": "Harvard Business School",
+      "degree": "Families in Business",
+      "location": "Boston",
+      "start": "2022",
+      "end": "2022",
+      "note": null
+    },
+    {
+      "school": "Le Wagon",
+      "degree": "Full-stack Web Development",
+      "location": "London, UK",
+      "start": "2018",
+      "end": "2018",
+      "note": "Batch #190. 9-week intensive coding bootcamp covering HTML, CSS, Bootstrap, JavaScript ES2015, SQL, Git, GitHub, Heroku, Ruby on Rails, React, and Redux."
+    },
+    {
+      "school": "UNSW",
+      "degree": "Exchange Semester",
+      "location": "Sydney, Australia",
+      "start": "2017",
+      "end": "2017",
+      "note": "Exchange semester at the University of New South Wales."
+    },
+    {
+      "school": "McGill University",
+      "degree": "BEng. Software Engineering",
+      "location": "Montreal, Canada",
+      "start": "2013",
+      "end": "2018",
+      "note": "Bachelor of Engineering in Software Engineering."
+    }
+  ],
+  "skills": {
+    "programming": [
+      "TypeScript",
+      "JavaScript",
+      "React",
+      "React Router",
+      "Remix",
+      "Next.js",
+      "React Native",
+      "Ruby on Rails",
+      "Python",
+      "FastAPI",
+      "SQL",
+      "HTML",
+      "CSS",
+      "Java",
+      "Kotlin",
+      "Swift"
+    ],
+    "spokenLanguages": ["French", "English", "Arabic"]
+  }
+}
