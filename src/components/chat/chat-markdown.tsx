@@ -1,5 +1,4 @@
 import { lazy, Suspense } from "react";
-
 import "streamdown/styles.css";
 
 const Streamdown = lazy(async () => {

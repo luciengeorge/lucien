@@ -1,6 +1,7 @@
 import type { QueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 
+import { NotFound } from "#/components/not-found";
 import { Toaster } from "#/components/ui/sonner";
 import { useToast } from "#/hooks/use-toast";
 import { getToast } from "#/lib/functions/get-toast";
@@ -59,6 +60,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
     return { serverToast };
   },
   component: RootComponent,
+  notFoundComponent: NotFound,
   head: () => ({
     meta: [
       {
