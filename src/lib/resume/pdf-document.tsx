@@ -1,46 +1,45 @@
-import type { Resume, ResumeExperience } from "./schema";
-
 import { Document, Image, Link, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 
-import { formatExperienceSpan, formatPeriod } from "./load";
+import type { Resume, ResumeExperience, ResumeRole } from "./schema";
+
+import { formatExperienceDuration, formatPeriod } from "./load";
 
 const COLORS = {
   accent: "#0f172a",
-  border: "#e5e5e5",
-  muted: "#6b7280",
-  subtle: "#9ca3af",
+  border: "#d4d4d8",
+  muted: "#4b5563",
+  subtle: "#6b7280",
   text: "#1c1c1c",
-  timeline: "#d4d4d8",
+  timeline: "#9ca3af",
 };
 
 const styles = StyleSheet.create({
   bullet: {
     color: COLORS.muted,
     fontSize: 9.5,
-    lineHeight: 1.45,
-    marginBottom: 1.5,
+    lineHeight: 1.5,
   },
   bulletRow: {
     flexDirection: "row",
-    marginBottom: 2,
+    marginBottom: 3,
   },
   bulletText: {
     color: COLORS.muted,
     flex: 1,
     fontSize: 9.5,
-    lineHeight: 1.45,
+    lineHeight: 1.5,
   },
   column: {
     flexDirection: "column",
   },
   companyName: {
     color: COLORS.text,
-    fontSize: 11.5,
+    fontSize: 12,
     fontWeight: 500,
   },
   educationDegree: {
     color: COLORS.text,
-    fontSize: 10,
+    fontSize: 10.5,
     fontWeight: 500,
   },
   educationItem: {
@@ -49,7 +48,7 @@ const styles = StyleSheet.create({
   educationMeta: {
     color: COLORS.muted,
     fontSize: 9,
-    marginTop: 1,
+    marginTop: 1.5,
   },
   educationNote: {
     color: COLORS.subtle,
@@ -67,20 +66,20 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 2,
   },
-  experienceItem: {
-    flexDirection: "row",
-    gap: 10,
-    marginBottom: 14,
-    position: "relative",
-  },
-  experiencePeriod: {
+  experienceDuration: {
     color: COLORS.subtle,
     fontSize: 9,
   },
+  experienceItem: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 11,
+    position: "relative",
+  },
   header: {
     borderBottomColor: COLORS.border,
-    borderBottomWidth: 1,
-    marginBottom: 18,
+    borderBottomWidth: 0.6,
+    marginBottom: 16,
     paddingBottom: 12,
   },
   headerContact: {
@@ -137,9 +136,9 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     flexDirection: "column",
     fontFamily: "Helvetica",
-    fontSize: 10,
+    fontSize: 9.5,
     paddingHorizontal: 40,
-    paddingVertical: 36,
+    paddingVertical: 32,
   },
   pill: {
     backgroundColor: "#f4f4f5",
@@ -157,11 +156,12 @@ const styles = StyleSheet.create({
   },
   roleEntry: {
     marginTop: 6,
-    paddingLeft: 0,
   },
   roleHeaderRow: {
+    alignItems: "baseline",
     flexDirection: "row",
     justifyContent: "space-between",
+    marginBottom: 2.5,
   },
   rolePeriod: {
     color: COLORS.subtle,
@@ -178,41 +178,30 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: "row",
-    gap: 28,
+    gap: 26,
   },
   sectionHeading: {
     color: COLORS.subtle,
     fontSize: 9,
     fontWeight: 600,
-    letterSpacing: 1.6,
+    letterSpacing: 1.5,
     marginBottom: 10,
     textTransform: "uppercase",
   },
   sidebar: {
     flexDirection: "column",
-    width: 175,
+    width: 170,
   },
   sidebarBlock: {
-    marginBottom: 18,
-  },
-  subDot: {
-    backgroundColor: COLORS.timeline,
-    borderRadius: 3,
-    height: 6,
-    width: 6,
-  },
-  subDotColumn: {
-    alignItems: "center",
-    paddingTop: 5,
-    width: 28,
+    marginBottom: 16,
   },
   timelineLine: {
     backgroundColor: COLORS.timeline,
-    bottom: -14,
-    left: 13,
+    bottom: -11,
+    left: 13.5,
     position: "absolute",
     top: 28,
-    width: 1.5,
+    width: 0.6,
   },
 });
 
@@ -243,6 +232,26 @@ function buildLogoUrl(baseUrl: string, logo: string | null | undefined) {
   return `${baseUrl}${logo.startsWith("/") ? logo : `/${logo}`}`;
 }
 
+function RolePdfBlock({ isFirst, role }: { isFirst: boolean; role: ResumeRole }) {
+  return (
+    <View style={isFirst ? undefined : styles.roleEntry}>
+      <View style={styles.roleHeaderRow}>
+        <Text style={styles.roleTitle}>
+          {role.role}
+          {role.employmentType ? <Text style={styles.roleType}> · {role.employmentType}</Text> : null}
+        </Text>
+        <Text style={styles.rolePeriod}>{formatPeriod(role.start, role.end)}</Text>
+      </View>
+      {role.bullets.map((bullet, bulletIndex) => (
+        <View key={bulletIndex} style={styles.bulletRow}>
+          <Text style={styles.bullet}>• </Text>
+          <Text style={styles.bulletText}>{bullet}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 function ExperienceBlock({
   baseUrl,
   experience,
@@ -252,8 +261,6 @@ function ExperienceBlock({
   experience: ResumeExperience;
   isLast: boolean;
 }) {
-  const [firstRole, ...otherRoles] = experience.roles;
-
   return (
     <View style={styles.experienceItem}>
       {!isLast ? <View style={styles.timelineLine} /> : null}
@@ -267,49 +274,10 @@ function ExperienceBlock({
       <View style={styles.experienceBody}>
         <View style={styles.experienceCompanyRow}>
           <Text style={styles.companyName}>{experience.company}</Text>
-          <Text style={styles.experiencePeriod}>{formatExperienceSpan(experience)}</Text>
+          <Text style={styles.experienceDuration}>{formatExperienceDuration(experience)}</Text>
         </View>
-
-        {firstRole ? (
-          <View>
-            <View style={styles.roleHeaderRow}>
-              <Text style={styles.roleTitle}>
-                {firstRole.role}
-                {firstRole.employmentType ? <Text style={styles.roleType}> · {firstRole.employmentType}</Text> : null}
-              </Text>
-              {experience.roles.length > 1 ? (
-                <Text style={styles.rolePeriod}>{formatPeriod(firstRole.start, firstRole.end)}</Text>
-              ) : null}
-            </View>
-            <View style={{ marginTop: 3 }}>
-              {firstRole.bullets.map((bullet, bulletIndex) => (
-                <View key={bulletIndex} style={styles.bulletRow}>
-                  <Text style={styles.bullet}>• </Text>
-                  <Text style={styles.bulletText}>{bullet}</Text>
-                </View>
-              ))}
-            </View>
-          </View>
-        ) : null}
-
-        {otherRoles.map((role, roleIndex) => (
-          <View key={roleIndex} style={styles.roleEntry}>
-            <View style={styles.roleHeaderRow}>
-              <Text style={styles.roleTitle}>
-                {role.role}
-                {role.employmentType ? <Text style={styles.roleType}> · {role.employmentType}</Text> : null}
-              </Text>
-              <Text style={styles.rolePeriod}>{formatPeriod(role.start, role.end)}</Text>
-            </View>
-            <View style={{ marginTop: 3 }}>
-              {role.bullets.map((bullet, bulletIndex) => (
-                <View key={bulletIndex} style={styles.bulletRow}>
-                  <Text style={styles.bullet}>• </Text>
-                  <Text style={styles.bulletText}>{bullet}</Text>
-                </View>
-              ))}
-            </View>
-          </View>
+        {experience.roles.map((role, roleIndex) => (
+          <RolePdfBlock key={roleIndex} isFirst={roleIndex === 0} role={role} />
         ))}
       </View>
     </View>
