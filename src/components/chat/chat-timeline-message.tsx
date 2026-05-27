@@ -4,8 +4,20 @@ import { match } from "ts-pattern";
 import type { ChatMessage, ChatStatus } from "./chat.types";
 
 import { ChatMarkdown } from "./chat-markdown";
+import { ChatResumeCard } from "./chat-resume-card";
 import { ChatShimmerLine } from "./chat-shimmer-line";
 import { entryItemClassName } from "./chat.utils";
+
+type ResumeToolOutput = {
+  filename: string;
+  url: string;
+};
+
+function isResumeToolOutput(value: unknown): value is ResumeToolOutput {
+  if (typeof value !== "object" || value === null) return false;
+  const candidate = value as Record<string, unknown>;
+  return typeof candidate.filename === "string" && typeof candidate.url === "string";
+}
 
 export function ChatTimelineMessage({
   isFirst,
@@ -37,6 +49,19 @@ export function ChatTimelineMessage({
       ])
       .otherwise(() => []),
   );
+  const resumeToolParts = message.parts.flatMap((part, index) => {
+    if (part.type !== "tool-download_resume") return [];
+    const candidate = part as { output?: unknown; state?: string };
+    if (candidate.state !== "output-available") return [];
+    if (!isResumeToolOutput(candidate.output)) return [];
+    return [
+      {
+        filename: candidate.output.filename,
+        key: `${message.id}-resume-${index}`,
+        url: candidate.output.url,
+      },
+    ];
+  });
 
   return (
     <li className={entryItemClassName(isFirst)}>
@@ -74,10 +99,18 @@ export function ChatTimelineMessage({
               <ChatMarkdown key={part.key} isAnimating={status === "streaming"} text={part.text} />
             ))}
           </div>
-        ) : role === "assistant" && status === "streaming" ? (
+        ) : role === "assistant" && status === "streaming" && resumeToolParts.length === 0 ? (
           <div className="space-y-3">
             <ChatShimmerLine widthClassName="w-full" />
             <ChatShimmerLine widthClassName="w-11/12" />
+          </div>
+        ) : null}
+
+        {resumeToolParts.length > 0 ? (
+          <div className="space-y-2">
+            {resumeToolParts.map((part) => (
+              <ChatResumeCard key={part.key} filename={part.filename} url={part.url} />
+            ))}
           </div>
         ) : null}
       </div>
