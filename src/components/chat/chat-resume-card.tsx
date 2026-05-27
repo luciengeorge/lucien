@@ -25,7 +25,7 @@ export function ChatResumeCard({ filename, url }: { filename: string; url: strin
         onClick={() => {
           capture(AnalyticsEvent.resumeDownloaded, { filename, source: "resume_card" });
         }}
-        rel="noopener"
+        rel="noreferrer"
         target="_blank"
       >
         <HugeiconsIcon icon={Download01Icon} size={16} />

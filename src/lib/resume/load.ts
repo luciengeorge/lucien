@@ -24,7 +24,7 @@ export function formatDuration(start: string, end: string | null) {
   if (!startDate) return "";
   const endDate = end ? (parseDate(end) ?? new Date()) : new Date();
 
-  const months = Math.max(0, differenceInMonths(endDate, startDate) + 1);
+  const months = differenceInMonths(endDate, startDate) + 1;
   if (months < 1) return "Less than a month";
 
   const years = Math.floor(months / 12);
@@ -51,6 +51,16 @@ export function formatExperienceDuration(experience: ResumeExperience) {
         .sort()
         .at(-1) ?? null);
   return formatDuration(earliestStart, latestEnd);
+}
+
+export function companyInitials(company: string) {
+  return company
+    .split(/\s+/)
+    .map((word) => word[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 }
 
 function parseDate(value: string) {

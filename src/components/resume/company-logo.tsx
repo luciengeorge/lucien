@@ -1,15 +1,6 @@
+import { companyInitials } from "#/lib/resume/load";
 import { cn } from "#/lib/utils";
 import { useState } from "react";
-
-function getInitials(company: string) {
-  return company
-    .split(/\s+/)
-    .map((word) => word[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-}
 
 export function CompanyLogo({
   className,
@@ -35,7 +26,7 @@ export function CompanyLogo({
         )}
         style={{ backgroundColor: color ?? "#0f172a" }}
       >
-        {getInitials(company)}
+        {companyInitials(company)}
       </span>
     );
   }

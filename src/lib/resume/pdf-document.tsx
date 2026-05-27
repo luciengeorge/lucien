@@ -2,7 +2,7 @@ import { Document, Image, Link, Page, StyleSheet, Text, View } from "@react-pdf/
 
 import type { Resume, ResumeExperience, ResumeRole } from "./schema";
 
-import { formatExperienceDuration, formatPeriod } from "./load";
+import { companyInitials, formatExperienceDuration, formatPeriod } from "./load";
 
 const COLORS = {
   accent: "#0f172a",
@@ -205,15 +205,6 @@ const styles = StyleSheet.create({
   },
 });
 
-function initials(company: string) {
-  return company
-    .split(/\s+/)
-    .map((word) => word[0])
-    ?.slice(0, 2)
-    .join("")
-    .toUpperCase();
-}
-
 function CompanyLogo({ color, company, logoUrl }: { color?: string; company: string; logoUrl?: string | null }) {
   if (logoUrl) {
     return <Image src={logoUrl} style={styles.logoImage} />;
@@ -221,7 +212,7 @@ function CompanyLogo({ color, company, logoUrl }: { color?: string; company: str
 
   return (
     <View style={[styles.logo, { backgroundColor: color ?? COLORS.accent }]}>
-      <Text>{initials(company)}</Text>
+      <Text>{companyInitials(company)}</Text>
     </View>
   );
 }

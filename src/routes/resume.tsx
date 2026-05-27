@@ -4,17 +4,17 @@ import { CompanyLogo } from "#/components/resume/company-logo";
 import { buttonVariants } from "#/components/ui/button";
 import { formatExperienceDuration, formatPeriod, loadResume } from "#/lib/resume/load";
 import { cn } from "#/lib/utils";
-import { Download01Icon } from "@hugeicons-pro/core-stroke-rounded";
+import { ArrowLeft01Icon, Download01Icon } from "@hugeicons-pro/core-stroke-rounded";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/resume")({
   component: ResumePage,
   head: () => ({
     meta: [
-      { title: "Lucien George — Resume" },
+      { title: "Lucien George | Resume" },
       {
-        content: "Resume for Lucien George — Senior Product Engineer at Fyxer.",
+        content: "Resume for Lucien George | Senior Product Engineer at Fyxer.",
         name: "description",
       },
     ],
@@ -29,7 +29,15 @@ function ResumePage() {
 
   return (
     <div className="min-h-0 grow overflow-y-auto">
-      <article className="mx-auto w-full max-w-4xl px-6 py-10 sm:px-10 sm:py-16">
+      <article className="mx-auto w-full max-w-4xl px-4 pb-10 sm:px-6 sm:pb-16">
+        <Link
+          to="/"
+          className="mb-8 inline-flex items-center gap-1.5 font-mono text-[11px] tracking-[0.12em] text-neutral-500 uppercase transition-colors hover:text-neutral-950 print:hidden"
+        >
+          <HugeiconsIcon icon={ArrowLeft01Icon} size={14} />
+          Back to chat
+        </Link>
+
         <header className="flex flex-col gap-6 border-b border-neutral-950/10 pb-8 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="text-3xl font-semibold tracking-tight text-neutral-950 sm:text-4xl">{personal.name}</h1>
@@ -42,7 +50,7 @@ function ResumePage() {
                 <a
                   className="hover:text-neutral-950 hover:underline"
                   href={personal.links.github}
-                  rel="noopener"
+                  rel="noreferrer"
                   target="_blank"
                 >
                   GitHub
@@ -52,7 +60,7 @@ function ResumePage() {
                 <a
                   className="hover:text-neutral-950 hover:underline"
                   href={personal.links.linkedin}
-                  rel="noopener"
+                  rel="noreferrer"
                   target="_blank"
                 >
                   LinkedIn
@@ -62,7 +70,7 @@ function ResumePage() {
                 <a
                   className="hover:text-neutral-950 hover:underline"
                   href={personal.website}
-                  rel="noopener"
+                  rel="noreferrer"
                   target="_blank"
                 >
                   {personal.website.replace(/^https?:\/\//, "")}
@@ -78,7 +86,7 @@ function ResumePage() {
             )}
             download="lucien-george-resume.pdf"
             href="/api/resume/pdf"
-            rel="noopener"
+            rel="noreferrer"
             target="_blank"
           >
             <HugeiconsIcon icon={Download01Icon} size={16} />
@@ -150,7 +158,7 @@ function ResumePage() {
                         <a
                           className="text-base font-semibold text-neutral-950 hover:underline"
                           href={experience.website}
-                          rel="noopener"
+                          rel="noreferrer"
                           target="_blank"
                         >
                           {experience.company}
