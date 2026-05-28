@@ -2,12 +2,13 @@ import { Button } from "#/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "#/components/ui/card";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "#/components/ui/field";
 import { Input } from "#/components/ui/input";
+import { NavLink } from "#/components/ui/nav-link";
 import { Spinner } from "#/components/ui/spinner";
 import { AnalyticsEvent, useAnalytics } from "#/lib/analytics";
 import { authClient } from "#/lib/auth-client";
 import { EmailSchema, NameSchema, PasswordSchema } from "#/lib/schemas/auth";
 import { useForm } from "@tanstack/react-form";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_auth/signup")({
@@ -176,7 +177,7 @@ function SignupPage() {
                   </Button>
                   {errorMap.onSubmit?.form ? <FieldError>{String(errorMap.onSubmit.form)}</FieldError> : null}
                   <FieldDescription className="px-6 text-center">
-                    Already have an account? <Link to="/login">Sign in</Link>
+                    Already have an account? <NavLink to="/login">Sign in</NavLink>
                   </FieldDescription>
                 </Field>
               )}

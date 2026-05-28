@@ -2,11 +2,12 @@ import type { ResumeRole } from "#/lib/resume/schema";
 
 import { CompanyLogo } from "#/components/resume/company-logo";
 import { buttonVariants } from "#/components/ui/button";
+import { NavLink } from "#/components/ui/nav-link";
 import { formatExperienceDuration, formatPeriod, loadResume } from "#/lib/resume/load";
 import { cn } from "#/lib/utils";
 import { ArrowLeft01Icon, Download01Icon } from "@hugeicons-pro/core-stroke-rounded";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/resume")({
   component: ResumePage,
@@ -30,13 +31,13 @@ function ResumePage() {
   return (
     <div className="min-h-0 grow overflow-y-auto">
       <article className="mx-auto w-full max-w-4xl px-4 pb-10 sm:px-6 sm:pb-16">
-        <Link
+        <NavLink
           to="/"
-          className="mb-8 inline-flex items-center gap-1.5 font-mono text-[11px] tracking-[0.12em] text-neutral-500 uppercase transition-colors hover:text-neutral-950 print:hidden"
+          icon={<HugeiconsIcon icon={ArrowLeft01Icon} size={14} />}
+          className="mb-8 font-mono text-[11px] tracking-[0.12em] text-neutral-500 uppercase transition-colors hover:text-neutral-950 print:hidden"
         >
-          <HugeiconsIcon icon={ArrowLeft01Icon} size={14} />
           Back to chat
-        </Link>
+        </NavLink>
 
         <header className="flex flex-col gap-6 border-b border-neutral-950/10 pb-8 sm:flex-row sm:items-end sm:justify-between">
           <div>

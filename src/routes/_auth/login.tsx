@@ -2,6 +2,7 @@ import { Button } from "#/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "#/components/ui/card";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "#/components/ui/field";
 import { Input } from "#/components/ui/input";
+import { NavLink } from "#/components/ui/nav-link";
 import { Spinner } from "#/components/ui/spinner";
 import { AnalyticsEvent, useAnalytics } from "#/lib/analytics";
 import { authClient } from "#/lib/auth-client";
@@ -136,7 +137,7 @@ function LoginPage() {
                     </Button>
                     {errorMap.onSubmit?.form ? <FieldError>{String(errorMap.onSubmit.form)}</FieldError> : null}
                     <FieldDescription className="text-center">
-                      Don't have an account? <Link to="/signup">Sign up</Link>
+                      Don't have an account? <NavLink to="/signup">Sign up</NavLink>
                     </FieldDescription>
                   </Field>
                 )}

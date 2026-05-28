@@ -1,9 +1,9 @@
 import { buttonVariants } from "#/components/ui/button";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "#/components/ui/empty";
+import { NavLink } from "#/components/ui/nav-link";
 import { cn } from "#/lib/utils";
 import { Compass01Icon } from "@hugeicons-pro/core-stroke-rounded";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Link } from "@tanstack/react-router";
 
 export function NotFound() {
   return (
@@ -20,9 +20,9 @@ export function NotFound() {
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
-          <Link to="/" className={cn(buttonVariants(), "rounded-full")}>
+          <NavLink to="/" className={cn(buttonVariants(), "rounded-full")}>
             Back to chat
-          </Link>
+          </NavLink>
         </EmptyContent>
       </Empty>
     </div>
