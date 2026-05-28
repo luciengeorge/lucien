@@ -1,10 +1,10 @@
 import { SOCIAL_LINKS } from "#/lib/social-links";
 import { PlusSignIcon } from "@hugeicons-pro/core-solid-rounded";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Link } from "@tanstack/react-router";
 import { useSpinDelay } from "spin-delay";
 
 import { Button } from "../ui/button";
+import { NavLink } from "../ui/nav-link";
 import { Spinner } from "../ui/spinner";
 
 const LINK_CLASS = "font-mono tracking-[0.12em] uppercase transition-colors hover:text-primary";
@@ -28,9 +28,9 @@ function SocialLinksRow() {
           </div>
         ))}
         <span>/</span>
-        <Link to="/resume" className={LINK_CLASS}>
-          Resume
-        </Link>
+        <NavLink to="/resume" className={LINK_CLASS}>
+          CV
+        </NavLink>
       </div>
     </div>
   );
