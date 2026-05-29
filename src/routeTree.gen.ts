@@ -8,197 +8,183 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from './routes/__root'
-import { Route as ResumeRouteImport } from './routes/resume'
-import { Route as AuthRouteImport } from './routes/_auth'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthSignupRouteImport } from './routes/_auth/signup'
-import { Route as AuthLoginRouteImport } from './routes/_auth/login'
-import { Route as ApiChatIndexRouteImport } from './routes/api/chat/index'
-import { Route as ApiResumePdfRouteImport } from './routes/api/resume/pdf'
-import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as rootRouteImport } from "./routes/__root";
+import { Route as AuthRouteImport } from "./routes/_auth";
+import { Route as AuthLoginRouteImport } from "./routes/_auth/login";
+import { Route as AuthSignupRouteImport } from "./routes/_auth/signup";
+import { Route as ApiAuthSplatRouteImport } from "./routes/api/auth/$";
+import { Route as ApiChatIndexRouteImport } from "./routes/api/chat/index";
+import { Route as ApiResumePdfRouteImport } from "./routes/api/resume/pdf";
+import { Route as IndexRouteImport } from "./routes/index";
+import { Route as ResumeRouteImport } from "./routes/resume";
 
 const ResumeRoute = ResumeRouteImport.update({
-  id: '/resume',
-  path: '/resume',
+  id: "/resume",
+  path: "/resume",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const AuthRoute = AuthRouteImport.update({
-  id: '/_auth',
+  id: "/_auth",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+  id: "/",
+  path: "/",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const AuthSignupRoute = AuthSignupRouteImport.update({
-  id: '/signup',
-  path: '/signup',
+  id: "/signup",
+  path: "/signup",
   getParentRoute: () => AuthRoute,
-} as any)
+} as any);
 const AuthLoginRoute = AuthLoginRouteImport.update({
-  id: '/login',
-  path: '/login',
+  id: "/login",
+  path: "/login",
   getParentRoute: () => AuthRoute,
-} as any)
+} as any);
 const ApiChatIndexRoute = ApiChatIndexRouteImport.update({
-  id: '/api/chat/',
-  path: '/api/chat/',
+  id: "/api/chat/",
+  path: "/api/chat/",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const ApiResumePdfRoute = ApiResumePdfRouteImport.update({
-  id: '/api/resume/pdf',
-  path: '/api/resume/pdf',
+  id: "/api/resume/pdf",
+  path: "/api/resume/pdf",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
-  id: '/api/auth/$',
-  path: '/api/auth/$',
+  id: "/api/auth/$",
+  path: "/api/auth/$",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/resume': typeof ResumeRoute
-  '/login': typeof AuthLoginRoute
-  '/signup': typeof AuthSignupRoute
-  '/api/auth/$': typeof ApiAuthSplatRoute
-  '/api/resume/pdf': typeof ApiResumePdfRoute
-  '/api/chat/': typeof ApiChatIndexRoute
+  "/": typeof IndexRoute;
+  "/resume": typeof ResumeRoute;
+  "/login": typeof AuthLoginRoute;
+  "/signup": typeof AuthSignupRoute;
+  "/api/auth/$": typeof ApiAuthSplatRoute;
+  "/api/resume/pdf": typeof ApiResumePdfRoute;
+  "/api/chat/": typeof ApiChatIndexRoute;
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/resume': typeof ResumeRoute
-  '/login': typeof AuthLoginRoute
-  '/signup': typeof AuthSignupRoute
-  '/api/auth/$': typeof ApiAuthSplatRoute
-  '/api/resume/pdf': typeof ApiResumePdfRoute
-  '/api/chat': typeof ApiChatIndexRoute
+  "/": typeof IndexRoute;
+  "/resume": typeof ResumeRoute;
+  "/login": typeof AuthLoginRoute;
+  "/signup": typeof AuthSignupRoute;
+  "/api/auth/$": typeof ApiAuthSplatRoute;
+  "/api/resume/pdf": typeof ApiResumePdfRoute;
+  "/api/chat": typeof ApiChatIndexRoute;
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/_auth': typeof AuthRouteWithChildren
-  '/resume': typeof ResumeRoute
-  '/_auth/login': typeof AuthLoginRoute
-  '/_auth/signup': typeof AuthSignupRoute
-  '/api/auth/$': typeof ApiAuthSplatRoute
-  '/api/resume/pdf': typeof ApiResumePdfRoute
-  '/api/chat/': typeof ApiChatIndexRoute
+  __root__: typeof rootRouteImport;
+  "/": typeof IndexRoute;
+  "/_auth": typeof AuthRouteWithChildren;
+  "/resume": typeof ResumeRoute;
+  "/_auth/login": typeof AuthLoginRoute;
+  "/_auth/signup": typeof AuthSignupRoute;
+  "/api/auth/$": typeof ApiAuthSplatRoute;
+  "/api/resume/pdf": typeof ApiResumePdfRoute;
+  "/api/chat/": typeof ApiChatIndexRoute;
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/resume'
-    | '/login'
-    | '/signup'
-    | '/api/auth/$'
-    | '/api/resume/pdf'
-    | '/api/chat/'
-  fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/resume'
-    | '/login'
-    | '/signup'
-    | '/api/auth/$'
-    | '/api/resume/pdf'
-    | '/api/chat'
+  fileRoutesByFullPath: FileRoutesByFullPath;
+  fullPaths: "/" | "/resume" | "/login" | "/signup" | "/api/auth/$" | "/api/resume/pdf" | "/api/chat/";
+  fileRoutesByTo: FileRoutesByTo;
+  to: "/" | "/resume" | "/login" | "/signup" | "/api/auth/$" | "/api/resume/pdf" | "/api/chat";
   id:
-    | '__root__'
-    | '/'
-    | '/_auth'
-    | '/resume'
-    | '/_auth/login'
-    | '/_auth/signup'
-    | '/api/auth/$'
-    | '/api/resume/pdf'
-    | '/api/chat/'
-  fileRoutesById: FileRoutesById
+    | "__root__"
+    | "/"
+    | "/_auth"
+    | "/resume"
+    | "/_auth/login"
+    | "/_auth/signup"
+    | "/api/auth/$"
+    | "/api/resume/pdf"
+    | "/api/chat/";
+  fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  AuthRoute: typeof AuthRouteWithChildren
-  ResumeRoute: typeof ResumeRoute
-  ApiAuthSplatRoute: typeof ApiAuthSplatRoute
-  ApiResumePdfRoute: typeof ApiResumePdfRoute
-  ApiChatIndexRoute: typeof ApiChatIndexRoute
+  IndexRoute: typeof IndexRoute;
+  AuthRoute: typeof AuthRouteWithChildren;
+  ResumeRoute: typeof ResumeRoute;
+  ApiAuthSplatRoute: typeof ApiAuthSplatRoute;
+  ApiResumePdfRoute: typeof ApiResumePdfRoute;
+  ApiChatIndexRoute: typeof ApiChatIndexRoute;
 }
 
-declare module '@tanstack/react-router' {
+declare module "@tanstack/react-router" {
   interface FileRoutesByPath {
-    '/resume': {
-      id: '/resume'
-      path: '/resume'
-      fullPath: '/resume'
-      preLoaderRoute: typeof ResumeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_auth': {
-      id: '/_auth'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_auth/signup': {
-      id: '/_auth/signup'
-      path: '/signup'
-      fullPath: '/signup'
-      preLoaderRoute: typeof AuthSignupRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/login': {
-      id: '/_auth/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof AuthLoginRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/api/chat/': {
-      id: '/api/chat/'
-      path: '/api/chat'
-      fullPath: '/api/chat/'
-      preLoaderRoute: typeof ApiChatIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/resume/pdf': {
-      id: '/api/resume/pdf'
-      path: '/api/resume/pdf'
-      fullPath: '/api/resume/pdf'
-      preLoaderRoute: typeof ApiResumePdfRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/auth/$': {
-      id: '/api/auth/$'
-      path: '/api/auth/$'
-      fullPath: '/api/auth/$'
-      preLoaderRoute: typeof ApiAuthSplatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+    "/resume": {
+      id: "/resume";
+      path: "/resume";
+      fullPath: "/resume";
+      preLoaderRoute: typeof ResumeRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/_auth": {
+      id: "/_auth";
+      path: "";
+      fullPath: "/";
+      preLoaderRoute: typeof AuthRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/": {
+      id: "/";
+      path: "/";
+      fullPath: "/";
+      preLoaderRoute: typeof IndexRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/_auth/signup": {
+      id: "/_auth/signup";
+      path: "/signup";
+      fullPath: "/signup";
+      preLoaderRoute: typeof AuthSignupRouteImport;
+      parentRoute: typeof AuthRoute;
+    };
+    "/_auth/login": {
+      id: "/_auth/login";
+      path: "/login";
+      fullPath: "/login";
+      preLoaderRoute: typeof AuthLoginRouteImport;
+      parentRoute: typeof AuthRoute;
+    };
+    "/api/chat/": {
+      id: "/api/chat/";
+      path: "/api/chat";
+      fullPath: "/api/chat/";
+      preLoaderRoute: typeof ApiChatIndexRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/api/resume/pdf": {
+      id: "/api/resume/pdf";
+      path: "/api/resume/pdf";
+      fullPath: "/api/resume/pdf";
+      preLoaderRoute: typeof ApiResumePdfRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/api/auth/$": {
+      id: "/api/auth/$";
+      path: "/api/auth/$";
+      fullPath: "/api/auth/$";
+      preLoaderRoute: typeof ApiAuthSplatRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
   }
 }
 
 interface AuthRouteChildren {
-  AuthLoginRoute: typeof AuthLoginRoute
-  AuthSignupRoute: typeof AuthSignupRoute
+  AuthLoginRoute: typeof AuthLoginRoute;
+  AuthSignupRoute: typeof AuthSignupRoute;
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
   AuthLoginRoute: AuthLoginRoute,
   AuthSignupRoute: AuthSignupRoute,
-}
+};
 
-const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren);
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -207,17 +193,15 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiResumePdfRoute: ApiResumePdfRoute,
   ApiChatIndexRoute: ApiChatIndexRoute,
-}
-export const routeTree = rootRouteImport
-  ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>()
+};
+export const routeTree = rootRouteImport._addFileChildren(rootRouteChildren)._addFileTypes<FileRouteTypes>();
 
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
+import type { getRouter } from "./router.tsx";
+import type { startInstance } from "./start.ts";
+declare module "@tanstack/react-start" {
   interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+    ssr: true;
+    router: Awaited<ReturnType<typeof getRouter>>;
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>;
   }
 }

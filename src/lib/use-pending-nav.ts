@@ -11,7 +11,10 @@ import { useRouterState } from "@tanstack/react-router";
 export function usePendingNav(to: string) {
   return useRouterState({
     select: (state) => {
-      const pendingMatch = state.pendingMatches?.some((match) => match.pathname === to) ?? false;
+      // `pendingMatches` is not in the public RouterState type across all router
+      // versions, but is present at runtime during navigation — read it defensively.
+      const pendingMatches = (state as { pendingMatches?: Array<{ pathname: string }> }).pendingMatches;
+      const pendingMatch = pendingMatches?.some((match) => match.pathname === to) ?? false;
       const loadingTarget = state.isLoading && state.location.pathname === to;
       return pendingMatch || loadingTarget;
     },

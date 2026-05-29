@@ -44,12 +44,12 @@
     "@tanstack/react-router-devtools": "latest",
     "@tanstack/react-router-ssr-query": "latest",
     "@tanstack/react-start": "latest",
-    "@tanstack/router-plugin": "^1.132.0",
+    "@tanstack/router-plugin": "^1.168.12",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
     "@xyflow/react": "^12.10.2",
     "ai": "^6.0.147",
-    "better-auth": "^1.5.3",
+    "better-auth": "^1.6.11",
     "change-case": "^5.4.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -99,7 +99,7 @@
     "oxlint": "^1.56.0",
     "tsx": "^4.21.0",
     "typescript": "^5.7.2",
-    "vite": "^7.3.1",
+    "vite": "^7.3.2",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.0.5"
   },
@@ -107,6 +107,28 @@
     "onlyBuiltDependencies": [
       "esbuild",
       "lightningcss"
-    ]
+    ],
+    "overrides": {
+      "protobufjs": "^7.5.8",
+      "@protobufjs/utf8": "^1.1.1",
+      "dompurify": "^3.4.0",
+      "ws": "^8.20.1",
+      "qs": "^6.15.2",
+      "postcss": "^8.5.10",
+      "uuid": "^11.1.1",
+      "fast-uri": "^3.1.2",
+      "defu": "^6.1.5",
+      "path-to-regexp": "^8.4.0",
+      "ip-address": "^10.1.1",
+      "@hono/node-server": "^1.19.13",
+      "kysely": "^0.28.17",
+      "hono": "^4.12.18",
+      "mermaid": "^11.15.0",
+      "srvx": "^0.11.13",
+      "picomatch@2": "^2.3.2",
+      "picomatch@4": "^4.0.4",
+      "brace-expansion@1": "^1.1.12",
+      "brace-expansion@2": "^2.0.2"
+    }
   }
 }
