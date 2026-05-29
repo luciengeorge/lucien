@@ -1,3 +1,5 @@
+import type { WorkMeta } from "./work-meta";
+
 import bioMd from "../../../content/bio.md?raw";
 import earlyCareerMd from "../../../content/early-career.md?raw";
 import educationMd from "../../../content/education.md?raw";
@@ -21,12 +23,7 @@ const WORK_SOURCES: Record<string, string> = {
   "early-career": earlyCareerMd,
 };
 
-export interface WorkEntry {
-  slug: string;
-  company: string;
-  role: string;
-  period: string;
-  summary: string;
+export interface WorkEntry extends WorkMeta {
   source: string;
 }
 

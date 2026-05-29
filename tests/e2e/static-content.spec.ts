@@ -88,6 +88,26 @@ test.describe("static content pages", () => {
     }
   });
 
+  test("/work index shows a Download CV CTA and a logo per entry", async ({ page }) => {
+    await page.goto("/work");
+    // CV download CTA points at the PDF endpoint
+    const cv = page.getByRole("link", { name: /download cv/i });
+    await expect(cv).toBeVisible();
+    await expect(cv).toHaveAttribute("href", "/api/resume/pdf");
+    // Every work card renders a logo (img) or an initials fallback (aria-labelled span)
+    for (const { company } of WORK_META) {
+      await expect(page.getByRole("img", { name: new RegExp(`${company}( logo)?`, "i") }).first()).toBeVisible();
+    }
+  });
+
+  test("/work/$slug shows the company logo and a Download CV CTA", async ({ page }) => {
+    await page.goto("/work/fyxer");
+    await expect(page.getByRole("img", { name: /fyxer( logo)?/i }).first()).toBeVisible();
+    const cv = page.getByRole("link", { name: /download cv/i });
+    await expect(cv).toBeVisible();
+    await expect(cv).toHaveAttribute("href", "/api/resume/pdf");
+  });
+
   test("/work/unknown-slug returns 404", async ({ page }) => {
     const response = await page.goto("/work/this-does-not-exist", { waitUntil: "domcontentloaded" });
     expect(response?.status()).toBe(404);

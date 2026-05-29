@@ -1,5 +1,7 @@
 import { ContentPage } from "#/components/content/content-page";
+import { DownloadCvButton } from "#/components/download-cv-button";
 import { NotFound } from "#/components/not-found";
+import { CompanyLogo } from "#/components/resume/company-logo";
 import { findWorkEntry } from "#/lib/content/registry";
 import { createFileRoute, notFound } from "@tanstack/react-router";
 
@@ -63,6 +65,10 @@ function WorkSlugPage() {
 
   return (
     <ContentPage
+      media={
+        <CompanyLogo className="size-14 text-base" color={entry.color} company={entry.company} logo={entry.logo} />
+      }
+      actions={<DownloadCvButton />}
       eyebrow={`${entry.role} · ${entry.period}`}
       title={entry.company}
       intro={entry.summary}

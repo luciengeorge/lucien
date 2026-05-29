@@ -21,6 +21,8 @@ describe("work registry / work-meta parity", () => {
       expect(entry?.role).toBe(meta.role);
       expect(entry?.period).toBe(meta.period);
       expect(entry?.summary).toBe(meta.summary);
+      expect(entry?.logo).toBe(meta.logo);
+      expect(entry?.color).toBe(meta.color);
     }
   });
 
@@ -39,6 +41,16 @@ describe("work registry / work-meta parity", () => {
   it("WORK_META slugs are kebab-case", () => {
     for (const { slug } of WORK_META) {
       expect(slug).toMatch(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+    }
+  });
+
+  it("each WORK_META entry has a brand color and a logo path (or explicit null)", () => {
+    for (const meta of WORK_META) {
+      expect(meta.color, `color for "${meta.slug}"`).toMatch(/^#[0-9a-fA-F]{6}$/);
+      // logo is either null or a /companies/*.png path
+      if (meta.logo !== null) {
+        expect(meta.logo, `logo for "${meta.slug}"`).toMatch(/^\/companies\/.+\.(png|svg|webp)$/);
+      }
     }
   });
 });
