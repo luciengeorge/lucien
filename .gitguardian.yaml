@@ -1,0 +1,13 @@
+# GitGuardian configuration — https://docs.gitguardian.com/ggshield-docs/configuration
+#
+# Test files legitimately contain fixture credentials (e.g. password-validation
+# specs, log-redaction specs). These are not real secrets, so exclude test paths
+# from secret scanning to avoid false positives blocking PRs.
+version: 2
+
+secret:
+  ignored-paths:
+    - "**/*.test.ts"
+    - "**/*.test.tsx"
+    - "tests/**"
+    - "evals/datasets/**"

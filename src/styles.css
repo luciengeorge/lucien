@@ -130,6 +130,15 @@ body,
   min-height: 100%;
 }
 
+/* Respect reduced-motion: skip cross-document/view transitions entirely. */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
 body {
   margin: 0;
   font-family: var(--font-sans);

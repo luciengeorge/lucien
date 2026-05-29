@@ -2,6 +2,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 
 import { NotFound } from "#/components/not-found";
+import { SiteNav } from "#/components/site-nav";
 import { Toaster } from "#/components/ui/sonner";
 import { useToast } from "#/hooks/use-toast";
 import { getToast } from "#/lib/functions/get-toast";
@@ -35,21 +36,108 @@ const structuredData = {
   "@graph": [
     {
       "@type": "Person",
+      "@id": `${SITE_URL}/#person`,
       name: "Lucien George",
+      givenName: "Lucien",
+      familyName: "George",
       jobTitle: "Senior Product Engineer",
-      sameAs: SOCIAL_LINKS.map((link) => link.href),
+      description:
+        "Senior Product Engineer at Fyxer. Builds products end-to-end, teaches, races karts, and runs ultras in London. Originally from Beirut, Lebanon.",
+      image: OG_IMAGE_URL,
       url: SITE_URL,
-      worksFor: {
-        "@type": "Organization",
-        name: "Fyxer AI",
-      },
+      email: "lucienkgeorge@gmail.com",
+      sameAs: SOCIAL_LINKS.map((link) => link.href),
+      address: { "@type": "PostalAddress", addressLocality: "London", addressCountry: "GB" },
+      birthPlace: { "@type": "Place", name: "Beirut, Lebanon" },
+      nationality: { "@type": "Country", name: "Lebanon" },
+      knowsLanguage: ["English", "French", "Arabic"],
+      knowsAbout: [
+        "TypeScript",
+        "JavaScript",
+        "React",
+        "TanStack",
+        "Tailwind CSS",
+        "Convex",
+        "AI applications",
+        "RAG",
+        "Ruby on Rails",
+        "Python",
+        "Electron",
+        "Native iOS",
+        "Native Android",
+        "React Native",
+      ],
+      alumniOf: [
+        { "@type": "EducationalOrganization", name: "McGill University" },
+        { "@type": "EducationalOrganization", name: "Le Wagon" },
+        { "@type": "EducationalOrganization", name: "Harvard Business School" },
+        { "@type": "EducationalOrganization", name: "University of New South Wales" },
+      ],
+      worksFor: { "@type": "Organization", name: "Fyxer", url: "https://www.fyxer.com" },
     },
     {
       "@type": "WebSite",
+      "@id": `${SITE_URL}/#website`,
       description: DESCRIPTION,
       image: OG_IMAGE_URL,
       name: "Lucien George",
       url: SITE_URL,
+      publisher: { "@id": `${SITE_URL}/#person` },
+      inLanguage: "en-GB",
+    },
+    {
+      "@type": "FAQPage",
+      "@id": `${SITE_URL}/#faq`,
+      mainEntity: [
+        {
+          "@type": "Question",
+          name: "Who is Lucien George?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Lucien George is a Senior Product Engineer at Fyxer, based in London and originally from Beirut, Lebanon. He builds products end-to-end and previously worked at Shopify, Le Wagon, and co-founded Localista, Skyla, and Impact Lebanon.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "What does Lucien do at Fyxer?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Lucien is a Senior Product Engineer leading development of Fyxer's notetaker product — a native macOS and Windows desktop app (Electron) that records meetings in the background without a bot. The product reached 1,000 weekly active users within months of launch.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "Where is Lucien based?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Lucien is based in London, UK. He grew up in Beirut, Lebanon, and lived in Montreal, Canada while studying software engineering at McGill University.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "What is Lucien's tech stack?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Lucien's primary stack is TypeScript and React with the TanStack ecosystem (Start, Router, Query, Form), Tailwind CSS, shadcn/ui, and Convex on the backend. He has deep experience with Ruby on Rails, Python, Electron, and native mobile (Swift/Kotlin/React Native).",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "Where did Lucien study?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Lucien holds a Bachelor of Engineering in Software Engineering from McGill University (2013–2018), with an exchange semester at UNSW Sydney. He also attended Le Wagon London (Batch #190, 2018) and Harvard Business School's Families in Business program (2022).",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "What languages does Lucien speak?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Lucien speaks English, French, and Arabic fluently.",
+          },
+        },
+      ],
     },
   ],
 };
@@ -80,6 +168,10 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       {
         name: "robots",
         content: "index, follow",
+      },
+      {
+        name: "author",
+        content: "Lucien George",
       },
       {
         name: "theme-color",
@@ -116,6 +208,10 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       {
         property: "og:site_name",
         content: "Lucien George",
+      },
+      {
+        property: "og:locale",
+        content: "en_GB",
       },
       {
         name: "twitter:card",
@@ -192,7 +288,8 @@ function RootDocument({ children }: { children: ReactNode }) {
           <PostHogProvider>
             <TanStackQueryProvider>
               <Toaster closeButton richColors />
-              <main className="isolate flex h-dvh min-h-0 w-full flex-col overflow-hidden py-2 sm:py-6">
+              <SiteNav />
+              <main className="isolate flex h-dvh min-h-0 w-full flex-col overflow-hidden pt-14 pb-2 sm:pt-16 sm:pb-6">
                 {children}
               </main>
               <TanStackDevtools

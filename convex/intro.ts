@@ -7,7 +7,7 @@ import { components, internal } from "./_generated/api";
 import { action, internalAction } from "./_generated/server";
 import { rag } from "./rag";
 
-const INTRO_CACHE_VERSION = "portfolio-intro:gpt-5.4-mini:v1";
+const INTRO_CACHE_VERSION = "portfolio-intro:gpt-5.4-mini:v2";
 const INTRO_QUERY = "Lucien George bio current role Fyxer product engineer projects background personal intro";
 const INTRO_SYSTEM_PROMPT = `You are Poof, Lucien George's AI portfolio assistant.
 
