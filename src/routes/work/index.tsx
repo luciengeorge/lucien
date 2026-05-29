@@ -73,6 +73,7 @@ function WorkIndexPage() {
               <Link
                 to="/work/$slug"
                 params={{ slug: entry.slug }}
+                viewTransition
                 className="group flex gap-4 rounded-2xl border border-neutral-950/8 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-all hover:-translate-y-0.5 hover:border-neutral-950/15 hover:shadow-[0_8px_24px_-12px_rgba(15,23,42,0.18)] sm:p-6"
               >
                 <CompanyLogo
@@ -80,10 +81,16 @@ function WorkIndexPage() {
                   color={entry.color}
                   company={entry.company}
                   logo={entry.logo}
+                  style={{ viewTransitionName: `work-logo-${entry.slug}` }}
                 />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                    <h2 className="text-lg font-semibold tracking-tight text-neutral-950">{entry.company}</h2>
+                    <h2
+                      className="text-lg font-semibold tracking-tight text-neutral-950"
+                      style={{ viewTransitionName: `work-title-${entry.slug}` }}
+                    >
+                      {entry.company}
+                    </h2>
                     <span className="font-mono text-[11px] tracking-[0.1em] text-neutral-500 uppercase">
                       {entry.period}
                     </span>

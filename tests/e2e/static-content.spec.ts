@@ -108,6 +108,15 @@ test.describe("static content pages", () => {
     await expect(cv).toHaveAttribute("href", "/api/resume/pdf");
   });
 
+  test("/work/$slug has a Back to work link that returns to the index", async ({ page }) => {
+    await page.goto("/work/fyxer");
+    const back = page.getByRole("link", { name: /back to work/i });
+    await expect(back).toBeVisible();
+    await expect(back).toHaveAttribute("href", "/work");
+    await back.click();
+    await expect(page).toHaveURL("/work");
+  });
+
   test("/work/unknown-slug returns 404", async ({ page }) => {
     const response = await page.goto("/work/this-does-not-exist", { waitUntil: "domcontentloaded" });
     expect(response?.status()).toBe(404);

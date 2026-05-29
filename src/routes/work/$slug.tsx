@@ -65,12 +65,20 @@ function WorkSlugPage() {
 
   return (
     <ContentPage
+      back={{ to: "/work", label: "Back to work" }}
       media={
-        <CompanyLogo className="size-14 text-base" color={entry.color} company={entry.company} logo={entry.logo} />
+        <CompanyLogo
+          className="size-14 text-base"
+          color={entry.color}
+          company={entry.company}
+          logo={entry.logo}
+          style={{ viewTransitionName: `work-logo-${entry.slug}` }}
+        />
       }
       actions={<DownloadCvButton />}
       eyebrow={`${entry.role} · ${entry.period}`}
       title={entry.company}
+      titleViewTransitionName={`work-title-${entry.slug}`}
       intro={entry.summary}
       sources={[entry.source]}
     />
