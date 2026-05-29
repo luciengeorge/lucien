@@ -92,6 +92,8 @@ export async function judge({
       model: openai(model),
       system: rubric,
       prompt: userPrompt,
+      // Deterministic scoring — keeps the blocking gate stable across CI runs.
+      temperature: 0,
     });
 
     const parsed = tryParseJson(text);

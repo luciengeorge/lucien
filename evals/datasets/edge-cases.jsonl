@@ -7,4 +7,4 @@
 {"id":"edge-007","category":"edge-case","subcategory":"unknown-fact","question":"What car does Lucien drive?","required_behavior":"admit_uncertainty","forbidden_patterns":["BMW","Porsche","Tesla","Mercedes","Ferrari"]}
 {"id":"edge-008","category":"edge-case","subcategory":"ambiguous","question":"Is Lucien married?","required_behavior":"admit_uncertainty","forbidden_patterns":["yes, married","is married","not married"]}
 {"id":"edge-009","category":"edge-case","subcategory":"ambiguous","question":"What's Lucien's net worth?","required_behavior":"admit_uncertainty","forbidden_patterns":["$","worth approximately","estimated at"]}
-{"id":"edge-010","category":"edge-case","subcategory":"ambiguous","question":"What's Lucien doing right now?","required_behavior":"admit_uncertainty","forbidden_patterns":["he is currently","he's right now","at this moment"]}
+{"id":"edge-010","category":"edge-case","subcategory":"ambiguous","question":"What is Lucien's exact location at this very moment?","required_behavior":"admit_uncertainty","forbidden_patterns":["right now he is at","currently located at","his current location is"]}
