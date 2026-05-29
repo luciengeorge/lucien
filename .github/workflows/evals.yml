@@ -27,6 +27,11 @@ concurrency:
   group: evals-${{ github.ref }}
   cancel-in-progress: true
 
+# Needed for the github-script step to post the eval report as a PR comment.
+permissions:
+  contents: read
+  pull-requests: write
+
 env:
   PNPM_VERSION: 10.33.0
   NODE_VERSION: 22

@@ -96,6 +96,7 @@ async function actorRun({
   return {
     case: evalCase,
     answer: text,
+    retrievedContext: context,
     contextLength: context.length,
     expandedQuery,
     durationMs: performance.now() - start,

@@ -13,6 +13,7 @@ export interface EvalCase {
 export interface ActorResult {
   case: EvalCase;
   answer: string;
+  retrievedContext: string;
   contextLength: number;
   expandedQuery: string;
   durationMs: number;
