@@ -12,3 +12,6 @@ dist-ssr
 __unconfig*
 todos.json
 .vercel
+test-results/
+playwright-report/
+tests/e2e/.auth/

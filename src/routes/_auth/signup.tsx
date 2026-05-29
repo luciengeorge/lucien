@@ -13,6 +13,9 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/_auth/signup")({
   component: SignupPage,
+  head: () => ({
+    meta: [{ title: "Sign up" }, { name: "robots", content: "noindex, nofollow" }],
+  }),
 });
 
 function SignupPage() {

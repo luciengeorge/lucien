@@ -11,11 +11,11 @@ import { StickToBottom, useStickToBottom } from "use-stick-to-bottom";
 
 import { ChatComposerBlock } from "./chat-composer-block";
 import { ChatIntroPlaceholder } from "./chat-intro-placeholder";
+import { ChatNewConversationBar } from "./chat-new-conversation-bar";
 import { ChatPendingReply } from "./chat-pending-reply";
 import { ChatScrollToBottomButton } from "./chat-scroll-to-bottom-button";
 import { ChatStarterPrompts } from "./chat-starter-prompts";
 import { ChatTimelineMessage } from "./chat-timeline-message";
-import { ChatTopSocialLinks } from "./chat-top-social-links";
 
 export function ChatConversation({
   chatState,
@@ -142,7 +142,7 @@ export function ChatConversation({
   return (
     <section className="flex min-h-0 grow overflow-hidden bg-background">
       <div className="flex min-h-0 w-full grow flex-col gap-2 sm:gap-5">
-        <ChatTopSocialLinks isDisabled={isStartingNewConversation} onClick={() => void handleNewConversation()} />
+        <ChatNewConversationBar isDisabled={isStartingNewConversation} onClick={() => void handleNewConversation()} />
 
         <StickToBottom instance={stickToBottom} className="relative min-h-0 grow">
           <StickToBottom.Content className="mx-auto w-full max-w-3xl px-4 pb-20 sm:px-6 sm:pb-24">

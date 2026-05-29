@@ -1,7 +1,5 @@
-import type { UIMessage } from "ai";
-
 import { fetchAuthAction, fetchAuthMutation, fetchAuthQuery } from "#/lib/auth-server";
-import { parseSerializedMessages } from "#/lib/chat-types";
+import { ChatRequestSchema, getTextFromMessage, parseSerializedMessages } from "#/lib/chat-types";
 import { getConversationSession } from "#/lib/conversation-session.server";
 import { createLogger } from "#/lib/logger";
 import { openai } from "@ai-sdk/openai";
@@ -17,36 +15,10 @@ import {
 } from "ai";
 import { z } from "zod";
 
-import type { Id } from "../../../../convex/_generated/dataModel";
-
 import systemPrompt from "../../../../content/system-prompt.md?raw";
 import { api } from "../../../../convex/_generated/api";
 
 const logger = createLogger("chat.api");
-
-const BasicUIMessageSchema = z.object({
-  id: z.string().min(1),
-  parts: z.array(z.record(z.string(), z.unknown())),
-  role: z.enum(["assistant", "system", "user"]),
-});
-const ConversationIdSchema = z.custom<Id<"conversations">>((value) => typeof value === "string" && value.length > 0);
-
-const ChatRequestSchema = z.object({
-  id: ConversationIdSchema,
-  message: z.custom<UIMessage>((value) => BasicUIMessageSchema.safeParse(value).success),
-});
-
-function getTextFromMessage(message: UIMessage | undefined) {
-  if (!message) return "";
-
-  return message.parts.reduce((text, part) => {
-    if (part.type !== "text") {
-      return text;
-    }
-
-    return `${text} ${part.text}`.trim();
-  }, "");
-}
 
 const QUERY_EXPANSION_PROMPT = `Rewrite the user's question into a better search query for finding relevant information about Lucien George's portfolio, career, projects, and personal life. Add context and relevant keywords. Return ONLY the rewritten query, nothing else.
 

@@ -1,0 +1,87 @@
+name: Poof evals
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "content/**"
+      - "convex/intro.ts"
+      - "convex/search.ts"
+      - "convex/rag.ts"
+      - "convex/seed.ts"
+      - "src/routes/api/chat/**"
+      - "evals/**"
+      - ".github/workflows/evals.yml"
+  workflow_dispatch:
+    inputs:
+      actor_model:
+        description: "Actor model"
+        required: false
+        default: "gpt-5.4-mini"
+      judge_model:
+        description: "Judge model"
+        required: false
+        default: "gpt-5.4-mini"
+
+concurrency:
+  group: evals-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PNPM_VERSION: 10.33.0
+  NODE_VERSION: 22
+  HUGEICONS_TOKEN: ${{ secrets.HUGEICONS_TOKEN }}
+
+jobs:
+  evals:
+    name: Poof eval (blocking)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Validate eval datasets
+        run: pnpm test -- evals/datasets.test.ts
+
+      - name: Run evals
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          VITE_CONVEX_URL: ${{ secrets.VITE_CONVEX_URL }}
+          EVAL_ACTOR_MODEL: ${{ github.event.inputs.actor_model || 'gpt-5.4-mini' }}
+          EVAL_JUDGE_MODEL: ${{ github.event.inputs.judge_model || 'gpt-5.4-mini' }}
+        run: pnpm tsx evals/run.ts
+
+      - name: Upload eval report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-report
+          path: evals/out/
+          retention-days: 30
+
+      - name: Post summary to PR
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require("fs");
+            const path = "evals/out/report.md";
+            if (!fs.existsSync(path)) {
+              core.setFailed("eval report missing");
+              return;
+            }
+            const body = "## Poof eval report\n\n" + fs.readFileSync(path, "utf-8");
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body,
+            });

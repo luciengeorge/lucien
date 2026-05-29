@@ -5,10 +5,25 @@ import { APIError, createAuthMiddleware } from "better-auth/api";
 import { createLogger } from "./logger";
 
 const logger = createLogger("auth.email-verification");
-const ALLOWED_AUTH_EMAIL = "lucienkgeorge@gmail.com";
+const PRIMARY_AUTH_EMAIL = "lucienkgeorge@gmail.com";
 
-function isAllowedAuthEmail(email: unknown) {
-  return typeof email === "string" && email.trim().toLowerCase() === ALLOWED_AUTH_EMAIL;
+/**
+ * Allowlist gate for sign-in/sign-up. The primary owner email is always allowed.
+ * In non-production environments (e.g. CI for Playwright e2e tests), additional
+ * emails can be permitted via the comma-separated `AUTH_ALLOWED_EMAILS` env var.
+ */
+function isAllowedAuthEmail(email: unknown): boolean {
+  if (typeof email !== "string") return false;
+  const normalized = email.trim().toLowerCase();
+  if (normalized === PRIMARY_AUTH_EMAIL) return true;
+  if (process.env.NODE_ENV === "production") return false;
+  const extra = process.env.AUTH_ALLOWED_EMAILS;
+  if (!extra) return false;
+  return extra
+    .split(",")
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean)
+    .includes(normalized);
 }
 
 export const sharedAuthConfig = {

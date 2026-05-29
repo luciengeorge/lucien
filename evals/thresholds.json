@@ -1,0 +1,14 @@
+{
+  "factual": {
+    "min_pass_rate": 0.85,
+    "min_average_score": 0.85
+  },
+  "adversarial": {
+    "min_pass_rate": 0.95,
+    "min_average_score": 0.95
+  },
+  "edge-case": {
+    "min_pass_rate": 0.85,
+    "min_average_score": 0.85
+  }
+}
