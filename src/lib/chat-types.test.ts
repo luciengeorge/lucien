@@ -7,6 +7,7 @@ import {
   ChatRequestSchema,
   getTextFromMessage,
   parseSerializedMessages,
+  StoredUIMessageSchema,
 } from "./chat-types";
 
 describe("parseSerializedMessages", () => {
@@ -108,7 +109,7 @@ describe("ChatRequestSchema", () => {
 
 describe("getTextFromMessage", () => {
   function uiMessage(parts: Array<{ type: string; text?: string }>): UIMessage {
-    return { id: "m", role: "user", parts: parts as UIMessage["parts"] };
+    return StoredUIMessageSchema.parse({ id: "m", role: "user", parts });
   }
 
   it("returns empty string for undefined input", () => {

@@ -1,5 +1,6 @@
 import { cn } from "#/lib/utils";
 import { match } from "ts-pattern";
+import { z } from "zod";
 
 import type { ChatMessage, ChatStatus } from "./chat.types";
 
@@ -8,15 +9,14 @@ import { ChatResumeCard } from "./chat-resume-card";
 import { ChatShimmerLine } from "./chat-shimmer-line";
 import { entryItemClassName } from "./chat.utils";
 
-type ResumeToolOutput = {
-  filename: string;
-  url: string;
-};
+const ResumeToolOutputSchema = z.object({
+  filename: z.string(),
+  url: z.string(),
+});
+type ResumeToolOutput = z.infer<typeof ResumeToolOutputSchema>;
 
 function isResumeToolOutput(value: unknown): value is ResumeToolOutput {
-  if (typeof value !== "object" || value === null) return false;
-  const candidate = value as Record<string, unknown>;
-  return typeof candidate.filename === "string" && typeof candidate.url === "string";
+  return ResumeToolOutputSchema.safeParse(value).success;
 }
 
 export function ChatTimelineMessage({
@@ -51,14 +51,13 @@ export function ChatTimelineMessage({
   );
   const resumeToolParts = message.parts.flatMap((part, index) => {
     if (part.type !== "tool-download_resume") return [];
-    const candidate = part as { output?: unknown; state?: string };
-    if (candidate.state !== "output-available") return [];
-    if (!isResumeToolOutput(candidate.output)) return [];
+    if (!("state" in part) || part.state !== "output-available") return [];
+    if (!("output" in part) || !isResumeToolOutput(part.output)) return [];
     return [
       {
-        filename: candidate.output.filename,
+        filename: part.output.filename,
         key: `${message.id}-resume-${index}`,
-        url: candidate.output.url,
+        url: part.output.url,
       },
     ];
   });

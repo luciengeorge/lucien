@@ -126,6 +126,7 @@
     "typescript/no-unsafe-unary-minus": "warn",
     "typescript/no-useless-empty-export": "warn",
     "typescript/no-wrapper-object-types": "error",
+    "typescript/consistent-type-assertions": ["error", { "assertionStyle": "never" }],
     "typescript/prefer-as-const": "error",
     "typescript/require-array-sort-compare": "warn",
     "typescript/restrict-template-expressions": "warn",

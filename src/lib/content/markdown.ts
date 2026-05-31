@@ -15,5 +15,6 @@ marked.use({
  * through this path, wrap the output in a sanitizer (e.g. DOMPurify) first.
  */
 export function renderMarkdown(source: string): string {
-  return marked.parse(source.trim()) as string;
+  // Passing `async: false` selects marked's synchronous (string) overload.
+  return marked.parse(source.trim(), { async: false });
 }

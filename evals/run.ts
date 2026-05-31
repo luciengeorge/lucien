@@ -11,12 +11,17 @@ import type { ActorResult, CategorySummary, EvalCase, EvalCategory, EvalReport, 
 
 import { api } from "../convex/_generated/api";
 import { judge } from "./judge";
+import { EvalCaseSchema } from "./types";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const ACTOR_MODEL = process.env.EVAL_ACTOR_MODEL ?? "gpt-5.4-mini";
 const JUDGE_MODEL = process.env.EVAL_JUDGE_MODEL ?? "gpt-5.4-mini";
 const EXPANSION_MODEL = process.env.EVAL_EXPANSION_MODEL ?? "gpt-5.4-nano";
+// Fixed seed + temperature 0 for reproducible actor/expansion output. These are
+// best-effort on reasoning models (which ignore temperature) but make the run
+// fully deterministic on non-reasoning models. Override via EVAL_SEED.
+const EVAL_SEED = Math.trunc(Number(process.env.EVAL_SEED ?? "1234")) || 1234;
 
 // Inlined from src/routes/api/chat/index.ts — same prompt used in production.
 const QUERY_EXPANSION_PROMPT = `Rewrite the user's question into a better search query for finding relevant information about Lucien George's portfolio, career, projects, and personal life. Add context and relevant keywords. Return ONLY the rewritten query, nothing else.
@@ -38,9 +43,10 @@ async function loadCases(file: string): Promise<EvalCase[]> {
     .filter(Boolean)
     .map((line, index) => {
       try {
-        return JSON.parse(line) as EvalCase;
+        return EvalCaseSchema.parse(JSON.parse(line));
       } catch (error) {
-        throw new Error(`Bad JSONL line ${index + 1} in ${file}: ${(error as Error).message}`);
+        const message = error instanceof Error ? error.message : String(error);
+        throw new Error(`Bad JSONL line ${index + 1} in ${file}: ${message}`);
       }
     });
 }
@@ -60,6 +66,8 @@ async function expandQuery(query: string): Promise<string> {
       model: openai(EXPANSION_MODEL),
       system: QUERY_EXPANSION_PROMPT,
       prompt: query,
+      temperature: 0,
+      seed: EVAL_SEED,
     });
     return text.trim();
   } catch {
@@ -91,6 +99,8 @@ async function actorRun({
     model: openai(ACTOR_MODEL),
     system,
     prompt: evalCase.question,
+    temperature: 0,
+    seed: EVAL_SEED,
   });
 
   return {

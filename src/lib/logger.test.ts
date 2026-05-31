@@ -19,6 +19,12 @@ function captureConsole() {
   return { calls, restore: () => spies.forEach((s) => s.mockRestore()) };
 }
 
+function firstPayload(capture: ReturnType<typeof captureConsole>): Record<string, unknown> {
+  const call = capture.calls[0];
+  if (!call) throw new Error("expected a captured console call");
+  return call.payload;
+}
+
 describe("createLogger", () => {
   let originalNodeEnv: string | undefined;
 
@@ -70,7 +76,7 @@ describe("createLogger", () => {
       something_else: "kept",
     });
 
-    const payload = capture.calls[0]?.payload as Record<string, unknown>;
+    const payload = firstPayload(capture);
     expect(payload.email).toBe("user@example.com");
     expect(payload.password).toBe("[REDACTED]");
     expect(payload.secret).toBe("[REDACTED]");
@@ -94,7 +100,7 @@ describe("createLogger", () => {
       },
     });
 
-    const payload = capture.calls[0]?.payload as Record<string, unknown>;
+    const payload = firstPayload(capture);
     expect(payload.user).toEqual({
       name: "alice",
       credentials: { password: "[REDACTED]", token: "[REDACTED]" },
@@ -108,11 +114,12 @@ describe("createLogger", () => {
 
     log.error("crashed", { err: new Error("kaboom") });
 
-    const payload = capture.calls[0]?.payload as Record<string, unknown>;
-    const err = payload.err as Record<string, unknown>;
-    expect(err.message).toBe("kaboom");
-    expect(err.name).toBe("Error");
-    expect(err.stack).toEqual(expect.any(String));
+    const payload = firstPayload(capture);
+    expect(payload.err).toMatchObject({
+      message: "kaboom",
+      name: "Error",
+      stack: expect.any(String),
+    });
     capture.restore();
   });
 
@@ -122,7 +129,7 @@ describe("createLogger", () => {
 
     log.info("arr", { items: Array.from({ length: 25 }, (_, i) => i) });
 
-    const payload = capture.calls[0]?.payload as Record<string, unknown>;
+    const payload = firstPayload(capture);
     expect(payload.items).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
     capture.restore();
   });
@@ -139,7 +146,7 @@ describe("createLogger", () => {
       und: undefined,
     });
 
-    const payload = capture.calls[0]?.payload as Record<string, unknown>;
+    const payload = firstPayload(capture);
     expect(payload.s).toBe("x");
     expect(payload.n).toBe(1);
     expect(payload.b).toBe(true);
@@ -178,7 +185,7 @@ describe("createLogger", () => {
     const capture = captureConsole();
     const log = createLogger("test");
     log.info("case", { Password: "x", SECRET: "y", AuthOrization: "z" });
-    const payload = capture.calls[0]?.payload as Record<string, unknown>;
+    const payload = firstPayload(capture);
     expect(payload.Password).toBe("[REDACTED]");
     expect(payload.SECRET).toBe("[REDACTED]");
     expect(payload.AuthOrization).toBe("[REDACTED]");

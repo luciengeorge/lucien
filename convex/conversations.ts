@@ -20,6 +20,7 @@ const MessagePartShapeSchema = z
     type: z.string(),
   })
   .catchall(SerializableValueSchema);
+type MessagePart = z.infer<typeof MessagePartShapeSchema>;
 const PersistedMessageSchema = z.object({
   createdAt: z.number().optional(),
   id: z.string().optional(),
@@ -63,7 +64,7 @@ function getPartState(part: Record<string, unknown>) {
   return typeof part.state === "string" ? part.state : undefined;
 }
 
-function isLegacyIntroBootstrapMessage(role: string, parts: { type: string; text?: string }[] | undefined) {
+function isLegacyIntroBootstrapMessage(role: string, parts: MessagePart[] | undefined) {
   if (role !== "user") return false;
   const firstText = parts?.find((part) => part.type === "text");
   const text = firstText ? getPartText(firstText) : undefined;
@@ -123,9 +124,9 @@ export const getConversationById = query({
 
           const parsedParts = parts
             .map((part) => MessagePartShapeSchema.safeParse(deserializeJson(part.partJson)).data)
-            .filter(Boolean);
+            .filter((part): part is MessagePart => part !== undefined);
 
-          if (isLegacyIntroBootstrapMessage(message.role, parsedParts as { type: string; text?: string }[])) {
+          if (isLegacyIntroBootstrapMessage(message.role, parsedParts)) {
             return null;
           }
 
