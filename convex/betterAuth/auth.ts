@@ -31,6 +31,7 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
 // adapter + plugins) to generate the schema — it never executes a request, so
 // there is no real Convex ctx to pass here. This empty placeholder is the
 // framework-prescribed boundary assertion and the one unavoidable cast.
+// oxlint-disable-next-line typescript/consistent-type-assertions
 export const options = createAuthOptions({} as GenericCtx<DataModel>);
 
 // Better Auth Instance
