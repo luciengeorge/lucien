@@ -6,6 +6,8 @@ import { fileURLToPath } from "node:url";
 
 import type { ActorResult, JudgeVerdict } from "./types";
 
+import { JudgeVerdictSchema } from "./types";
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 let cachedRubric: string | undefined;
@@ -35,14 +37,7 @@ function tryParseJson(raw: string): unknown {
 }
 
 function isJudgeVerdict(value: unknown): value is JudgeVerdict {
-  if (!value || typeof value !== "object") return false;
-  const v = value as Record<string, unknown>;
-  return (
-    typeof v.criteria === "object" &&
-    v.criteria !== null &&
-    typeof v.score === "number" &&
-    typeof v.reasoning === "string"
-  );
+  return JudgeVerdictSchema.safeParse(value).success;
 }
 
 export async function judge({

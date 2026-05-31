@@ -11,6 +11,7 @@ import type { ActorResult, CategorySummary, EvalCase, EvalCategory, EvalReport, 
 
 import { api } from "../convex/_generated/api";
 import { judge } from "./judge";
+import { EvalCaseSchema } from "./types";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -38,9 +39,10 @@ async function loadCases(file: string): Promise<EvalCase[]> {
     .filter(Boolean)
     .map((line, index) => {
       try {
-        return JSON.parse(line) as EvalCase;
+        return EvalCaseSchema.parse(JSON.parse(line));
       } catch (error) {
-        throw new Error(`Bad JSONL line ${index + 1} in ${file}: ${(error as Error).message}`);
+        const message = error instanceof Error ? error.message : String(error);
+        throw new Error(`Bad JSONL line ${index + 1} in ${file}: ${message}`);
       }
     });
 }

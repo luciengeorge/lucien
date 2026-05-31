@@ -1,14 +1,18 @@
-export type EvalCategory = "factual" | "adversarial" | "edge-case";
+import { z } from "zod";
 
-export interface EvalCase {
-  id: string;
-  category: EvalCategory;
-  subcategory: string;
-  question: string;
-  expected_facts?: string[];
-  forbidden_patterns?: string[];
-  required_behavior?: string;
-}
+export const EvalCategorySchema = z.enum(["factual", "adversarial", "edge-case"]);
+export type EvalCategory = z.infer<typeof EvalCategorySchema>;
+
+export const EvalCaseSchema = z.object({
+  id: z.string(),
+  category: EvalCategorySchema,
+  subcategory: z.string(),
+  question: z.string(),
+  expected_facts: z.array(z.string()).optional(),
+  forbidden_patterns: z.array(z.string()).optional(),
+  required_behavior: z.string().optional(),
+});
+export type EvalCase = z.infer<typeof EvalCaseSchema>;
 
 export interface ActorResult {
   case: EvalCase;
@@ -19,11 +23,12 @@ export interface ActorResult {
   durationMs: number;
 }
 
-export interface JudgeVerdict {
-  criteria: Record<string, number>;
-  score: number;
-  reasoning: string;
-}
+export const JudgeVerdictSchema = z.object({
+  criteria: z.record(z.string(), z.number()),
+  score: z.number(),
+  reasoning: z.string(),
+});
+export type JudgeVerdict = z.infer<typeof JudgeVerdictSchema>;
 
 export interface EvalResult {
   case: EvalCase;

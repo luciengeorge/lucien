@@ -27,7 +27,10 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
   } satisfies BetterAuthOptions;
 };
 
-// For `auth` CLI
+// For `auth` CLI: the better-auth CLI only introspects static options (database
+// adapter + plugins) to generate the schema — it never executes a request, so
+// there is no real Convex ctx to pass here. This empty placeholder is the
+// framework-prescribed boundary assertion and the one unavoidable cast.
 export const options = createAuthOptions({} as GenericCtx<DataModel>);
 
 // Better Auth Instance

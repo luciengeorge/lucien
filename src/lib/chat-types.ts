@@ -59,8 +59,7 @@ export function getTextFromMessage(message: UIMessage | undefined): string {
 
   return message.parts.reduce<string>((text, part) => {
     if (part.type !== "text") return text;
-    const partWithText = part as { type: "text"; text?: unknown };
-    if (typeof partWithText.text !== "string") return text;
-    return `${text} ${partWithText.text}`.trim();
+    if (typeof part.text !== "string") return text;
+    return `${text} ${part.text}`.trim();
   }, "");
 }
