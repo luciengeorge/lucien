@@ -1,0 +1,30 @@
+{"id":"bio-001","category":"factual","subcategory":"bio","question":"Who is Lucien George?","expected_facts":["Senior Product Engineer","Fyxer","London","fullstack developer","Beirut"]}
+{"id":"bio-002","category":"factual","subcategory":"bio","question":"Where is Lucien based?","expected_facts":["London","UK"]}
+{"id":"bio-003","category":"factual","subcategory":"bio","question":"Where is Lucien originally from?","expected_facts":["Beirut","Lebanon"]}
+{"id":"bio-004","category":"factual","subcategory":"bio","question":"What languages does Lucien speak?","expected_facts":["French","English","Arabic"]}
+{"id":"bio-005","category":"factual","subcategory":"bio","question":"Does Lucien have siblings?","expected_facts":["three"]}
+{"id":"bio-006","category":"factual","subcategory":"bio","question":"Does Lucien have dogs?","expected_facts":["dogs"]}
+{"id":"bio-007","category":"factual","subcategory":"bio","question":"Where did Lucien live before London?","expected_facts":["Montreal","Lebanon"]}
+{"id":"bio-008","category":"factual","subcategory":"bio","question":"When did Lucien move to London?","expected_facts":["2018"]}
+{"id":"work-001","category":"factual","subcategory":"current-work","question":"What does Lucien do at Fyxer?","expected_facts":["Senior Product Engineer","notetaker","Fyxer"]}
+{"id":"work-002","category":"factual","subcategory":"current-work","question":"What is the Fyxer notetaker product?","expected_facts":["macOS","Windows","desktop","Electron","background","without","bot"]}
+{"id":"work-003","category":"factual","subcategory":"current-work","question":"When did Lucien join Fyxer?","expected_facts":["September 2025"]}
+{"id":"work-004","category":"factual","subcategory":"past-work","question":"What did Lucien do at Shopify?","expected_facts":["Senior Developer","checkout","SDK","iOS","Android"]}
+{"id":"work-005","category":"factual","subcategory":"past-work","question":"What was Localista?","expected_facts":["B2B","event","marketing","CTO","Co-Founder"]}
+{"id":"work-006","category":"factual","subcategory":"past-work","question":"What did Lucien do at Le Wagon?","expected_facts":["teaching","Engineering Manager","bootcamp","London"]}
+{"id":"work-007","category":"factual","subcategory":"past-work","question":"What is Skyla?","expected_facts":["Shopify","AI","customer support","chatbot"]}
+{"id":"work-008","category":"factual","subcategory":"past-work","question":"What is Impact Lebanon?","expected_facts":["Lebanese","non-profit","Beirut explosion","Co-Founder"]}
+{"id":"work-009","category":"factual","subcategory":"past-work","question":"How much did Impact Lebanon raise after the Beirut explosion?","expected_facts":["8.3 million","8.3M"]}
+{"id":"work-010","category":"factual","subcategory":"past-work","question":"When did Lucien work at Shopify?","expected_facts":["2022","2023"]}
+{"id":"skills-001","category":"factual","subcategory":"skills","question":"What is Lucien's primary programming language?","expected_facts":["TypeScript"]}
+{"id":"skills-002","category":"factual","subcategory":"skills","question":"What's Lucien's current frontend stack?","expected_facts":["TanStack","React","Tailwind"]}
+{"id":"skills-003","category":"factual","subcategory":"skills","question":"Does Lucien have mobile experience?","expected_facts":["iOS","Android","React Native"]}
+{"id":"skills-004","category":"factual","subcategory":"skills","question":"What backend has Lucien worked with recently?","expected_facts":["Convex"]}
+{"id":"education-001","category":"factual","subcategory":"education","question":"Where did Lucien study software engineering?","expected_facts":["McGill","Montreal"]}
+{"id":"education-002","category":"factual","subcategory":"education","question":"Did Lucien attend any bootcamp?","expected_facts":["Le Wagon","London","2018"]}
+{"id":"education-003","category":"factual","subcategory":"education","question":"Did Lucien do an exchange program?","expected_facts":["UNSW","Sydney","Australia"]}
+{"id":"personal-001","category":"factual","subcategory":"personal","question":"What endurance sports has Lucien done?","expected_facts":["triathlon","Ironman","marathon"]}
+{"id":"personal-002","category":"factual","subcategory":"personal","question":"Does Lucien race karts?","expected_facts":["IAME","karting","Le Mans"]}
+{"id":"personal-003","category":"factual","subcategory":"personal","question":"Did Lucien ski competitively?","expected_facts":["Lebanese","national","ski","team"]}
+{"id":"socials-001","category":"factual","subcategory":"socials","question":"What's Lucien's GitHub?","expected_facts":["github.com/luciengeorge"]}
+{"id":"socials-002","category":"factual","subcategory":"socials","question":"How can I find Lucien on LinkedIn?","expected_facts":["linkedin.com/in/luciengeorge"]}

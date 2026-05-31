@@ -11,7 +11,12 @@ import { useForm } from "@tanstack/react-form";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_auth/login")({ component: LoginPage });
+export const Route = createFileRoute("/_auth/login")({
+  component: LoginPage,
+  head: () => ({
+    meta: [{ title: "Log in" }, { name: "robots", content: "noindex, nofollow" }],
+  }),
+});
 
 function LoginPage() {
   const { capture } = useAnalytics();

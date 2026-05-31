@@ -2,25 +2,80 @@ import type { ResumeRole } from "#/lib/resume/schema";
 
 import { CompanyLogo } from "#/components/resume/company-logo";
 import { buttonVariants } from "#/components/ui/button";
-import { NavLink } from "#/components/ui/nav-link";
 import { formatExperienceDuration, formatPeriod, loadResume } from "#/lib/resume/load";
 import { cn } from "#/lib/utils";
-import { ArrowLeft01Icon, Download01Icon } from "@hugeicons-pro/core-stroke-rounded";
+import { Download01Icon } from "@hugeicons-pro/core-stroke-rounded";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute } from "@tanstack/react-router";
 
+const SITE_URL = "https://www.luciengeorge.com";
+const RESUME_URL = `${SITE_URL}/resume`;
+const TITLE = "Lucien George — Resume";
+const DESCRIPTION =
+  "Resume for Lucien George: Senior Product Engineer at Fyxer. Experience at Shopify, Le Wagon, Localista, Skyla, Impact Lebanon. McGill BEng Software Engineering.";
+
 export const Route = createFileRoute("/resume")({
   component: ResumePage,
-  head: () => ({
-    meta: [
-      { title: "Lucien George | Resume" },
-      {
-        content: "Resume for Lucien George | Senior Product Engineer at Fyxer.",
-        name: "description",
-      },
-    ],
-  }),
   loader: () => loadResume(),
+  head: ({ loaderData }) => {
+    const resume = loaderData;
+    const structuredData = resume
+      ? {
+          "@context": "https://schema.org",
+          "@type": "ProfilePage",
+          url: RESUME_URL,
+          name: TITLE,
+          description: DESCRIPTION,
+          mainEntity: {
+            "@type": "Person",
+            name: resume.personal.name,
+            jobTitle: resume.personal.title,
+            email: resume.personal.email,
+            telephone: resume.personal.phone,
+            url: SITE_URL,
+            address: { "@type": "PostalAddress", addressLocality: resume.personal.location },
+            sameAs: [resume.personal.links.github, resume.personal.links.linkedin].filter((value): value is string =>
+              Boolean(value),
+            ),
+            knowsAbout: resume.skills.programming,
+            knowsLanguage: resume.skills.spokenLanguages,
+            alumniOf: resume.education.map((entry) => ({
+              "@type": "EducationalOrganization",
+              name: entry.school,
+            })),
+            worksFor: { "@type": "Organization", name: resume.experiences[0]?.company ?? "Fyxer" },
+          },
+        }
+      : null;
+    const breadcrumb = {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+        { "@type": "ListItem", position: 2, name: "Resume", item: RESUME_URL },
+      ],
+    };
+    return {
+      meta: [
+        { title: TITLE },
+        { name: "description", content: DESCRIPTION },
+        { property: "og:title", content: TITLE },
+        { property: "og:description", content: DESCRIPTION },
+        { property: "og:url", content: RESUME_URL },
+        { property: "og:type", content: "profile" },
+        { property: "og:image", content: `${SITE_URL}/cover.png` },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: TITLE },
+        { name: "twitter:description", content: DESCRIPTION },
+        { name: "twitter:image", content: `${SITE_URL}/cover.png` },
+      ],
+      links: [{ rel: "canonical", href: RESUME_URL }],
+      scripts: [
+        ...(structuredData ? [{ type: "application/ld+json", children: JSON.stringify(structuredData) } as const] : []),
+        { type: "application/ld+json", children: JSON.stringify(breadcrumb) },
+      ],
+    };
+  },
 });
 
 function ResumePage() {
@@ -30,15 +85,7 @@ function ResumePage() {
 
   return (
     <div className="min-h-0 grow overflow-y-auto">
-      <article className="mx-auto w-full max-w-4xl px-4 pb-10 sm:px-6 sm:pb-16">
-        <NavLink
-          to="/"
-          icon={<HugeiconsIcon icon={ArrowLeft01Icon} size={14} />}
-          className="mb-8 font-mono text-[11px] tracking-[0.12em] text-neutral-500 uppercase transition-colors hover:text-neutral-950 print:hidden"
-        >
-          Back to chat
-        </NavLink>
-
+      <article className="mx-auto w-full max-w-4xl px-4 pt-6 pb-10 sm:px-6 sm:pt-10 sm:pb-16">
         <header className="flex flex-col gap-6 border-b border-neutral-950/10 pb-8 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="text-3xl font-semibold tracking-tight text-neutral-950 sm:text-4xl">{personal.name}</h1>

@@ -8,200 +8,384 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from "./routes/__root";
-import { Route as AuthRouteImport } from "./routes/_auth";
-import { Route as AuthLoginRouteImport } from "./routes/_auth/login";
-import { Route as AuthSignupRouteImport } from "./routes/_auth/signup";
-import { Route as ApiAuthSplatRouteImport } from "./routes/api/auth/$";
-import { Route as ApiChatIndexRouteImport } from "./routes/api/chat/index";
-import { Route as ApiResumePdfRouteImport } from "./routes/api/resume/pdf";
-import { Route as IndexRouteImport } from "./routes/index";
-import { Route as ResumeRouteImport } from "./routes/resume";
+import { Route as rootRouteImport } from './routes/__root'
+import { Route as SkillsRouteImport } from './routes/skills'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as ResumeRouteImport } from './routes/resume'
+import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
+import { Route as LlmsFullDottxtRouteImport } from './routes/llms-full[.]txt'
+import { Route as EducationRouteImport } from './routes/education'
+import { Route as AboutRouteImport } from './routes/about'
+import { Route as AuthRouteImport } from './routes/_auth'
+import { Route as IndexRouteImport } from './routes/index'
+import { Route as WorkIndexRouteImport } from './routes/work/index'
+import { Route as WorkSlugRouteImport } from './routes/work/$slug'
+import { Route as AuthSignupRouteImport } from './routes/_auth/signup'
+import { Route as AuthLoginRouteImport } from './routes/_auth/login'
+import { Route as ApiChatIndexRouteImport } from './routes/api/chat/index'
+import { Route as ApiResumePdfRouteImport } from './routes/api/resume/pdf'
+import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
+const SkillsRoute = SkillsRouteImport.update({
+  id: '/skills',
+  path: '/skills',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResumeRoute = ResumeRouteImport.update({
-  id: "/resume",
-  path: "/resume",
+  id: '/resume',
+  path: '/resume',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
+const LlmsDottxtRoute = LlmsDottxtRouteImport.update({
+  id: '/llms.txt',
+  path: '/llms.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LlmsFullDottxtRoute = LlmsFullDottxtRouteImport.update({
+  id: '/llms-full.txt',
+  path: '/llms-full.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EducationRoute = EducationRouteImport.update({
+  id: '/education',
+  path: '/education',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
-  id: "/_auth",
+  id: '/_auth',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const IndexRoute = IndexRouteImport.update({
-  id: "/",
-  path: "/",
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
+const WorkIndexRoute = WorkIndexRouteImport.update({
+  id: '/work/',
+  path: '/work/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkSlugRoute = WorkSlugRouteImport.update({
+  id: '/work/$slug',
+  path: '/work/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthSignupRoute = AuthSignupRouteImport.update({
-  id: "/signup",
-  path: "/signup",
+  id: '/signup',
+  path: '/signup',
   getParentRoute: () => AuthRoute,
-} as any);
+} as any)
 const AuthLoginRoute = AuthLoginRouteImport.update({
-  id: "/login",
-  path: "/login",
+  id: '/login',
+  path: '/login',
   getParentRoute: () => AuthRoute,
-} as any);
+} as any)
 const ApiChatIndexRoute = ApiChatIndexRouteImport.update({
-  id: "/api/chat/",
-  path: "/api/chat/",
+  id: '/api/chat/',
+  path: '/api/chat/',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const ApiResumePdfRoute = ApiResumePdfRouteImport.update({
-  id: "/api/resume/pdf",
-  path: "/api/resume/pdf",
+  id: '/api/resume/pdf',
+  path: '/api/resume/pdf',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
-  id: "/api/auth/$",
-  path: "/api/auth/$",
+  id: '/api/auth/$',
+  path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 
 export interface FileRoutesByFullPath {
-  "/": typeof IndexRoute;
-  "/resume": typeof ResumeRoute;
-  "/login": typeof AuthLoginRoute;
-  "/signup": typeof AuthSignupRoute;
-  "/api/auth/$": typeof ApiAuthSplatRoute;
-  "/api/resume/pdf": typeof ApiResumePdfRoute;
-  "/api/chat/": typeof ApiChatIndexRoute;
+  '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/education': typeof EducationRoute
+  '/llms-full.txt': typeof LlmsFullDottxtRoute
+  '/llms.txt': typeof LlmsDottxtRoute
+  '/resume': typeof ResumeRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/skills': typeof SkillsRoute
+  '/login': typeof AuthLoginRoute
+  '/signup': typeof AuthSignupRoute
+  '/work/$slug': typeof WorkSlugRoute
+  '/work/': typeof WorkIndexRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/resume/pdf': typeof ApiResumePdfRoute
+  '/api/chat/': typeof ApiChatIndexRoute
 }
 export interface FileRoutesByTo {
-  "/": typeof IndexRoute;
-  "/resume": typeof ResumeRoute;
-  "/login": typeof AuthLoginRoute;
-  "/signup": typeof AuthSignupRoute;
-  "/api/auth/$": typeof ApiAuthSplatRoute;
-  "/api/resume/pdf": typeof ApiResumePdfRoute;
-  "/api/chat": typeof ApiChatIndexRoute;
+  '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/education': typeof EducationRoute
+  '/llms-full.txt': typeof LlmsFullDottxtRoute
+  '/llms.txt': typeof LlmsDottxtRoute
+  '/resume': typeof ResumeRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/skills': typeof SkillsRoute
+  '/login': typeof AuthLoginRoute
+  '/signup': typeof AuthSignupRoute
+  '/work/$slug': typeof WorkSlugRoute
+  '/work': typeof WorkIndexRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/resume/pdf': typeof ApiResumePdfRoute
+  '/api/chat': typeof ApiChatIndexRoute
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport;
-  "/": typeof IndexRoute;
-  "/_auth": typeof AuthRouteWithChildren;
-  "/resume": typeof ResumeRoute;
-  "/_auth/login": typeof AuthLoginRoute;
-  "/_auth/signup": typeof AuthSignupRoute;
-  "/api/auth/$": typeof ApiAuthSplatRoute;
-  "/api/resume/pdf": typeof ApiResumePdfRoute;
-  "/api/chat/": typeof ApiChatIndexRoute;
+  __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
+  '/_auth': typeof AuthRouteWithChildren
+  '/about': typeof AboutRoute
+  '/education': typeof EducationRoute
+  '/llms-full.txt': typeof LlmsFullDottxtRoute
+  '/llms.txt': typeof LlmsDottxtRoute
+  '/resume': typeof ResumeRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/skills': typeof SkillsRoute
+  '/_auth/login': typeof AuthLoginRoute
+  '/_auth/signup': typeof AuthSignupRoute
+  '/work/$slug': typeof WorkSlugRoute
+  '/work/': typeof WorkIndexRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/resume/pdf': typeof ApiResumePdfRoute
+  '/api/chat/': typeof ApiChatIndexRoute
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath;
-  fullPaths: "/" | "/resume" | "/login" | "/signup" | "/api/auth/$" | "/api/resume/pdf" | "/api/chat/";
-  fileRoutesByTo: FileRoutesByTo;
-  to: "/" | "/resume" | "/login" | "/signup" | "/api/auth/$" | "/api/resume/pdf" | "/api/chat";
+  fileRoutesByFullPath: FileRoutesByFullPath
+  fullPaths:
+    | '/'
+    | '/about'
+    | '/education'
+    | '/llms-full.txt'
+    | '/llms.txt'
+    | '/resume'
+    | '/sitemap.xml'
+    | '/skills'
+    | '/login'
+    | '/signup'
+    | '/work/$slug'
+    | '/work/'
+    | '/api/auth/$'
+    | '/api/resume/pdf'
+    | '/api/chat/'
+  fileRoutesByTo: FileRoutesByTo
+  to:
+    | '/'
+    | '/about'
+    | '/education'
+    | '/llms-full.txt'
+    | '/llms.txt'
+    | '/resume'
+    | '/sitemap.xml'
+    | '/skills'
+    | '/login'
+    | '/signup'
+    | '/work/$slug'
+    | '/work'
+    | '/api/auth/$'
+    | '/api/resume/pdf'
+    | '/api/chat'
   id:
-    | "__root__"
-    | "/"
-    | "/_auth"
-    | "/resume"
-    | "/_auth/login"
-    | "/_auth/signup"
-    | "/api/auth/$"
-    | "/api/resume/pdf"
-    | "/api/chat/";
-  fileRoutesById: FileRoutesById;
+    | '__root__'
+    | '/'
+    | '/_auth'
+    | '/about'
+    | '/education'
+    | '/llms-full.txt'
+    | '/llms.txt'
+    | '/resume'
+    | '/sitemap.xml'
+    | '/skills'
+    | '/_auth/login'
+    | '/_auth/signup'
+    | '/work/$slug'
+    | '/work/'
+    | '/api/auth/$'
+    | '/api/resume/pdf'
+    | '/api/chat/'
+  fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute;
-  AuthRoute: typeof AuthRouteWithChildren;
-  ResumeRoute: typeof ResumeRoute;
-  ApiAuthSplatRoute: typeof ApiAuthSplatRoute;
-  ApiResumePdfRoute: typeof ApiResumePdfRoute;
-  ApiChatIndexRoute: typeof ApiChatIndexRoute;
+  IndexRoute: typeof IndexRoute
+  AuthRoute: typeof AuthRouteWithChildren
+  AboutRoute: typeof AboutRoute
+  EducationRoute: typeof EducationRoute
+  LlmsFullDottxtRoute: typeof LlmsFullDottxtRoute
+  LlmsDottxtRoute: typeof LlmsDottxtRoute
+  ResumeRoute: typeof ResumeRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  SkillsRoute: typeof SkillsRoute
+  WorkSlugRoute: typeof WorkSlugRoute
+  WorkIndexRoute: typeof WorkIndexRoute
+  ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiResumePdfRoute: typeof ApiResumePdfRoute
+  ApiChatIndexRoute: typeof ApiChatIndexRoute
 }
 
-declare module "@tanstack/react-router" {
+declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    "/resume": {
-      id: "/resume";
-      path: "/resume";
-      fullPath: "/resume";
-      preLoaderRoute: typeof ResumeRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/_auth": {
-      id: "/_auth";
-      path: "";
-      fullPath: "/";
-      preLoaderRoute: typeof AuthRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/": {
-      id: "/";
-      path: "/";
-      fullPath: "/";
-      preLoaderRoute: typeof IndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/_auth/signup": {
-      id: "/_auth/signup";
-      path: "/signup";
-      fullPath: "/signup";
-      preLoaderRoute: typeof AuthSignupRouteImport;
-      parentRoute: typeof AuthRoute;
-    };
-    "/_auth/login": {
-      id: "/_auth/login";
-      path: "/login";
-      fullPath: "/login";
-      preLoaderRoute: typeof AuthLoginRouteImport;
-      parentRoute: typeof AuthRoute;
-    };
-    "/api/chat/": {
-      id: "/api/chat/";
-      path: "/api/chat";
-      fullPath: "/api/chat/";
-      preLoaderRoute: typeof ApiChatIndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/api/resume/pdf": {
-      id: "/api/resume/pdf";
-      path: "/api/resume/pdf";
-      fullPath: "/api/resume/pdf";
-      preLoaderRoute: typeof ApiResumePdfRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/api/auth/$": {
-      id: "/api/auth/$";
-      path: "/api/auth/$";
-      fullPath: "/api/auth/$";
-      preLoaderRoute: typeof ApiAuthSplatRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+    '/skills': {
+      id: '/skills'
+      path: '/skills'
+      fullPath: '/skills'
+      preLoaderRoute: typeof SkillsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/resume': {
+      id: '/resume'
+      path: '/resume'
+      fullPath: '/resume'
+      preLoaderRoute: typeof ResumeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/llms.txt': {
+      id: '/llms.txt'
+      path: '/llms.txt'
+      fullPath: '/llms.txt'
+      preLoaderRoute: typeof LlmsDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/llms-full.txt': {
+      id: '/llms-full.txt'
+      path: '/llms-full.txt'
+      fullPath: '/llms-full.txt'
+      preLoaderRoute: typeof LlmsFullDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/education': {
+      id: '/education'
+      path: '/education'
+      fullPath: '/education'
+      preLoaderRoute: typeof EducationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_auth': {
+      id: '/_auth'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/work/': {
+      id: '/work/'
+      path: '/work'
+      fullPath: '/work/'
+      preLoaderRoute: typeof WorkIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/work/$slug': {
+      id: '/work/$slug'
+      path: '/work/$slug'
+      fullPath: '/work/$slug'
+      preLoaderRoute: typeof WorkSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_auth/signup': {
+      id: '/_auth/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof AuthSignupRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/login': {
+      id: '/_auth/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof AuthLoginRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/api/chat/': {
+      id: '/api/chat/'
+      path: '/api/chat'
+      fullPath: '/api/chat/'
+      preLoaderRoute: typeof ApiChatIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/resume/pdf': {
+      id: '/api/resume/pdf'
+      path: '/api/resume/pdf'
+      fullPath: '/api/resume/pdf'
+      preLoaderRoute: typeof ApiResumePdfRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/$': {
+      id: '/api/auth/$'
+      path: '/api/auth/$'
+      fullPath: '/api/auth/$'
+      preLoaderRoute: typeof ApiAuthSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 interface AuthRouteChildren {
-  AuthLoginRoute: typeof AuthLoginRoute;
-  AuthSignupRoute: typeof AuthSignupRoute;
+  AuthLoginRoute: typeof AuthLoginRoute
+  AuthSignupRoute: typeof AuthSignupRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
   AuthLoginRoute: AuthLoginRoute,
   AuthSignupRoute: AuthSignupRoute,
-};
+}
 
-const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren);
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRouteWithChildren,
+  AboutRoute: AboutRoute,
+  EducationRoute: EducationRoute,
+  LlmsFullDottxtRoute: LlmsFullDottxtRoute,
+  LlmsDottxtRoute: LlmsDottxtRoute,
   ResumeRoute: ResumeRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
+  SkillsRoute: SkillsRoute,
+  WorkSlugRoute: WorkSlugRoute,
+  WorkIndexRoute: WorkIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiResumePdfRoute: ApiResumePdfRoute,
   ApiChatIndexRoute: ApiChatIndexRoute,
-};
-export const routeTree = rootRouteImport._addFileChildren(rootRouteChildren)._addFileTypes<FileRouteTypes>();
+}
+export const routeTree = rootRouteImport
+  ._addFileChildren(rootRouteChildren)
+  ._addFileTypes<FileRouteTypes>()
 
-import type { getRouter } from "./router.tsx";
-import type { startInstance } from "./start.ts";
-declare module "@tanstack/react-start" {
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
   interface Register {
-    ssr: true;
-    router: Awaited<ReturnType<typeof getRouter>>;
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>;
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
   }
 }
