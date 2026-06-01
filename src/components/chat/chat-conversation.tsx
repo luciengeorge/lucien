@@ -48,6 +48,17 @@ export function ChatConversation({
   });
   const { isPending: isStartingNewConversation, mutateAsync: startConversation } = startConversationMutation;
 
+  // The homepage renders a static, edge-cached shell with no conversation.
+  // Create one (which sets the session cookie on its own request) as soon as we
+  // mount without one, so a conversation exists before the first send without
+  // making the document itself per-session / uncacheable.
+  const conversationCreationStartedRef = useRef(false);
+  useEffect(() => {
+    if (chatState.conversation || conversationCreationStartedRef.current) return;
+    conversationCreationStartedRef.current = true;
+    void startConversation({});
+  }, [chatState.conversation, startConversation]);
+
   const { messages, sendMessage, status } = useChat({
     id: chatState.conversation?.id ?? "new-conversation",
     messages: initialMessages,

@@ -1,3 +1,4 @@
+import type { Toast } from "#/lib/toast";
 import type { QueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 
@@ -12,6 +13,7 @@ import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from "@tanst
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
+import { useEffect, useState } from "react";
 
 import ConvexProvider from "../integrations/convex/provider";
 import { GoogleAnalyticsPageViews, GoogleAnalyticsScripts } from "../integrations/google-analytics/provider";
@@ -143,10 +145,6 @@ const structuredData = {
 };
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
-  beforeLoad: async () => {
-    const serverToast = await getToast();
-    return { serverToast };
-  },
   component: RootComponent,
   notFoundComponent: NotFound,
   head: () => ({
@@ -266,7 +264,22 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 });
 
 function RootComponent() {
-  const { serverToast } = Route.useRouteContext();
+  // Read the one-shot server toast client-side (after hydration) instead of in
+  // beforeLoad, so SSR documents carry no Set-Cookie and stay edge-cacheable.
+  const [serverToast, setServerToast] = useState<Toast | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void getToast()
+      .then((toast) => {
+        if (active) setServerToast(toast);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
   useToast(serverToast);
 
   return <Outlet />;

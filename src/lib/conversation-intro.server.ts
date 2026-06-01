@@ -1,4 +1,3 @@
-import type { Id } from "../../convex/_generated/dataModel";
 import type { ChatConversationState } from "./chat-types";
 
 import { api } from "../../convex/_generated/api";
@@ -20,32 +19,6 @@ function createAssistantMessage(text: string) {
     ],
     role: "assistant" as const,
   };
-}
-
-// Generates + persists the intro message for an already-created conversation.
-// Split out so the homepage can mint the conversation synchronously (to set the
-// session cookie) and stream this comparatively expensive step afterwards.
-export async function buildIntroForConversation(
-  conversationId: string,
-  sessionId: string,
-): Promise<{ serializedMessages: string[] }> {
-  let introText = FALLBACK_INTRO_TEXT;
-
-  try {
-    introText = await fetchAuthAction(api.intro.getCachedIntro, {});
-  } catch (error) {
-    logger.error("cached intro failed", { conversationId, error });
-  }
-
-  const introMessageJson = JSON.stringify(createAssistantMessage(introText));
-
-  await fetchAuthMutation(api.conversations.upsertConversationMessage, {
-    conversationId: conversationId as Id<"conversations">,
-    messageJson: introMessageJson,
-    sessionId,
-  });
-
-  return { serializedMessages: [introMessageJson] };
 }
 
 export async function createConversationWithIntro(sessionId: string): Promise<ChatConversationState> {
