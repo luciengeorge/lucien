@@ -15,7 +15,7 @@ import { SpeedInsights } from "@vercel/speed-insights/react";
 
 import ConvexProvider from "../integrations/convex/provider";
 import { GoogleAnalyticsPageViews, GoogleAnalyticsScripts } from "../integrations/google-analytics/provider";
-import PostHogProvider from "../integrations/posthog/provider";
+import PostHogInit from "../integrations/posthog/provider";
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 import TanStackQueryProvider from "../integrations/tanstack-query/root-provider";
 import appCss from "../styles.css?url";
@@ -285,27 +285,26 @@ function RootDocument({ children }: { children: ReactNode }) {
         <SpeedInsights />
         <GoogleAnalyticsPageViews />
         <ConvexProvider>
-          <PostHogProvider>
-            <TanStackQueryProvider>
-              <Toaster closeButton richColors />
-              <SiteNav />
-              <main className="isolate flex h-dvh min-h-0 w-full flex-col overflow-hidden pt-14 pb-2 sm:pt-16 sm:pb-6">
-                {children}
-              </main>
-              <TanStackDevtools
-                config={{
-                  position: "bottom-right",
-                }}
-                plugins={[
-                  {
-                    name: "Tanstack Router",
-                    render: <TanStackRouterDevtoolsPanel />,
-                  },
-                  TanStackQueryDevtools,
-                ]}
-              />
-            </TanStackQueryProvider>
-          </PostHogProvider>
+          <TanStackQueryProvider>
+            <PostHogInit />
+            <Toaster closeButton richColors />
+            <SiteNav />
+            <main className="isolate flex h-dvh min-h-0 w-full flex-col overflow-hidden pt-14 pb-2 sm:pt-16 sm:pb-6">
+              {children}
+            </main>
+            <TanStackDevtools
+              config={{
+                position: "bottom-right",
+              }}
+              plugins={[
+                {
+                  name: "Tanstack Router",
+                  render: <TanStackRouterDevtoolsPanel />,
+                },
+                TanStackQueryDevtools,
+              ]}
+            />
+          </TanStackQueryProvider>
         </ConvexProvider>
         <Scripts />
       </body>
