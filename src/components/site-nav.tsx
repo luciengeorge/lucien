@@ -91,7 +91,7 @@ function NavLinkPill({ to, label }: NavItem) {
   return (
     <Link
       to={to}
-      className="rounded-full px-3 py-1.5 text-xs font-medium text-neutral-600 transition-colors hover:text-neutral-950"
+      className="inline-block rounded-full px-3 py-1.5 text-xs font-medium text-neutral-600 transition-colors hover:text-neutral-950"
       activeProps={{ className: "bg-neutral-950/8 text-neutral-950" }}
       activeOptions={{ exact: to === "/" }}
     >
