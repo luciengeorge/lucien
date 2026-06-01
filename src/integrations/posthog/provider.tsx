@@ -1,44 +1,41 @@
-import type { ReactNode } from "react";
-
 import { authClient } from "#/lib/auth-client";
 import { createLogger } from "#/lib/logger";
-import { PostHogProvider as BasePostHogProvider } from "@posthog/react";
-import posthog from "posthog-js";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
-const posthogKey = import.meta.env.VITE_POSTHOG_KEY;
-const posthogHost = import.meta.env.VITE_POSTHOG_HOST;
-const isProduction = import.meta.env.PROD;
+import { getPostHog, loadPostHog } from "./client";
+
 const logger = createLogger("posthog.provider");
 
-if (typeof window !== "undefined" && isProduction && posthogKey) {
-  posthog.init(posthogKey, {
-    api_host: posthogHost || "https://eu.i.posthog.com",
-    autocapture: false,
-    capture_pageleave: true,
-    capture_pageview: true,
-    defaults: "2026-01-30",
-    person_profiles: "identified_only",
-  });
-
-  posthog.register({
-    app: "lucien",
-    source: "web",
-  });
-}
-
-interface PostHogProviderProps {
-  children: ReactNode;
-}
-
-function PostHogSessionSync() {
+/**
+ * Headless posthog bootstrapper. Rendered as a sibling (not a wrapper) so the
+ * lazy posthog-js load never remounts the app tree. Loads + inits posthog after
+ * hydration and keeps user identity in sync with the auth session.
+ */
+export default function PostHogInit() {
   const { data: session } = authClient.useSession();
+  const [ready, setReady] = useState(false);
   const previousUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+    void loadPostHog()
+      .then((client) => {
+        if (!cancelled && client) setReady(true);
+      })
+      .catch((error) => logger.error("posthog load failed", { error }));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!ready) return;
+    const client = getPostHog();
+    if (!client) return;
+
     if (!session?.user) {
       if (previousUserIdRef.current) {
-        posthog.reset();
+        client.reset();
         logger.info("posthog reset", { previousUserId: previousUserIdRef.current });
         previousUserIdRef.current = null;
       }
@@ -46,25 +43,12 @@ function PostHogSessionSync() {
     }
 
     previousUserIdRef.current = session.user.id;
-    posthog.identify(session.user.id, {
+    client.identify(session.user.id, {
       email: session.user.email,
       name: session.user.name,
     });
     logger.info("posthog identify", { userId: session.user.id });
-  }, [session?.user]);
+  }, [ready, session?.user]);
 
   return null;
-}
-
-export default function PostHogProvider({ children }: PostHogProviderProps) {
-  if (!isProduction || !posthogKey) {
-    return <>{children}</>;
-  }
-
-  return (
-    <BasePostHogProvider client={posthog}>
-      <PostHogSessionSync />
-      {children}
-    </BasePostHogProvider>
-  );
 }

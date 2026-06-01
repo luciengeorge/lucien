@@ -1,3 +1,4 @@
+import type { Toast } from "#/lib/toast";
 import type { QueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 
@@ -12,10 +13,11 @@ import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from "@tanst
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
+import { useEffect, useState } from "react";
 
 import ConvexProvider from "../integrations/convex/provider";
 import { GoogleAnalyticsPageViews, GoogleAnalyticsScripts } from "../integrations/google-analytics/provider";
-import PostHogProvider from "../integrations/posthog/provider";
+import PostHogInit from "../integrations/posthog/provider";
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 import TanStackQueryProvider from "../integrations/tanstack-query/root-provider";
 import appCss from "../styles.css?url";
@@ -143,10 +145,6 @@ const structuredData = {
 };
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
-  beforeLoad: async () => {
-    const serverToast = await getToast();
-    return { serverToast };
-  },
   component: RootComponent,
   notFoundComponent: NotFound,
   head: () => ({
@@ -266,7 +264,22 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 });
 
 function RootComponent() {
-  const { serverToast } = Route.useRouteContext();
+  // Read the one-shot server toast client-side (after hydration) instead of in
+  // beforeLoad, so SSR documents carry no Set-Cookie and stay edge-cacheable.
+  const [serverToast, setServerToast] = useState<Toast | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void getToast()
+      .then((toast) => {
+        if (active) setServerToast(toast);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
   useToast(serverToast);
 
   return <Outlet />;
@@ -285,27 +298,26 @@ function RootDocument({ children }: { children: ReactNode }) {
         <SpeedInsights />
         <GoogleAnalyticsPageViews />
         <ConvexProvider>
-          <PostHogProvider>
-            <TanStackQueryProvider>
-              <Toaster closeButton richColors />
-              <SiteNav />
-              <main className="isolate flex h-dvh min-h-0 w-full flex-col overflow-hidden pt-14 pb-2 sm:pt-16 sm:pb-6">
-                {children}
-              </main>
-              <TanStackDevtools
-                config={{
-                  position: "bottom-right",
-                }}
-                plugins={[
-                  {
-                    name: "Tanstack Router",
-                    render: <TanStackRouterDevtoolsPanel />,
-                  },
-                  TanStackQueryDevtools,
-                ]}
-              />
-            </TanStackQueryProvider>
-          </PostHogProvider>
+          <TanStackQueryProvider>
+            <PostHogInit />
+            <Toaster closeButton richColors />
+            <SiteNav />
+            <main className="isolate flex h-dvh min-h-0 w-full flex-col overflow-hidden pt-14 pb-2 sm:pt-16 sm:pb-6">
+              {children}
+            </main>
+            <TanStackDevtools
+              config={{
+                position: "bottom-right",
+              }}
+              plugins={[
+                {
+                  name: "Tanstack Router",
+                  render: <TanStackRouterDevtoolsPanel />,
+                },
+                TanStackQueryDevtools,
+              ]}
+            />
+          </TanStackQueryProvider>
         </ConvexProvider>
         <Scripts />
       </body>

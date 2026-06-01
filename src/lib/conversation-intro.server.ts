@@ -2,11 +2,11 @@ import type { ChatConversationState } from "./chat-types";
 
 import { api } from "../../convex/_generated/api";
 import { fetchAuthAction, fetchAuthMutation, fetchAuthQuery } from "./auth-server";
+import { HOMEPAGE_INTRO_FALLBACK } from "./chat-intro";
 import { createLogger } from "./logger";
 
 const logger = createLogger("conversation.intro");
-const FALLBACK_INTRO_TEXT =
-  "I'm Poof, Lucien George's AI portfolio assistant. I can help you explore Lucien's work, background, projects, and interests. Lucien is a product engineer focused on thoughtful, high-leverage software, currently building at Fyxer and shaped by a mix of startup, product, and engineering experience. Ask me about his current work, past projects, technical taste, or personal background.";
+const FALLBACK_INTRO_TEXT = HOMEPAGE_INTRO_FALLBACK;
 
 function createAssistantMessage(text: string) {
   return {

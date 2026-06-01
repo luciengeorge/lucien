@@ -31,6 +31,14 @@ export default defineNitroConfig({
     "/**": {
       headers: securityHeaders,
     },
+    "/": {
+      headers: {
+        // Static, per-session-free homepage: cache the SSR document at the edge
+        // so most visits skip the function entirely (no cold start, ~edge TTFB).
+        "Cache-Control": "public, max-age=0, s-maxage=86400, stale-while-revalidate=604800",
+        ...securityHeaders,
+      },
+    },
     "/api/**": {
       headers: {
         "Cache-Control": "no-store",

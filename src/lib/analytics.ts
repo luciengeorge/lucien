@@ -1,5 +1,5 @@
+import { getPostHog } from "#/integrations/posthog/client";
 import { authClient } from "#/lib/auth-client";
-import { usePostHog } from "@posthog/react";
 import { useCallback } from "react";
 
 export const AnalyticsEvent = {
@@ -39,18 +39,17 @@ function getBaseProperties(userId?: string): AnalyticsProperties {
 }
 
 export function useAnalytics() {
-  const posthog = usePostHog();
   const { data: session } = authClient.useSession();
   const userId = session?.user?.id;
 
   const capture = useCallback(
     (event: AnalyticsEventName, properties: AnalyticsProperties = {}) => {
-      posthog?.capture(event, {
+      getPostHog()?.capture(event, {
         ...getBaseProperties(userId),
         ...properties,
       });
     },
-    [posthog, userId],
+    [userId],
   );
 
   return {
