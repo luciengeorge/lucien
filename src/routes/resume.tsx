@@ -31,7 +31,6 @@ export const Route = createFileRoute("/resume")({
             name: resume.personal.name,
             jobTitle: resume.personal.title,
             email: resume.personal.email,
-            telephone: resume.personal.phone,
             url: SITE_URL,
             address: { "@type": "PostalAddress", addressLocality: resume.personal.location },
             sameAs: [resume.personal.links.github, resume.personal.links.linkedin].filter((value): value is string =>
@@ -81,7 +80,6 @@ export const Route = createFileRoute("/resume")({
 function ResumePage() {
   const resume = Route.useLoaderData();
   const { education, experiences, personal, skills } = resume;
-  const contactLine = [personal.phone, personal.email, personal.location].filter(Boolean).join(" · ");
 
   return (
     <div className="min-h-0 grow overflow-y-auto">
@@ -92,7 +90,12 @@ function ResumePage() {
             <p className="mt-1 font-mono text-xs tracking-[0.18em] text-neutral-500 uppercase sm:text-sm">
               {personal.title}
             </p>
-            <p className="mt-3 text-sm text-neutral-600">{contactLine}</p>
+            <p className="mt-3 text-sm text-neutral-600">
+              <a className="hover:text-neutral-950 hover:underline" href={`mailto:${personal.email}`}>
+                {personal.email}
+              </a>
+              {personal.location ? <span> · {personal.location}</span> : null}
+            </p>
             <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-neutral-600">
               {personal.links.github ? (
                 <a
