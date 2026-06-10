@@ -1,246 +1,143 @@
-# Codebase Architecture Summary
-
-## Overview
-
-TanStack Start application with comprehensive UI component library, real-time data streaming, multi-service integrations, and theme management system.
-
-## Technology Stack
-
-- **Framework**: TanStack Start (Vite-based)
-- **UI Library**: shadcn/ui (Radix UI + Tailwind CSS)
-- **Component Styling**: CVA (Class Variance Authority) for variant management
-- **Authentication**: better-auth with TanStack Start cookies plugin
-- **Backend**: Convex with ConvexQueryClient
-- **Data Fetching**: TanStack Query (React Query)
-- **Routing**: TanStack Router
-- **Forms**: TanStack Form with custom createFormHook() pattern
-- **Analytics**: PostHog (conditional initialization via environment variables)
-- **Data Synchronization**: TanStack react-db collections for real-time streaming
-- **Styling**: Tailwind CSS with comprehensive dark mode (prefers-color-scheme)
-- **Build Tool**: Vite with environment variable access via import.meta
-
-## Directory Structure & Findings
-
-### /src/components/
-
-#### UI Components (shadcn/ui Pattern)
-
-All UI components follow consistent patterns:
-
-- Built on Radix UI primitives
-- Styled with Tailwind CSS
-- Use CVA for variant management
-- Support dark mode via className/data attributes
-- Include accessibility features (aria-invalid, focus-visible states)
-
-**Core Components:**
-
-- **Button**: Variants (default, destructive, outline, secondary, ghost, link), Sizes (default, xs, sm, lg, icon)
-- **Input**: Standard form input with file upload styling
-- **Slider**: Range input control
-- **Label**: Form label component
-- **Switch**: Toggle switch control
-- **Select**: Dropdown selection
-- **Textarea**: Multi-line text input
-
-#### Feature Components
-
-- **Header.tsx**: Sticky navigation with backdrop blur, theme toggle, user session display, TanStackChat integration
-- **ThemeToggle.tsx**: Light/dark/auto theme switcher with localStorage persistence
-- **demo.chat-area.tsx, demo.messages.tsx**: Chat interface components with streaming data
-- **demo.FormComponents.tsx**: Form-related components using TanStack Form
-- **demo-GuitarRecommendation.tsx**: Product recommendation using static guitar data
-- **demo-AIAssistant.tsx**: AI assistant integration
-- **Footer.tsx**: Footer component
-
-#### Integration Components
-
-- **better-auth/header-user.tsx**: User session display with sign-in/sign-out functionality
-
-#### Styling Patterns
-
-- `cn()` utility combines clsx and tailwind-merge for className composition
-- CSS variables for theming (referenced in Header.tsx)
-- Responsive design with dark mode variants
-- Disabled and invalid states handled consistently
-
-### /src/hooks/
-
-#### Custom Data Hooks
-
-**demo.useChat.ts**
-
-- `useStreamConnection()`: Helper for streaming JSON-newline data from /demo/db-chat-api
-- `useMessages()`: Live query results from TanStack react-db messagesCollection
-- `sendMessage()`: POST request handler for sending chat messages
-
-#### Form Hooks
-
-**demo.form.ts**
-
-- `createFormHook()` pattern: Custom TanStack Form integration
-- Custom field components: TextField, Select, TextArea
-- Custom form components: SubscribeButton
-- fieldContext and formContext for component integration
-
-#### Utility Hooks
-
-- **demo-useAudioRecorder.ts**: Audio recording functionality
-- **demo-useTTS.ts**: Text-to-speech functionality
-- **demo.form-context.ts**: Form context utilities and hooks
-
-### /src/lib/
-
-#### Utilities
-
-**utils.ts**
-
-- `cn()`: Core utility combining clsx + tailwind-merge for className composition
-
-#### Integration Setup
-
-**auth.ts**
-
-- better-auth initialization with email/password strategy
-- tanstackStartCookies plugin for session management
-- Server-side auth configuration
-
-**auth-client.ts**
-
-- Client-side better-auth via createAuthClient()
-- Returns reactive auth client for React components
-- Used in header-user component for session display
-
-### /src/integrations/
-
-#### Convex Integration (convex/provider.tsx)
-
-- ConvexQueryClient initialization
-- Environment variable: VITE_CONVEX_URL
-- Error logging for missing configuration
-- Wraps application tree
-
-#### PostHog Analytics (posthog/provider.tsx)
-
-- Conditional initialization via VITE_POSTHOG_KEY
-- Configuration: person_profiles: 'identified_only', capture_pageview: false
-- API host defaults to 'https://us.i.posthog.com'
-- Client-side only (window check)
-
-#### TanStack Query (tanstack-query/)
-
-**root-provider.tsx**
-
-- Singleton QueryClient pattern via getContext()
-- Single instance across application
-- QueryClientProvider wraps app tree
-
-**devtools.tsx**
-
-- ReactQueryDevtoolsPanel export for development
-
-### /src/data/
-
-**demo-guitars.ts**
-
-- Static product data: 8 themed guitars
-- Guitar interface: id, name, image, description, shortDescription, price
-- Products: TanStack Ukulele, Video Game, Superhero, Motherboard, Racing, Steamer Trunk, Traveling Man, Flowerly Love
-
-### Core Files
-
-- **db-collections/index.ts**: Database collections configuration
-- **start.ts**: Application entry point
-- **router.tsx**: TanStack Router configuration
-- **routeTree.gen.ts**: Auto-generated route tree
-
-## Architectural Patterns
-
-### State Management
-
-1. **Server State**: Convex (backend persistence)
-2. **Sync State**: TanStack react-db collections (real-time streaming)
-3. **Client State**: TanStack Form (form-specific), React state for UI
-4. **Server Session**: better-auth with TanStack Start cookies
-
-### Data Streaming
-
-- JSON-newline format from /demo/db-chat-api
-- useStreamConnection() helper handles subscription lifecycle
-- TanStack react-db collections provide live query results
-- Automatic re-renders on data changes
-
-### Theme System
-
-- localStorage persistence of user selection
-- System preference detection via prefers-color-scheme
-- Three modes: light, dark, auto
-- Applied via className on document.documentElement
-- data-theme attribute + colorScheme style property
-
-### Authentication Flow
-
-1. better-auth handles credentials
-2. tanstackStartCookies plugin manages sessions
-3. Client-side authClient.useSession() checks authentication status
-4. Route protection via router integration
-
-### Form Handling
-
-1. TanStack Form with custom createFormHook() pattern
-2. Field components via fieldContext
-3. Form context for cross-field access
-4. Custom components for domain-specific inputs
-
-### Component Library
-
-1. All components use CVA for variants
-2. Consistent Tailwind styling
-3. Accessibility-first (aria attributes, focus states)
-4. Dark mode support via CSS utilities
-5. Polymorphic components via Radix Slot (asChild pattern)
-
-## Integration Architecture
+# Codebase Architecture
+
+Lucien George's personal site + AI portfolio assistant ("Poof"). A single TanStack Start app (SSR) deployed to Vercel, backed by Convex, that answers questions about Lucien via RAG over markdown and serves static work/resume/about pages.
+
+## Technology stack
+
+- **Framework**: TanStack Start (Vite + Nitro), React 19 + React Compiler
+- **Routing**: TanStack Router (file-based, `defaultPreload: "intent"`)
+- **Data**: TanStack Query + `@convex-dev/react-query`
+- **Forms**: TanStack Form + Zod
+- **Backend**: Convex (`@convex-dev/rag`, `@convex-dev/better-auth`, `@convex-dev/action-cache`)
+- **AI**: Vercel AI SDK (`ai` v6) + OpenAI (`gpt-5.4-nano` expansion, `gpt-5.4-mini` chat/intro, `text-embedding-3-small` embeddings)
+- **Auth**: Better Auth (email/password, verification, owner-only allowlist)
+- **UI**: shadcn-style components on Base UI / Radix + CVA, Tailwind CSS v4, `motion`, `sonner`, hugeicons/lucide
+- **PDF**: `@react-pdf/renderer` (resume)
+- **Observability**: Sentry, PostHog, Vercel Analytics + Speed Insights, Google Analytics
+- **Quality**: Vitest (convex/node/jsdom), Playwright (e2e), Poof eval harness; oxfmt + oxlint, `tsgo` typecheck
+- **Runtime**: pnpm, Node 22; deployed on Vercel
+
+## Top-level layout
 
 ```
-Application Root
-├── TanStack Router
-├── Convex Provider (ConvexQueryClient)
-├── PostHog Provider (conditional)
-├── TanStack Query Provider (singleton QueryClient)
-├── Header (Theme Toggle, User Session, TanStackChat)
-├── Main Content (Routes)
-└── Footer
+src/        frontend + API routes (TanStack Start)
+convex/     Convex backend (schema, functions, components)
+content/    markdown knowledge base + system-prompt.md + resume.json
+evals/      Poof eval harness
+scripts/    seed.ts (content → Convex RAG)
+tests/e2e/  Playwright specs
 ```
 
-## Development Environment
+## Request / data flow
 
-- Vite with hot module replacement
-- Environment variables via import.meta.env.VITE\_\*
-- Development tools: React Query DevTools
-- TypeScript for type safety
+```
+Browser ──► TanStack Start (Nitro / Vercel)
+              ├─ SSR pages (router + loaders)
+              ├─ /api/chat   ─► OpenAI (expand) ─► Convex RAG ─► OpenAI (stream) ─► Convex (persist)
+              ├─ /api/auth/$ ─► Better Auth ─► Convex betterAuth component
+              └─ /api/resume/pdf ─► @react-pdf/renderer
+            Convex
+              ├─ conversations / messages / messageParts
+              ├─ rag component (portfolio namespace)
+              ├─ actionCache component (cached intro)
+              └─ betterAuth component (user/session/account/...)
+```
 
-## Key Configuration Dependencies
+### Provider tree (`src/routes/__root.tsx`)
 
-- VITE_CONVEX_URL: Backend connection
-- VITE_POSTHOG_KEY: Analytics (optional)
-- No API keys stored in code (environment-based)
+`ConvexProvider` → `TanStackQueryProvider` → (`PostHogInit`, `Toaster`, `SiteNav`, `<main>{routes}</main>`, devtools), with Vercel Analytics + Speed Insights + Google Analytics and JSON-LD in the document shell.
 
-## Notable Implementation Details
+### Entry points
 
-1. **Singleton Pattern**: QueryClient ensures single instance across app
-2. **Streaming Pattern**: JSON-newline for real-time data sync
-3. **Theme Persistence**: localStorage + system preference fallback
-4. **Error Boundaries**: Implied through integration setup (check for in routes)
-5. **Responsive Design**: All components support mobile via Tailwind breakpoints
-6. **Accessibility**: Focus states, aria-invalid, labels properly associated
-7. **Dark Mode**: Comprehensive support across all components via CSS utilities
+- `src/start.ts` — client entry
+- `src/server.ts` — server entry
+- `src/router.tsx` — `getRouter()`; lazy-inits the Sentry browser SDK in prod
+- `instrument.server.mjs` — server Sentry/OTel, loaded via `NODE_OPTIONS=--import`
 
-## Future Development Considerations
+## Frontend (`src/`)
 
-- Add more UI components as needed (follow shadcn/ui + CVA pattern)
-- Extend form components via createFormHook() for new domain models
-- Additional integrations via providers pattern (follow Convex/PostHog setup)
-- Real-time features leverage TanStack react-db collections
-- Theme system extensible via CSS variables
-- Authentication extensible via better-auth strategies
+### Routes (`src/routes/`)
+
+File-based. Pages: `/` (chat), `/about`, `/skills`, `/education`, `/work` + `/work/$slug`, `/resume`, `/login`, `/signup`. API: `/api/chat` (POST), `/api/auth/$`, `/api/resume/pdf`. SEO: `/sitemap.xml`, `/llms.txt`, `/llms-full.txt`. `__root.tsx` owns global SEO meta + JSON-LD (Person / WebSite / FAQPage); per-route heads add page-specific meta + structured data. `routeTree.gen.ts` is generated.
+
+### Components (`src/components/`)
+
+- `chat/` — the chat UI (composer, conversation, timeline message, pending reply, markdown render, starter prompts, resume card, etc.)
+- `ui/` — shadcn-style primitives (Base UI / Radix + CVA): button, card, dropdown-menu, input, field, label, select, separator, slider, switch, textarea, tooltip, scroll-area, spinner, sonner, empty, nav-link
+- `content/content-page.tsx` — shared markdown page layout
+- `resume/company-logo.tsx`, `site-nav.tsx`, `download-cv-button.tsx`, `global-loading.tsx`, `initials-mark.tsx`, `not-found.tsx`
+
+### Lib (`src/lib/`)
+
+- `content/registry.ts` + `content/work-meta.ts` — single source for work entries; joins metadata with `?raw` markdown
+- `resume/{load,schema,pdf-document}` — resume loading (zod-validated), formatting, PDF
+- `auth-config.ts` / `auth-client.ts` / `auth-server.ts` — Better Auth wiring
+- `conversation-session.server.ts`, `toast-session.server.ts` — sealed-cookie sessions (`TOAST_SECRET`)
+- `functions/` — server functions (session, toast, start-new-conversation)
+- `analytics.ts` (typed PostHog events), `logger.ts`, `social-links.ts`, `homepage-intro.ts`, `utils.ts` (`cn()`)
+
+## Backend (`convex/`)
+
+### Schema (`convex/schema.ts`)
+
+- **conversations** — `createdAt`, `updatedAt`, `sessionId?`, `title?`; indexes by created/updated/session
+- **messages** — `conversationId`, `role`, `uiMessageId`, `createdAt`, `modelId?`, `provider?`, `metadataJson?`; indexes by conversation, by (conversation, uiMessageId), by created
+- **messageParts** — `messageId`, `order`, `partJson`, `type`, plus `textPreview?` / `toolCallId?` / `toolName?` / `toolState?`; index by message
+
+UI messages are stored as JSON parts with extracted columns for queryability. Better Auth tables live in the betterAuth component (`convex/betterAuth/schema.ts`, generated).
+
+### Functions
+
+- `conversations.ts` — `createConversation`, `getConversationById` (ownership-checked, hydrates parts), `upsertConversationMessage` (zod-validated, derives title)
+- `search.ts` — `searchContext(query)` → RAG search text
+- `intro.ts` — `generateIntro` (internal) + `getCachedIntro`, wrapped in action-cache (30-day TTL)
+- `rag.ts` — RAG instance (`text-embedding-3-small`, 1536-d, namespace `portfolio`)
+- `seed.ts` — `resetNamespace` + `addContent`
+- `http.ts` — registers Better Auth routes (CORS)
+
+## Content (`content/`)
+
+Markdown is the single source of truth for both the chat RAG index and the rendered HTML pages + `/llms-full.txt`. Files: bio, personal, education, tech-stack, socials, and one per work entry (fyxer, localista, skyla, shopify, le-wagon, impact-lebanon, early-career). `system-prompt.md` holds Poof's prompt (`{retrieved_context}` slot; skipped by seeding). `resume.json` is structured and validated by `src/lib/resume/schema.ts`. `scripts/seed.ts` (`pnpm seed`) embeds the markdown into Convex RAG.
+
+## Sessions (three, independent)
+
+1. **Better Auth session** — owner login (allowlisted).
+2. **Conversation session** — anonymous visitor; sealed cookie `lucien-conversation` (`TOAST_SECRET`) holding `{ sessionId, conversationId }`; authorizes chat access.
+3. **Toast session** — one-shot flash messages; read client-side after hydration so the SSR homepage stays cookie-free and edge-cacheable.
+
+## Chat pipeline (`src/routes/api/chat/index.ts`)
+
+1. Validate body (`ChatRequestSchema`) and the conversation-session cookie.
+2. Load the conversation from Convex; validate UI messages.
+3. Expand the query (`gpt-5.4-nano`).
+4. RAG search (`searchContext`) → inject into `system-prompt.md`.
+5. Persist the user message; stream the answer (`gpt-5.4-mini`, `stepCountIs(3)`) with a `download_resume` tool.
+6. `onFinish` persists the assistant message.
+
+The homepage's first message is a cached LLM intro (`convex/intro.ts`) read cookie-free and baked into first paint.
+
+## Build, deploy, observability
+
+- **Vite** (`vite.config.ts`): TanStack Start, Nitro, Tailwind, React (React Compiler), Sentry source-map upload.
+- **Nitro** (`nitro.config.ts`): security headers on all routes; homepage edge-cached (`s-maxage=86400`, SWR); `/api/**` `no-store`; `/resume.pdf` → 301.
+- **Sentry**: browser (lazy) + server (`instrument.server.mjs`); source maps at build.
+- **PostHog**: global provider, conditional on `VITE_POSTHOG_KEY`; typed events in `src/lib/analytics.ts`.
+- **Vercel** Analytics + Speed Insights; Google Analytics.
+
+## Testing
+
+- **Vitest** (`vitest.config.ts`): `convex` (edge-runtime + `convex-test`), `node` (`src` + `evals` `*.test.ts`), `jsdom` (`*.test.tsx`).
+- **Playwright** (`playwright.config.ts`): `setup` (seeds a throwaway user → storage state), `chromium` (logged-out), `chromium-authed` (logged-in redirect).
+- **Evals** (`evals/`): runs the real chat pipeline against curated datasets, scored by an LLM judge against thresholds; blocking CI check (`.github/workflows/evals.yml`).
+
+## CI (`.github/workflows/`)
+
+`ci.yml`: install → lint (`oxfmt --check` + `oxlint`), typecheck (`tsgo`), unit (vitest), build (raised heap), e2e (Playwright). `evals.yml`: Poof evals on relevant PRs, posts the report as a PR comment.
+
+## Conventions
+
+- TypeScript strict; `#/*` → `src/*` import alias
+- File-based routing; forms via TanStack Form + Zod
+- oxfmt + oxlint; `tsgo` typecheck
+- Do not edit generated files: `src/routeTree.gen.ts`, `convex/_generated/`, `convex/betterAuth/schema.ts`
+- `.cursorrules` documents Sentry instrumentation, Convex schema, and shadcn install conventions

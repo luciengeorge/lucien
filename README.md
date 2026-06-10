@@ -1,71 +1,90 @@
 # Lucien
 
-Lucien's personal site and AI portfolio assistant.
+Lucien George's personal site and AI portfolio assistant ("Poof").
 
-The app is a small TanStack Start full-stack app with a public chat UI, Better Auth auth flows, and Convex-backed RAG search over markdown content about Lucien.
+A TanStack Start full-stack app: a public chat UI grounded (RAG) in markdown about Lucien, static work/resume/about pages, Better Auth (owner-only), and a Convex backend.
 
 ## What it does
 
-- Serves a public chat page at `/`
-- Answers questions about Lucien using retrieved markdown context from `content/`
-- Uses OpenAI for query expansion and final streamed responses
-- Supports email/password signup and login with Better Auth
-- Stores auth data in Convex and content embeddings in Convex RAG
+- Public chat at `/` — visitors ask about Lucien; Poof answers using only retrieved context from `content/`
+- First assistant message is a cached, LLM-written intro baked into the first paint
+- Per-visitor conversation history persisted in Convex
+- Static pages: about, skills, education, work (per role), resume (HTML + downloadable PDF)
+- SEO + AI-crawler surfaces: rich JSON-LD, `/sitemap.xml`, `/llms.txt`, `/llms-full.txt`
+- Owner-only auth (allowlisted email) with email verification
 
 ## Stack
 
-- TanStack Start
-- TanStack Router
-- React 19
-- Tailwind CSS v4
-- shadcn-style UI components
-- TanStack Form
-- Convex
-- `@convex-dev/rag`
-- Better Auth + `@convex-dev/better-auth`
-- Vercel AI SDK + OpenAI
-- Sentry
-- PostHog
-- Vitest
+- TanStack Start (Vite + Nitro), TanStack Router / Query / Form
+- React 19 + React Compiler
+- Tailwind CSS v4, shadcn-style UI on Base UI / Radix, `motion`, `sonner`
+- Convex + `@convex-dev/rag`, `@convex-dev/better-auth`, `@convex-dev/action-cache`, `@convex-dev/react-query`
+- Vercel AI SDK (`ai` v6) + OpenAI
+- Better Auth (email/password, verification, allowlist gate)
+- `@react-pdf/renderer` (resume PDF)
+- Sentry, PostHog, Vercel Analytics + Speed Insights, Google Analytics
+- Vitest (unit/convex/jsdom) + Playwright (e2e) + a Poof eval harness
+- oxfmt + oxlint, `tsgo` (TS native preview) for typecheck
+- pnpm, Node 22
+
+### Models
+
+- Query expansion: `gpt-5.4-nano`
+- Chat + intro generation: `gpt-5.4-mini`
+- Embeddings: `text-embedding-3-small` (1536 dims)
 
 ## App structure
 
 ```text
 src/
-  routes/                 Pages and API routes
-  components/ui/          Shared UI primitives
-  integrations/           Convex, PostHog, React Query providers
-  lib/                    Auth, schemas, server helpers, utils
+  routes/                 Pages + API routes (file-based)
+  components/             chat/, ui/, content/, resume/, site-nav, etc.
+  integrations/           Convex, PostHog, Google Analytics, TanStack Query providers
+  lib/                    auth, content registry, resume, sessions, analytics, logger, schemas
+  router.tsx start.ts server.ts styles.css
 convex/
-  betterAuth/             Better Auth Convex component
+  schema.ts               conversations + messages + messageParts
+  conversations.ts        conversation persistence (queries/mutations)
   search.ts               RAG search action
-  seed.ts                 Content seed action
-content/                  Markdown knowledge base for Lucien
-scripts/seed.ts           Seeds markdown into Convex RAG
+  intro.ts                cached LLM intro (action-cache)
+  rag.ts                  RAG instance
+  seed.ts                 content seed actions
+  http.ts                 Better Auth routes
+  betterAuth/             Better Auth Convex component (schema is generated)
+content/                  Markdown knowledge base + system-prompt.md + resume.json
+evals/                    Poof eval harness (datasets, run.ts, judge.ts)
+scripts/seed.ts           Seeds content/*.md into Convex RAG
+tests/e2e/                Playwright specs
 ```
 
-## Current routes
+## Routes
 
-- `/` chat page
-- `/login` login page
-- `/signup` signup page
-- `/api/chat` streamed chat API
+- `/` chat page (edge-cacheable)
+- `/about`, `/skills`, `/education` content pages (rendered from `content/`)
+- `/work`, `/work/$slug` work history (entries from `src/lib/content/work-meta.ts`)
+- `/resume` HTML resume · `/api/resume/pdf` PDF · `/resume.pdf` → 301 to the PDF
+- `/login`, `/signup` auth pages
+- `/api/chat` streamed chat API (POST only)
 - `/api/auth/$` Better Auth handler
+- `/sitemap.xml`, `/llms.txt`, `/llms-full.txt` SEO / AI-crawler surfaces
 
 ## How chat works
 
-1. User sends a message from `src/routes/index.tsx`
-2. Frontend posts to `/api/chat`
-3. Server expands the query with OpenAI
-4. Server calls Convex RAG search in namespace `portfolio`
-5. Retrieved context is injected into `content/system-prompt.md`
-6. Server streams the final answer back to the UI
+1. The frontend posts `{ id, message }` to `/api/chat`.
+2. The handler checks the conversation-session cookie (`sessionId` must match the conversation `id`).
+3. It loads the conversation from Convex (`getConversationById`).
+4. The last user message is expanded into a richer search query with `gpt-5.4-nano`.
+5. Convex RAG search runs in namespace `portfolio` (`limit 5`, `vectorScoreThreshold 0.4`).
+6. Retrieved context is injected into `content/system-prompt.md` (`{retrieved_context}`).
+7. The user message is persisted; `gpt-5.4-mini` streams the answer (with a `download_resume` tool).
+8. `onFinish` persists the assistant message.
+
+The homepage's first message is a separate **cached intro** (`convex/intro.ts`, action-cache, 30-day TTL) so a new visit renders an LLM intro without a per-request model call.
 
 Key files:
 
-- `src/routes/index.tsx`
 - `src/routes/api/chat/index.ts`
-- `convex/search.ts`
+- `convex/search.ts`, `convex/rag.ts`, `convex/intro.ts`
 - `content/system-prompt.md`
 
 ## Local setup
@@ -104,9 +123,11 @@ SENTRY_AUTH_TOKEN=
 
 Notes:
 
-- `RESEND_API_KEY` and `RESEND_FROM_EMAIL` are needed for email verification
+- `TOAST_SECRET` seals the conversation + toast cookies — the app throws without it
+- `RESEND_API_KEY` / `RESEND_FROM_EMAIL` are needed for email verification
 - PostHog is optional and safely no-ops if unset
-- Sentry build upload vars are only needed if you want release uploads/source maps
+- Sentry build vars only matter for release uploads / source maps
+- `AUTH_ALLOWED_EMAILS` and `E2E_TEST_MODE` are dev/e2e-only (never set in prod)
 
 ### 3. Start Convex
 
@@ -114,15 +135,9 @@ Notes:
 pnpm dlx convex dev
 ```
 
-If needed, initialize Convex first:
-
-```bash
-pnpm dlx convex init
-```
-
 ### 4. Seed portfolio content
 
-This reads markdown files from `content/` and uploads them to Convex RAG.
+Reads `content/*.md` and uploads them to Convex RAG.
 
 ```bash
 pnpm seed
@@ -138,32 +153,25 @@ App runs on `http://localhost:3000`.
 
 ## Auth
 
-- Better Auth is configured in `src/lib/auth-config.ts`
-- Auth HTTP handler lives at `src/routes/api/auth/$.ts`
-- Convex auth integration lives under `convex/betterAuth/`
-- Email/password auth is enabled
-- Email verification is required
+- Better Auth is configured in `src/lib/auth-config.ts` (shared with the Convex component in `convex/betterAuth/`)
+- Email/password is enabled; email verification is required (relaxed only when `E2E_TEST_MODE=true`)
+- **Allowlist gate:** a `before` hook rejects sign-in/sign-up unless the email is allowlisted. Only the owner email is allowed in prod (extra emails via `AUTH_ALLOWED_EMAILS` on dev), so auth is effectively single-user despite the public-looking UI
+- Auth HTTP handler: `src/routes/api/auth/$.ts`; Convex routes registered in `convex/http.ts`
 
-Current route protection is minimal:
+Route protection:
 
 - logged-in users are redirected away from `/login` and `/signup`
-- `/` and `/api/chat` are public
+- `/` and `/api/chat` are public (chat is scoped by the conversation cookie, not by login)
 
 ## Database / persistence
 
-There is no custom app schema yet.
+App schema (`convex/schema.ts`):
 
-Current persisted data is mostly:
+- `conversations` — `createdAt`, `updatedAt`, `sessionId?`, `title?`
+- `messages` — `conversationId`, `role`, `uiMessageId`, `createdAt`, `modelId?`, `provider?`, `metadataJson?`
+- `messageParts` — `messageId`, `order`, `partJson`, `type`, plus tool/text columns
 
-- Better Auth tables in `convex/betterAuth/schema.ts`
-  - `user`
-  - `session`
-  - `account`
-  - `verification`
-  - `jwks`
-- RAG-managed content/indexes from `@convex-dev/rag`
-
-The root Convex schema in `convex/schema.ts` is currently empty.
+Better Auth tables (`user`, `session`, `account`, `verification`, `jwks`) live in the betterAuth component (`convex/betterAuth/schema.ts`, generated). Content embeddings are managed by `@convex-dev/rag`.
 
 ## Useful commands
 
@@ -171,59 +179,56 @@ The root Convex schema in `convex/schema.ts` is currently empty.
 pnpm dev
 pnpm build
 pnpm start
-pnpm test
-pnpm typecheck
-pnpm lint
+pnpm test          # vitest (convex + node + jsdom projects)
+pnpm test:e2e      # playwright
+pnpm evals         # Poof eval harness
+pnpm typecheck     # tsgo --noEmit
+pnpm lint          # oxfmt + oxlint
 pnpm format
 pnpm seed
 ```
 
 ## Conventions
 
-- TypeScript strict mode
+- TypeScript strict mode; `#/*` import alias → `src/*`
 - File-based routing in `src/routes`
 - Forms use TanStack Form + Zod
-- Styling uses Tailwind utilities and shared UI primitives
-- Use `#/` import alias for app code
-- Generated files should not be edited manually:
-  - `src/routeTree.gen.ts`
-  - `convex/betterAuth/schema.ts`
-
-Formatting/linting:
-
-- `oxfmt`
-- `oxlint`
+- Styling uses Tailwind utilities + shared UI primitives
+- Formatting/linting: `oxfmt` + `oxlint`; typecheck via `tsgo`
+- Generated files (do not edit): `src/routeTree.gen.ts`, `convex/_generated/`, `convex/betterAuth/schema.ts`
 
 ## Observability
 
-- Sentry is wired for client and server
-- PostHog provider is mounted globally
+- Sentry wired for client (lazy-loaded) and server (`instrument.server.mjs`)
+- PostHog provider mounted globally (typed events in `src/lib/analytics.ts`)
+- Vercel Analytics + Speed Insights; Google Analytics
 
-Relevant files:
-
-- `src/start.ts`
-- `src/server.ts`
-- `vite.config.ts`
-- `src/integrations/posthog/provider.tsx`
+Relevant files: `src/start.ts`, `src/server.ts`, `src/router.tsx`, `vite.config.ts`, `nitro.config.ts`, `src/integrations/posthog/provider.tsx`.
 
 ## Testing
 
-Vitest is installed and `pnpm test` is available, but there are currently no test files in the repo.
+- Vitest (`vitest.config.ts`) runs three projects: `convex` (edge-runtime, `convex-test`), `node` (`src` + `evals` `*.test.ts`), `jsdom` (`*.test.tsx`)
+- Playwright e2e in `tests/e2e/` (auth setup project seeds a throwaway user; logged-out + logged-in specs)
+- `pnpm evals` runs the Poof eval harness; CI also runs it as a blocking PR check
 
-## Known limitations
+## Deployment
 
-- README used to be starter-template content; this file now reflects the current app
-- Chat history is not persisted
-- No role/permission system yet
-- Very small route surface today
-- Convex is used mainly for auth + RAG, not broader app data yet
+- Built with Vite + Nitro; deployed to Vercel
+- `nitro.config.ts` sets security headers (CSP/HSTS/etc.), edge-caches the homepage, and `no-store`s API routes
+- `pnpm build` copies `instrument.server.mjs` into the server output for runtime Sentry/OTel
 
 ## Adding content
 
 To update Lucien's knowledge base:
 
 1. Add or edit markdown files in `content/`
-2. Keep `content/system-prompt.md` for prompt instructions only
+2. Keep `content/system-prompt.md` for prompt instructions only (it's skipped by the seed script)
 3. Run `pnpm seed`
 
-`system-prompt.md` is skipped by the seed script on purpose.
+The same `content/*.md` drives both the chat RAG index and the rendered HTML pages + `/llms-full.txt`.
+
+## Known limitations
+
+- Auth is owner-only (allowlist), not open signup
+- No role/permission system
+- Small route surface; Convex is used for chat persistence, RAG, and auth (not broader app data)
