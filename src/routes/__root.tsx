@@ -2,6 +2,7 @@ import type { Toast } from "#/lib/toast";
 import type { QueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 
+import { GlobalLoading } from "#/components/global-loading";
 import { NotFound } from "#/components/not-found";
 import { SiteNav } from "#/components/site-nav";
 import { Toaster } from "#/components/ui/sonner";
@@ -294,6 +295,7 @@ function RootDocument({ children }: { children: ReactNode }) {
         <GoogleAnalyticsScripts />
       </head>
       <body className="font-sans wrap-anywhere antialiased">
+        <GlobalLoading />
         <Analytics />
         <SpeedInsights />
         <GoogleAnalyticsPageViews />
