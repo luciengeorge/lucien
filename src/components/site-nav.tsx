@@ -172,7 +172,7 @@ export function SiteNav() {
           >
             <Link
               to="/"
-              aria-label="Lucien George — Home"
+              aria-label="Lucien George | Home"
               className="ml-1 inline-flex h-7 items-center rounded-full px-1.5 text-neutral-950"
             >
               <InitialsMark className="size-3.5" />
@@ -194,7 +194,7 @@ export function SiteNav() {
         <div className="flex w-full items-center justify-between gap-2 lg:hidden">
           <Link
             to="/"
-            aria-label="Lucien George — Home"
+            aria-label="Lucien George | Home"
             className={cn(
               "pointer-events-auto inline-flex size-9 items-center justify-center rounded-full text-neutral-950",
               GLASS_CLASSES,

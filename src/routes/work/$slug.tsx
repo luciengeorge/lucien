@@ -18,7 +18,7 @@ export const Route = createFileRoute("/work/$slug")({
   head: ({ loaderData }) => {
     if (!loaderData) return {};
     const url = `${SITE_URL}/work/${loaderData.slug}`;
-    const title = `${loaderData.role} at ${loaderData.company} — Lucien George`;
+    const title = `${loaderData.role} at ${loaderData.company} | Lucien George`;
     const description = loaderData.summary;
     const structuredData = {
       "@context": "https://schema.org",

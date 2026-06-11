@@ -10,7 +10,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 const SITE_URL = "https://www.luciengeorge.com";
 const RESUME_URL = `${SITE_URL}/resume`;
-const TITLE = "Lucien George — Resume";
+const TITLE = "Lucien George | Resume";
 const DESCRIPTION =
   "Resume for Lucien George: Senior Product Engineer at Fyxer. Experience at Shopify, Le Wagon, Localista, Skyla, Impact Lebanon. McGill BEng Software Engineering.";
 

@@ -6,7 +6,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { Link, createFileRoute } from "@tanstack/react-router";
 
 const SITE_URL = "https://www.luciengeorge.com";
-const TITLE = "Lucien George — Work history";
+const TITLE = "Lucien George | Work history";
 const DESCRIPTION =
   "Lucien George's work history: Fyxer, Localista, Skyla, Shopify, Le Wagon, Impact Lebanon, and early roles. Each role with context, scope, and outcomes.";
 const URL = `${SITE_URL}/work`;

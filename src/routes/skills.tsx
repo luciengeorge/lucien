@@ -4,7 +4,7 @@ import { loadResume } from "#/lib/resume/load";
 import { createFileRoute } from "@tanstack/react-router";
 
 const SITE_URL = "https://www.luciengeorge.com";
-const TITLE = "Lucien George — Tech stack & skills";
+const TITLE = "Lucien George | Tech stack & skills";
 const DESCRIPTION =
   "Lucien George's tech stack: TypeScript, React, the TanStack ecosystem, Convex, Tailwind, Electron, Ruby on Rails, Python, native iOS/Android.";
 const URL = `${SITE_URL}/skills`;

@@ -280,7 +280,7 @@ export function ResumeDocument({ baseUrl, resume }: { baseUrl: string; resume: R
   const contactLine = [personal.phone, personal.email, personal.location].filter(Boolean).join(" · ");
 
   return (
-    <Document author={personal.name} subject="Resume" title={`${personal.name} – Resume`}>
+    <Document author={personal.name} subject="Resume" title={`${personal.name} - Resume`}>
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
           <Text style={styles.headerName}>{personal.name}</Text>
