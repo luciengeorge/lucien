@@ -6,8 +6,7 @@ import type { ChatMessage, ChatStatus } from "./chat.types";
 
 import { ChatMarkdown } from "./chat-markdown";
 import { ChatResumeCard } from "./chat-resume-card";
-import { ChatShimmerLine } from "./chat-shimmer-line";
-import { entryItemClassName } from "./chat.utils";
+import { ChatStatusMarker } from "./chat-status-marker";
 
 const ResumeToolOutputSchema = z.object({
   filename: z.string(),
@@ -19,15 +18,7 @@ function isResumeToolOutput(value: unknown): value is ResumeToolOutput {
   return ResumeToolOutputSchema.safeParse(value).success;
 }
 
-export function ChatTimelineMessage({
-  isFirst,
-  message,
-  status,
-}: {
-  isFirst: boolean;
-  message: ChatMessage;
-  status: ChatStatus;
-}) {
+export function ChatTimelineMessage({ message, status }: { message: ChatMessage; status: ChatStatus }) {
   const role = message.role === "user" ? "user" : "assistant";
   const reasoningParts = message.parts.flatMap((part, index) =>
     match(part)
@@ -63,56 +54,51 @@ export function ChatTimelineMessage({
   });
 
   return (
-    <li className={entryItemClassName(isFirst)}>
-      <div className="space-y-4">
-        <p
+    <div className="space-y-4">
+      <p
+        className={cn(
+          "font-mono text-sm tracking-wide uppercase",
+          role === "assistant" ? "text-neutral-500" : "text-neutral-400",
+        )}
+      >
+        {role === "user" ? "You" : "Poof"}
+      </p>
+
+      {reasoningParts.length > 0 ? (
+        <div className="space-y-2 border-l border-neutral-950/8 pl-4">
+          <p className="font-mono text-sm tracking-wide text-neutral-400 uppercase">Thinking</p>
+          {reasoningParts.map((part) => (
+            <p key={part.key} className="max-w-[62ch] text-sm text-pretty text-neutral-500 italic">
+              {part.text}
+            </p>
+          ))}
+        </div>
+      ) : null}
+
+      {textParts.length > 0 ? (
+        <div
           className={cn(
-            "font-mono text-sm tracking-wide uppercase",
-            role === "assistant" ? "text-neutral-500" : "text-neutral-400",
+            "max-w-none [&_p]:max-w-[62ch] [&_p]:text-pretty",
+            role === "assistant"
+              ? "text-[1.02rem] text-neutral-800 sm:text-[1.08rem]"
+              : "text-base font-medium text-neutral-950 sm:text-[1.02rem]",
           )}
         >
-          {role === "user" ? "You" : "Poof"}
-        </p>
+          {textParts.map((part) => (
+            <ChatMarkdown key={part.key} isAnimating={status === "streaming"} text={part.text} />
+          ))}
+        </div>
+      ) : role === "assistant" && status === "streaming" && resumeToolParts.length === 0 ? (
+        <ChatStatusMarker label="Generating response…" />
+      ) : null}
 
-        {reasoningParts.length > 0 ? (
-          <div className="space-y-2 border-l border-neutral-950/8 pl-4">
-            <p className="font-mono text-sm tracking-wide text-neutral-400 uppercase">Thinking</p>
-            {reasoningParts.map((part) => (
-              <p key={part.key} className="max-w-[62ch] text-sm text-pretty text-neutral-500 italic">
-                {part.text}
-              </p>
-            ))}
-          </div>
-        ) : null}
-
-        {textParts.length > 0 ? (
-          <div
-            className={cn(
-              "max-w-none [&_p]:max-w-[62ch] [&_p]:text-pretty",
-              role === "assistant"
-                ? "text-[1.02rem] text-neutral-800 sm:text-[1.08rem]"
-                : "text-base font-medium text-neutral-950 sm:text-[1.02rem]",
-            )}
-          >
-            {textParts.map((part) => (
-              <ChatMarkdown key={part.key} isAnimating={status === "streaming"} text={part.text} />
-            ))}
-          </div>
-        ) : role === "assistant" && status === "streaming" && resumeToolParts.length === 0 ? (
-          <div className="space-y-3">
-            <ChatShimmerLine widthClassName="w-full" />
-            <ChatShimmerLine widthClassName="w-11/12" />
-          </div>
-        ) : null}
-
-        {resumeToolParts.length > 0 ? (
-          <div className="space-y-2">
-            {resumeToolParts.map((part) => (
-              <ChatResumeCard key={part.key} filename={part.filename} url={part.url} />
-            ))}
-          </div>
-        ) : null}
-      </div>
-    </li>
+      {resumeToolParts.length > 0 ? (
+        <div className="space-y-2">
+          {resumeToolParts.map((part) => (
+            <ChatResumeCard key={part.key} filename={part.filename} url={part.url} />
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 }
