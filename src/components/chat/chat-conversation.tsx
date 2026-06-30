@@ -1,5 +1,13 @@
 import type { ChatConversationState } from "#/lib/chat-types";
 
+import {
+  MessageScroller,
+  MessageScrollerButton,
+  MessageScrollerContent,
+  MessageScrollerItem,
+  MessageScrollerProvider,
+  MessageScrollerViewport,
+} from "#/components/ui/message-scroller";
 import { AnalyticsEvent, useAnalytics } from "#/lib/analytics";
 import { parseSerializedMessages } from "#/lib/chat-types";
 import { startNewConversation } from "#/lib/functions/start-new-conversation";
@@ -7,15 +15,14 @@ import { useChat } from "@ai-sdk/react";
 import { useMutation } from "@tanstack/react-query";
 import { DefaultChatTransport } from "ai";
 import { startTransition, useEffect, useMemo, useRef } from "react";
-import { StickToBottom, useStickToBottom } from "use-stick-to-bottom";
 
 import { ChatComposerBlock } from "./chat-composer-block";
 import { ChatIntroPlaceholder } from "./chat-intro-placeholder";
 import { ChatNewConversationBar } from "./chat-new-conversation-bar";
 import { ChatPendingReply } from "./chat-pending-reply";
-import { ChatScrollToBottomButton } from "./chat-scroll-to-bottom-button";
 import { ChatStarterPrompts } from "./chat-starter-prompts";
 import { ChatTimelineMessage } from "./chat-timeline-message";
+import { entryItemClassName } from "./chat.utils";
 
 export function ChatConversation({
   chatState,
@@ -30,19 +37,11 @@ export function ChatConversation({
     () => parseSerializedMessages(chatState.serializedMessages),
     [chatState.serializedMessages],
   );
-  const stickToBottom = useStickToBottom({
-    initial: "instant",
-    resize: "smooth",
-  });
   const startConversationMutation = useMutation({
     mutationFn: startNewConversation,
     onSuccess(nextConversation) {
       startTransition(() => {
         onConversationChange(nextConversation);
-      });
-
-      requestAnimationFrame(() => {
-        void stickToBottom.scrollToBottom("auto");
       });
     },
   });
@@ -113,7 +112,6 @@ export function ChatConversation({
       message_length: message.length,
       source: "composer",
     });
-    void stickToBottom.scrollToBottom({ animation: "smooth" });
     await sendMessage({ text: message });
   };
 
@@ -125,7 +123,6 @@ export function ChatConversation({
       message_length: prompt.length,
       source: "starter_prompt",
     });
-    void stickToBottom.scrollToBottom({ animation: "smooth" });
     await sendMessage({ text: prompt });
   };
 
@@ -137,7 +134,6 @@ export function ChatConversation({
       message_length: prompt.length,
       source: "resume_chip",
     });
-    void stickToBottom.scrollToBottom({ animation: "smooth" });
     void sendMessage({ text: prompt });
   };
 
@@ -155,17 +151,31 @@ export function ChatConversation({
       <div className="flex min-h-0 w-full grow flex-col gap-2 sm:gap-5">
         <ChatNewConversationBar isDisabled={isStartingNewConversation} onClick={() => void handleNewConversation()} />
 
-        <StickToBottom instance={stickToBottom} className="relative min-h-0 grow">
-          <StickToBottom.Content className="mx-auto w-full max-w-3xl px-4 pb-20 sm:px-6 sm:pb-24">
-            <ol className="space-y-0">
-              {showIntroPlaceholder ? <ChatIntroPlaceholder /> : null}
-              {visibleMessages.map((message, index) => (
-                <ChatTimelineMessage key={message.id} isFirst={index === 0} message={message} status={status} />
-              ))}
-              {showPendingReply ? <ChatPendingReply isFirst={visibleMessages.length === 0} /> : null}
-            </ol>
-          </StickToBottom.Content>
-        </StickToBottom>
+        <MessageScrollerProvider
+          key={chatState.conversation?.id ?? "new-conversation"}
+          autoScroll
+          defaultScrollPosition="end"
+        >
+          <MessageScroller className="min-h-0 grow">
+            <MessageScrollerViewport>
+              <MessageScrollerContent className="mx-auto w-full max-w-3xl gap-0 px-4 pb-20 sm:px-6 sm:pb-24">
+                {showIntroPlaceholder ? <ChatIntroPlaceholder /> : null}
+                {visibleMessages.map((message, index) => (
+                  <MessageScrollerItem
+                    key={message.id}
+                    messageId={message.id}
+                    scrollAnchor={message.role === "user"}
+                    className={entryItemClassName(index === 0)}
+                  >
+                    <ChatTimelineMessage message={message} status={status} />
+                  </MessageScrollerItem>
+                ))}
+                {showPendingReply ? <ChatPendingReply isFirst={visibleMessages.length === 0} /> : null}
+              </MessageScrollerContent>
+            </MessageScrollerViewport>
+            <MessageScrollerButton />
+          </MessageScroller>
+        </MessageScrollerProvider>
 
         {showStarterPrompts ? (
           <div className="mx-auto w-full max-w-3xl px-4 sm:px-6">
@@ -175,13 +185,6 @@ export function ChatConversation({
 
         <div className="sticky bottom-0 z-10">
           <div className="relative mx-auto w-full max-w-3xl px-4 sm:px-6">
-            {!stickToBottom.isAtBottom ? (
-              <ChatScrollToBottomButton
-                onClick={() => {
-                  void stickToBottom.scrollToBottom({ animation: "smooth" });
-                }}
-              />
-            ) : null}
             <div className="bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/75">
               <ChatComposerBlock isBusy={isBusy} onResumeRequest={handleResumeRequest} onSend={handleSend} />
             </div>
