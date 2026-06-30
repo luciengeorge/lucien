@@ -16,7 +16,7 @@ test.describe("SiteNav (desktop)", () => {
 
   test("renders the monogram link to home", async ({ page }) => {
     await page.goto("/about");
-    const monogramLink = page.getByRole("link", { name: "Lucien George — Home" }).first();
+    const monogramLink = page.getByRole("link", { name: "Lucien George | Home" }).first();
     await expect(monogramLink).toBeVisible();
     await expect(monogramLink).toHaveAttribute("href", "/");
     // SVG monogram is present
@@ -69,7 +69,7 @@ test.describe("SiteNav (mobile)", () => {
 
   test("shows the mobile monogram + dropdown trigger; the desktop pill is hidden", async ({ page }) => {
     await page.goto("/about");
-    const monogramLink = page.getByRole("link", { name: "Lucien George — Home" }).first();
+    const monogramLink = page.getByRole("link", { name: "Lucien George | Home" }).first();
     await expect(monogramLink).toBeVisible();
     const trigger = page.getByRole("button", { name: /open menu/i });
     await expect(trigger).toBeVisible();
