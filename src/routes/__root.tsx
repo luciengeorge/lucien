@@ -205,6 +205,10 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         content: "2520",
       },
       {
+        property: "og:image:alt",
+        content: "Lucien George, Senior Product Engineer at Fyxer",
+      },
+      {
         property: "og:site_name",
         content: "Lucien George",
       },
@@ -236,15 +240,15 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         name: "twitter:image",
         content: OG_IMAGE_URL,
       },
+      {
+        name: "twitter:image:alt",
+        content: "Lucien George, Senior Product Engineer at Fyxer",
+      },
     ],
     links: [
       {
         rel: "stylesheet",
         href: appCss,
-      },
-      {
-        rel: "canonical",
-        href: SITE_URL,
       },
       {
         rel: "icon",
