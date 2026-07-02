@@ -5,7 +5,7 @@ import { expect, test } from "@playwright/test";
  * with a "You are already logged in" info toast.
  *
  * This spec runs in the `chromium-authed` Playwright project, which depends on the
- * `setup` project (auth.setup.ts) and loads its saved session storage state — so
+ * `setup` project (auth.setup.ts) and loads its saved session storage state - so
  * the browser context is already authenticated here.
  */
 

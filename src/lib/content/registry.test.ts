@@ -6,7 +6,7 @@ import { WORK_META } from "./work-meta";
 /**
  * Guards parity between WORK_META (consumed by the Playwright e2e spec) and
  * WORK_ENTRIES (consumed by the routes). They are constructed from the same
- * source list — these assertions exist so any future drift (e.g. someone
+ * source list - these assertions exist so any future drift (e.g. someone
  * inlines the array back into registry.ts, or forgets to add a markdown
  * source for a new slug) fails CI before reaching production.
  */

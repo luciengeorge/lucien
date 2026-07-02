@@ -47,7 +47,7 @@ const SOCIAL_ICONS: Record<string, typeof GithubIcon> = {
 };
 
 /**
- * Glass surface — Apple-style frosted-glass treatment.
+ * Glass surface - Apple-style frosted-glass treatment.
  *
  * - Low-opacity bg lets the layer below show through
  * - High blur + saturation = the "vivid frosted" Apple look
@@ -101,7 +101,7 @@ function NavLinkPill({ to, label }: NavItem) {
 }
 
 /**
- * Mobile menu — uses shadcn's Base UI dropdown-menu so we inherit the same
+ * Mobile menu - uses shadcn's Base UI dropdown-menu so we inherit the same
  * frosted-glass popup styling as the rest of the design system.
  */
 function MobileMenu() {
@@ -164,7 +164,7 @@ export function SiteNav() {
   return (
     <div className="fixed inset-x-0 top-0 z-30">
       <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 pt-3 sm:px-6">
-        {/* Desktop pill — sits centered above content */}
+        {/* Desktop pill - sits centered above content */}
         <div className="hidden flex-1 justify-center lg:flex">
           <nav
             aria-label="Primary"
@@ -190,7 +190,7 @@ export function SiteNav() {
           </nav>
         </div>
 
-        {/* Mobile — monogram left, dropdown-menu trigger right */}
+        {/* Mobile - monogram left, dropdown-menu trigger right */}
         <div className="flex w-full items-center justify-between gap-2 lg:hidden">
           <Link
             to="/"

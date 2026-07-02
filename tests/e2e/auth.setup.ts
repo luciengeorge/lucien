@@ -7,7 +7,7 @@ import { dirname } from "node:path";
  * which the `chromium-authed` project loads for the logged-in specs.
  *
  * Requirements (set in CI; defaults work locally against the dev Convex deployment):
- * - The dev server runs with E2E_TEST_MODE=true (relaxes email verification) — set
+ * - The dev server runs with E2E_TEST_MODE=true (relaxes email verification) - set
  *   by playwright.config webServer env.
  * - AUTH_ALLOWED_EMAILS includes E2E_LOGIN_EMAIL so the allowlist gate permits it.
  */

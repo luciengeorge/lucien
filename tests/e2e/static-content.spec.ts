@@ -140,7 +140,7 @@ test.describe("static content pages", () => {
       const robots = page.locator('meta[name="robots"]');
       await expect(robots).toHaveAttribute("content", /noindex/);
     } else {
-      test.skip(true, "auth route returns non-200 in dev — see auth-config setup");
+      test.skip(true, "auth route returns non-200 in dev - see auth-config setup");
     }
   });
 
@@ -150,7 +150,7 @@ test.describe("static content pages", () => {
       const robots = page.locator('meta[name="robots"]');
       await expect(robots).toHaveAttribute("content", /noindex/);
     } else {
-      test.skip(true, "auth route returns non-200 in dev — see auth-config setup");
+      test.skip(true, "auth route returns non-200 in dev - see auth-config setup");
     }
   });
 });

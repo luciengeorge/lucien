@@ -12,7 +12,7 @@ const PRIMARY_AUTH_EMAIL = "lucienkgeorge@gmail.com";
  * Additional emails can be permitted via the comma-separated `AUTH_ALLOWED_EMAILS`
  * env var, which is set ONLY on the dev Convex deployment (for Playwright e2e).
  *
- * NOTE: we deliberately do NOT gate on `NODE_ENV` — it is unreliable in the Convex
+ * NOTE: we deliberately do NOT gate on `NODE_ENV` - it is unreliable in the Convex
  * runtime (HTTP actions report "production" even on the dev deployment), which would
  * silently disable the allowlist. The security boundary is the env var itself:
  * production simply never has `AUTH_ALLOWED_EMAILS` set, so only the owner can sign in.
@@ -33,7 +33,7 @@ function isAllowedAuthEmail(email: unknown): boolean {
 /**
  * Email verification is required in normal operation. For Playwright e2e runs we seed
  * a throwaway user and need it to sign in immediately, so verification is disabled when
- * `E2E_TEST_MODE === "true"` — an env var set ONLY on the dev deployment, never prod.
+ * `E2E_TEST_MODE === "true"` - an env var set ONLY on the dev deployment, never prod.
  * (As above, `NODE_ENV` is not a reliable prod signal inside Convex.)
  */
 function requireEmailVerification(): boolean {

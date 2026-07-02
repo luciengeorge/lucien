@@ -39,7 +39,7 @@ test.describe("SEO / GEO / AEO routes", () => {
     expect(res.status()).toBe(200);
     expect(res.headers()["content-type"]).toMatch(/text\/plain/);
     const body = await res.text();
-    expect(body).toContain("# Lucien George — full content");
+    expect(body).toContain("# Lucien George - full content");
     expect(body).toContain("## About (https://www.luciengeorge.com/about)");
     expect(body).toContain("## Work history (https://www.luciengeorge.com/work)");
     expect(body).toContain("### Senior Product Engineer at Fyxer");

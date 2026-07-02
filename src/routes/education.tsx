@@ -57,7 +57,7 @@ function EducationPage() {
     <ContentPage
       eyebrow="Education"
       title="Education"
-      intro="Where Lucien studied — formal degrees, bootcamps, and continuing education."
+      intro="Where Lucien studied - formal degrees, bootcamps, and continuing education."
       sources={EDUCATION_SOURCES}
       footer={
         <ul className="space-y-5 text-sm">

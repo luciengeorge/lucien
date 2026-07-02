@@ -6,7 +6,7 @@ Disallow: /api/
 Disallow: /login
 Disallow: /signup
 
-# AI / LLM crawlers — explicitly allowed to ingest public content
+# AI / LLM crawlers - explicitly allowed to ingest public content
 User-agent: GPTBot
 Allow: /
 Disallow: /api/

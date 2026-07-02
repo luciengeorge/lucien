@@ -21,7 +21,7 @@ const SessionResponseSchema = z.object({
  * We hit the app's own `/api/auth/get-session` endpoint with the incoming request's
  * cookies, building an absolute URL from the request host. (The better-auth *client*
  * SDK has no valid server-side baseURL, so calling it here throws "fetch failed" and
- * 500s any logged-in visit to a `_auth` route — this avoids that.)
+ * 500s any logged-in visit to a `_auth` route - this avoids that.)
  *
  * Returns the `{ user }` object, or null when unauthenticated / on error.
  */

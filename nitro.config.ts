@@ -26,6 +26,14 @@ const securityHeaders = {
   "X-Frame-Options": "DENY",
 };
 
+// Public assets embedded by other origins (OG/social previews, favicons) must
+// opt out of the default same-origin CORP or the browser blocks the fetch
+// (ERR_BLOCKED_BY_RESPONSE.NotSameOrigin).
+const embeddableAssetHeaders = {
+  ...securityHeaders,
+  "Cross-Origin-Resource-Policy": "cross-origin",
+};
+
 export default defineNitroConfig({
   routeRules: {
     "/**": {
@@ -53,6 +61,12 @@ export default defineNitroConfig({
     },
     "/resume.pdf": {
       redirect: { status: 301, to: "/api/resume/pdf" },
+    },
+    "/cover.png": {
+      headers: embeddableAssetHeaders,
+    },
+    "/favicon.png": {
+      headers: embeddableAssetHeaders,
     },
   },
 });
