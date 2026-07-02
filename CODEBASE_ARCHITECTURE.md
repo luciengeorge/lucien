@@ -49,10 +49,10 @@ Browser ──► TanStack Start (Nitro / Vercel)
 
 ### Entry points
 
-- `src/start.ts` — client entry
-- `src/server.ts` — server entry
-- `src/router.tsx` — `getRouter()`; lazy-inits the Sentry browser SDK in prod
-- `instrument.server.mjs` — server Sentry/OTel, loaded via `NODE_OPTIONS=--import`
+- `src/start.ts` - client entry
+- `src/server.ts` - server entry
+- `src/router.tsx` - `getRouter()`; lazy-inits the Sentry browser SDK in prod
+- `instrument.server.mjs` - server Sentry/OTel, loaded via `NODE_OPTIONS=--import`
 
 ## Frontend (`src/`)
 
@@ -62,38 +62,38 @@ File-based. Pages: `/` (chat), `/about`, `/skills`, `/education`, `/work` + `/wo
 
 ### Components (`src/components/`)
 
-- `chat/` — the chat UI (composer, conversation, timeline message, pending reply, markdown render, starter prompts, resume card, etc.)
-- `ui/` — shadcn-style primitives (Base UI / Radix + CVA): button, card, dropdown-menu, input, field, label, select, separator, slider, switch, textarea, tooltip, scroll-area, spinner, sonner, empty, nav-link
-- `content/content-page.tsx` — shared markdown page layout
+- `chat/` - the chat UI (composer, conversation, timeline message, pending reply, markdown render, starter prompts, resume card, etc.)
+- `ui/` - shadcn-style primitives (Base UI / Radix + CVA): button, card, dropdown-menu, input, field, label, select, separator, slider, switch, textarea, tooltip, scroll-area, spinner, sonner, empty, nav-link
+- `content/content-page.tsx` - shared markdown page layout
 - `resume/company-logo.tsx`, `site-nav.tsx`, `download-cv-button.tsx`, `global-loading.tsx`, `initials-mark.tsx`, `not-found.tsx`
 
 ### Lib (`src/lib/`)
 
-- `content/registry.ts` + `content/work-meta.ts` — single source for work entries; joins metadata with `?raw` markdown
-- `resume/{load,schema,pdf-document}` — resume loading (zod-validated), formatting, PDF
-- `auth-config.ts` / `auth-client.ts` / `auth-server.ts` — Better Auth wiring
-- `conversation-session.server.ts`, `toast-session.server.ts` — sealed-cookie sessions (`TOAST_SECRET`)
-- `functions/` — server functions (session, toast, start-new-conversation)
+- `content/registry.ts` + `content/work-meta.ts` - single source for work entries; joins metadata with `?raw` markdown
+- `resume/{load,schema,pdf-document}` - resume loading (zod-validated), formatting, PDF
+- `auth-config.ts` / `auth-client.ts` / `auth-server.ts` - Better Auth wiring
+- `conversation-session.server.ts`, `toast-session.server.ts` - sealed-cookie sessions (`TOAST_SECRET`)
+- `functions/` - server functions (session, toast, start-new-conversation)
 - `analytics.ts` (typed PostHog events), `logger.ts`, `social-links.ts`, `homepage-intro.ts`, `utils.ts` (`cn()`)
 
 ## Backend (`convex/`)
 
 ### Schema (`convex/schema.ts`)
 
-- **conversations** — `createdAt`, `updatedAt`, `sessionId?`, `title?`; indexes by created/updated/session
-- **messages** — `conversationId`, `role`, `uiMessageId`, `createdAt`, `modelId?`, `provider?`, `metadataJson?`; indexes by conversation, by (conversation, uiMessageId), by created
-- **messageParts** — `messageId`, `order`, `partJson`, `type`, plus `textPreview?` / `toolCallId?` / `toolName?` / `toolState?`; index by message
+- **conversations** - `createdAt`, `updatedAt`, `sessionId?`, `title?`; indexes by created/updated/session
+- **messages** - `conversationId`, `role`, `uiMessageId`, `createdAt`, `modelId?`, `provider?`, `metadataJson?`; indexes by conversation, by (conversation, uiMessageId), by created
+- **messageParts** - `messageId`, `order`, `partJson`, `type`, plus `textPreview?` / `toolCallId?` / `toolName?` / `toolState?`; index by message
 
 UI messages are stored as JSON parts with extracted columns for queryability. Better Auth tables live in the betterAuth component (`convex/betterAuth/schema.ts`, generated).
 
 ### Functions
 
-- `conversations.ts` — `createConversation`, `getConversationById` (ownership-checked, hydrates parts), `upsertConversationMessage` (zod-validated, derives title)
-- `search.ts` — `searchContext(query)` → RAG search text
-- `intro.ts` — `generateIntro` (internal) + `getCachedIntro`, wrapped in action-cache (30-day TTL)
-- `rag.ts` — RAG instance (`text-embedding-3-small`, 1536-d, namespace `portfolio`)
-- `seed.ts` — `resetNamespace` + `addContent`
-- `http.ts` — registers Better Auth routes (CORS)
+- `conversations.ts` - `createConversation`, `getConversationById` (ownership-checked, hydrates parts), `upsertConversationMessage` (zod-validated, derives title)
+- `search.ts` - `searchContext(query)` → RAG search text
+- `intro.ts` - `generateIntro` (internal) + `getCachedIntro`, wrapped in action-cache (30-day TTL)
+- `rag.ts` - RAG instance (`text-embedding-3-small`, 1536-d, namespace `portfolio`)
+- `seed.ts` - `resetNamespace` + `addContent`
+- `http.ts` - registers Better Auth routes (CORS)
 
 ## Content (`content/`)
 
@@ -101,9 +101,9 @@ Markdown is the single source of truth for both the chat RAG index and the rende
 
 ## Sessions (three, independent)
 
-1. **Better Auth session** — owner login (allowlisted).
-2. **Conversation session** — anonymous visitor; sealed cookie `lucien-conversation` (`TOAST_SECRET`) holding `{ sessionId, conversationId }`; authorizes chat access.
-3. **Toast session** — one-shot flash messages; read client-side after hydration so the SSR homepage stays cookie-free and edge-cacheable.
+1. **Better Auth session** - owner login (allowlisted).
+2. **Conversation session** - anonymous visitor; sealed cookie `lucien-conversation` (`TOAST_SECRET`) holding `{ sessionId, conversationId }`; authorizes chat access.
+3. **Toast session** - one-shot flash messages; read client-side after hydration so the SSR homepage stays cookie-free and edge-cacheable.
 
 ## Chat pipeline (`src/routes/api/chat/index.ts`)
 

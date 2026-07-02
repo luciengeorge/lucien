@@ -6,7 +6,7 @@ A TanStack Start full-stack app: a public chat UI grounded (RAG) in markdown abo
 
 ## What it does
 
-- Public chat at `/` — visitors ask about Lucien; Poof answers using only retrieved context from `content/`
+- Public chat at `/` - visitors ask about Lucien; Poof answers using only retrieved context from `content/`
 - First assistant message is a cached, LLM-written intro baked into the first paint
 - Per-visitor conversation history persisted in Convex
 - Static pages: about, skills, education, work (per role), resume (HTML + downloadable PDF)
@@ -123,7 +123,7 @@ SENTRY_AUTH_TOKEN=
 
 Notes:
 
-- `TOAST_SECRET` seals the conversation + toast cookies — the app throws without it
+- `TOAST_SECRET` seals the conversation + toast cookies - the app throws without it
 - `RESEND_API_KEY` / `RESEND_FROM_EMAIL` are needed for email verification
 - PostHog is optional and safely no-ops if unset
 - Sentry build vars only matter for release uploads / source maps
@@ -167,9 +167,9 @@ Route protection:
 
 App schema (`convex/schema.ts`):
 
-- `conversations` — `createdAt`, `updatedAt`, `sessionId?`, `title?`
-- `messages` — `conversationId`, `role`, `uiMessageId`, `createdAt`, `modelId?`, `provider?`, `metadataJson?`
-- `messageParts` — `messageId`, `order`, `partJson`, `type`, plus tool/text columns
+- `conversations` - `createdAt`, `updatedAt`, `sessionId?`, `title?`
+- `messages` - `conversationId`, `role`, `uiMessageId`, `createdAt`, `modelId?`, `provider?`, `metadataJson?`
+- `messageParts` - `messageId`, `order`, `partJson`, `type`, plus tool/text columns
 
 Better Auth tables (`user`, `session`, `account`, `verification`, `jwks`) live in the betterAuth component (`convex/betterAuth/schema.ts`, generated). Content embeddings are managed by `@convex-dev/rag`.
 

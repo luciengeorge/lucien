@@ -5,11 +5,11 @@ import { expect, test } from "@playwright/test";
  *
  * The detailed email/password validation rules are exhaustively covered by unit
  * tests (src/lib/schemas/auth.test.ts). Here we only assert the routes render the
- * form for an anonymous visitor — a stable check that doesn't depend on client
+ * form for an anonymous visitor - a stable check that doesn't depend on client
  * hydration timing (a submit-then-assert flow races the native form submission).
  */
 
-test.describe("auth forms — logged out", () => {
+test.describe("auth forms - logged out", () => {
   test("/login renders the login form for an anonymous visitor", async ({ page }) => {
     const response = await page.goto("/login", { waitUntil: "domcontentloaded" });
     expect(response?.status()).toBe(200);

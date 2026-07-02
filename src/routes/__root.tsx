@@ -30,7 +30,7 @@ interface MyRouterContext {
 const SITE_URL = "https://www.luciengeorge.com";
 const TITLE = "Lucien George | Senior Product Engineer at Fyxer";
 const DESCRIPTION =
-  "Lucien George is a Senior Product Engineer at Fyxer. Explore his work, background, projects, and interests through Poof, his AI-powered portfolio assistant.";
+  "Senior Product Engineer at Fyxer. Explore Lucien George's work, projects, and interests via Poof, his AI portfolio assistant.";
 const OG_IMAGE_URL = `${SITE_URL}/cover.png`;
 const TWITTER_HANDLE = "@luciengeorge16";
 
@@ -105,7 +105,7 @@ const structuredData = {
           name: "What does Lucien do at Fyxer?",
           acceptedAnswer: {
             "@type": "Answer",
-            text: "Lucien is a Senior Product Engineer leading development of Fyxer's notetaker product — a native macOS and Windows desktop app (Electron) that records meetings in the background without a bot. The product reached 1,000 weekly active users within months of launch.",
+            text: "Lucien is a Senior Product Engineer leading development of Fyxer's notetaker product - a native macOS and Windows desktop app (Electron) that records meetings in the background without a bot. The product reached 1,000 weekly active users within months of launch.",
           },
         },
         {
@@ -198,11 +198,15 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       },
       {
         property: "og:image:width",
-        content: "4800",
+        content: "1200",
       },
       {
         property: "og:image:height",
-        content: "2520",
+        content: "630",
+      },
+      {
+        property: "og:image:type",
+        content: "image/png",
       },
       {
         property: "og:image:alt",

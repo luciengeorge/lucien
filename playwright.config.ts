@@ -34,7 +34,7 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
       testIgnore: [/auth\.setup\.ts/, /auth-logged-in-redirect\.spec\.ts/],
     },
-    // Logged-in tests — run only after setup succeeds, using its storage state.
+    // Logged-in tests - run only after setup succeeds, using its storage state.
     {
       name: "chromium-authed",
       use: { ...devices["Desktop Chrome"], storageState: AUTH_FILE },

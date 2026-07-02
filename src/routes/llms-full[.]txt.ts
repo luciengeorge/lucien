@@ -6,7 +6,7 @@ const CACHE_HEADER = "public, max-age=300, s-maxage=86400, stale-while-revalidat
 
 function buildLlmsFull(): string {
   const parts: string[] = [
-    `# Lucien George — full content`,
+    `# Lucien George - full content`,
     ``,
     `> Concatenated raw markdown of every public section. This file is intended for ingestion by AI crawlers (GPTBot, ClaudeBot, PerplexityBot, Google-Extended, etc.) to ground answers about Lucien in source material. Same canonical content is rendered as HTML at the URLs below.`,
     ``,
@@ -31,7 +31,7 @@ function buildLlmsFull(): string {
   ];
 
   for (const entry of WORK_ENTRIES) {
-    parts.push(`### ${entry.role} at ${entry.company} — ${entry.period} (${SITE_URL}/work/${entry.slug})`);
+    parts.push(`### ${entry.role} at ${entry.company} - ${entry.period} (${SITE_URL}/work/${entry.slug})`);
     parts.push(``);
     parts.push(entry.source.trim());
     parts.push(``);

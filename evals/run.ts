@@ -23,7 +23,7 @@ const EXPANSION_MODEL = process.env.EVAL_EXPANSION_MODEL ?? "gpt-5.4-nano";
 // fully deterministic on non-reasoning models. Override via EVAL_SEED.
 const EVAL_SEED = Math.trunc(Number(process.env.EVAL_SEED ?? "1234")) || 1234;
 
-// Inlined from src/routes/api/chat/index.ts — same prompt used in production.
+// Inlined from src/routes/api/chat/index.ts - same prompt used in production.
 const QUERY_EXPANSION_PROMPT = `Rewrite the user's question into a better search query for finding relevant information about Lucien George's portfolio, career, projects, and personal life. Add context and relevant keywords. Return ONLY the rewritten query, nothing else.
 
 Examples:
@@ -168,8 +168,8 @@ function buildMarkdownSummary(report: EvalReport): string {
   } else {
     for (const f of failures) {
       const reasoning = "reasoning" in f.judge ? f.judge.reasoning : f.judge.error;
-      const score = "score" in f.judge ? f.judge.score.toFixed(2) : "—";
-      lines.push(`### ${f.case.id} (${f.case.category}/${f.case.subcategory}) — score ${score}`);
+      const score = "score" in f.judge ? f.judge.score.toFixed(2) : "-";
+      lines.push(`### ${f.case.id} (${f.case.category}/${f.case.subcategory}) - score ${score}`);
       lines.push("");
       lines.push(`**Q**: ${f.case.question}`);
       lines.push("");

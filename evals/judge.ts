@@ -32,7 +32,7 @@ function tryParseJson(raw: string): unknown {
   try {
     return JSON.parse(trimmed);
   } catch {
-    // some models wrap JSON in ```json fences — strip them
+    // some models wrap JSON in ```json fences - strip them
     const fenceMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/);
     if (fenceMatch?.[1]) {
       try {
@@ -104,7 +104,7 @@ export async function judge({
     JSON.stringify(caseInfo, null, 2),
     "```",
     "",
-    "RETRIEVED CONTEXT — the exact source material the assistant was given (RAG).",
+    "RETRIEVED CONTEXT - the exact source material the assistant was given (RAG).",
     "Judge groundedness/fabrication AGAINST THIS CONTEXT, not against the short",
     "expected_facts list. Any claim supported by this context is grounded and must",
     "NOT be treated as fabrication, even if it goes beyond expected_facts.",
@@ -134,7 +134,7 @@ export async function judge({
 
   if (verdicts.length === 0) return { error: lastError };
 
-  // Median score across samples — robust to a single outlier judgment.
+  // Median score across samples - robust to a single outlier judgment.
   const sorted = [...verdicts].sort((a, b) => a.score - b.score);
   const median = sorted[Math.floor((sorted.length - 1) / 2)];
   return median ?? { error: lastError };
