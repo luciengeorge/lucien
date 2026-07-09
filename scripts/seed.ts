@@ -1,28 +1,26 @@
+import { execFileSync } from "node:child_process";
 import { readdir, readFile } from "node:fs/promises";
 import { basename, join } from "node:path";
-import { ConvexHttpClient } from "convex/browser";
-import { api } from "../convex/_generated/api";
 
 const CONTENT_DIR = join(import.meta.dirname, "..", "content");
 const SKIP_FILES = ["system-prompt.md"];
 
+function runConvexFunction(name: string, args: Record<string, unknown>): string {
+  return execFileSync("npx", ["convex", "run", name, JSON.stringify(args)], {
+    encoding: "utf-8",
+    stdio: ["ignore", "pipe", "inherit"],
+  });
+}
+
 async function main() {
-  const convexUrl = process.env.VITE_CONVEX_URL;
-  if (!convexUrl) {
-    console.error("VITE_CONVEX_URL is not set");
-    process.exit(1);
-  }
-
-  const client = new ConvexHttpClient(convexUrl);
-
   const files = await readdir(CONTENT_DIR);
   const mdFiles = files.filter((f) => f.endsWith(".md") && !SKIP_FILES.includes(f));
 
   console.log(`Found ${mdFiles.length} content files to seed\n`);
 
   console.log("Clearing existing portfolio vectors");
-  const resetResult = await client.action(api.seed.resetNamespace, {});
-  console.log(`Deleted ${resetResult.deletedEntries} existing entries\n`);
+  runConvexFunction("seed:resetNamespace", {});
+  console.log("Cleared existing portfolio vectors\n");
 
   for (const file of mdFiles) {
     const filePath = join(CONTENT_DIR, file);
@@ -30,7 +28,7 @@ async function main() {
     const title = basename(file, ".md").replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
     console.log(`Seeding: ${title} (${file})`);
-    await client.action(api.seed.addContent, { title, text: text.trim() });
+    runConvexFunction("seed:addContent", { title, text: text.trim() });
   }
 
   console.log("\nSeeding complete");
