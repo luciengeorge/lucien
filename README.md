@@ -137,7 +137,7 @@ pnpm dlx convex dev
 
 ### 4. Seed portfolio content
 
-Reads `content/*.md` and uploads them to Convex RAG.
+Reads `content/*.md` and uploads them to Convex RAG via an authenticated `npx convex run` call, so you need a logged in Convex CLI session (e.g. from step 3).
 
 ```bash
 pnpm seed

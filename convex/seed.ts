@@ -1,11 +1,11 @@
 import { v } from "convex/values";
 
-import { action } from "./_generated/server";
+import { internalAction } from "./_generated/server";
 import { rag } from "./rag";
 
 const PORTFOLIO_NAMESPACE = "portfolio";
 
-export const resetNamespace = action({
+export const resetNamespace = internalAction({
   args: {},
   handler: async (ctx) => {
     const namespace = await rag.getNamespace(ctx, {
@@ -45,7 +45,7 @@ export const resetNamespace = action({
   },
 });
 
-export const addContent = action({
+export const addContent = internalAction({
   args: {
     title: v.string(),
     text: v.string(),
