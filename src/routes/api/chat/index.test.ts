@@ -73,7 +73,7 @@ describe("POST /api/chat", () => {
     ]);
     vi.mocked(generateText, { partial: true }).mockResolvedValue({ text: "expanded query" });
     vi.mocked(fetchAuthAction).mockResolvedValue("CTX");
-    vi.mocked(fetchAuthMutation).mockResolvedValue(undefined);
+    vi.mocked(fetchAuthMutation).mockResolvedValue({ allowed: true, retryAfter: 0 });
     vi.mocked(streamText, { partial: true }).mockReturnValue({
       toUIMessageStreamResponse: () => new Response("stream", { status: 200 }),
     });
@@ -109,6 +109,13 @@ describe("POST /api/chat", () => {
       const res = await invokePost(postRequest(validBody));
       expect(res.status).toBe(200);
     });
+
+    it("returns 429 with a Retry-After header when the rate limit is exceeded", async () => {
+      vi.mocked(fetchAuthMutation).mockResolvedValue({ allowed: false, retryAfter: 5000 });
+      const res = await invokePost(postRequest(validBody));
+      expect(res.status).toBe(429);
+      expect(res.headers.get("Retry-After")).toBe("5");
+    });
   });
 
   describe("query expansion, RAG, and persistence", () => {
@@ -127,12 +134,13 @@ describe("POST /api/chat", () => {
 
     it("persists the user message before streaming starts", async () => {
       await invokePost(postRequest(validBody));
-      expect(vi.mocked(fetchAuthMutation)).toHaveBeenNthCalledWith(1, expect.anything(), {
+      // Call 1 is the rate-limit check (runs before conversation lookup); call 2 persists the user message.
+      expect(vi.mocked(fetchAuthMutation)).toHaveBeenNthCalledWith(2, expect.anything(), {
         conversationId: "conv-123",
         messageJson: JSON.stringify(validBody.message),
         sessionId: "sess-1",
       });
-      expect(vi.mocked(fetchAuthMutation).mock.invocationCallOrder[0]).toBeLessThan(
+      expect(vi.mocked(fetchAuthMutation).mock.invocationCallOrder[1]).toBeLessThan(
         vi.mocked(streamText).mock.invocationCallOrder[0]!,
       );
     });

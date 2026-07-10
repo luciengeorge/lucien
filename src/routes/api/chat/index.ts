@@ -1,5 +1,5 @@
 import { fetchAuthAction, fetchAuthMutation, fetchAuthQuery } from "#/lib/auth-server";
-import { ChatRequestSchema, getTextFromMessage, parseSerializedMessages } from "#/lib/chat-types";
+import { ChatRequestSchema, getTextFromMessage, MAX_HISTORY_MESSAGES, parseSerializedMessages } from "#/lib/chat-types";
 import { getConversationSession } from "#/lib/conversation-session.server";
 import { createLogger } from "#/lib/logger";
 import { openai } from "@ai-sdk/openai";
@@ -68,6 +68,22 @@ export const Route = createFileRoute("/api/chat/")({
           return new Response("Unauthorized", { status: 401 });
         }
 
+        const ip =
+          request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+          request.headers.get("x-vercel-id") ||
+          "unknown";
+        const rateLimitStatus = await fetchAuthMutation(api.rateLimits.checkChatRateLimit, {
+          ip,
+          sessionId,
+        });
+        if (!rateLimitStatus.allowed) {
+          logger.warn("chat rate limited", { requestId });
+          return new Response("Too Many Requests", {
+            headers: { "Retry-After": String(Math.ceil(rateLimitStatus.retryAfter / 1000)) },
+            status: 429,
+          });
+        }
+
         const conversation = await fetchAuthQuery(api.conversations.getConversationById, {
           conversationId: id,
           sessionId,
@@ -110,11 +126,12 @@ export const Route = createFileRoute("/api/chat/")({
         });
 
         const prompt = systemPrompt.replace("{retrieved_context}", context);
+        const modelMessages = messages.slice(-MAX_HISTORY_MESSAGES);
 
         const result = streamText({
           model: openai("gpt-5.4-mini"),
           system: prompt,
-          messages: await convertToModelMessages(messages),
+          messages: await convertToModelMessages(modelMessages),
           stopWhen: stepCountIs(3),
           tools: {
             download_resume: tool({

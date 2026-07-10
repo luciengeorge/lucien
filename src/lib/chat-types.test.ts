@@ -6,6 +6,8 @@ import {
   ChatConversationStateSchema,
   ChatRequestSchema,
   getTextFromMessage,
+  MAX_MESSAGE_CHARS,
+  MAX_MESSAGE_PARTS,
   parseSerializedMessages,
   StoredUIMessageSchema,
 } from "./chat-types";
@@ -102,6 +104,57 @@ describe("ChatRequestSchema", () => {
     const result = ChatRequestSchema.safeParse({
       id: "c",
       message: { role: "user", parts: [] },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects role assistant", () => {
+    const result = ChatRequestSchema.safeParse({
+      id: "c",
+      message: { id: "m", role: "assistant", parts: [{ type: "text", text: "hi" }] },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects role system", () => {
+    const result = ChatRequestSchema.safeParse({
+      id: "c",
+      message: { id: "m", role: "system", parts: [{ type: "text", text: "hi" }] },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts role user", () => {
+    const result = ChatRequestSchema.safeParse({
+      id: "c",
+      message: { id: "m", role: "user", parts: [{ type: "text", text: "hi" }] },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects combined text over MAX_MESSAGE_CHARS", () => {
+    const result = ChatRequestSchema.safeParse({
+      id: "c",
+      message: {
+        id: "m",
+        role: "user",
+        parts: [{ type: "text", text: "a".repeat(MAX_MESSAGE_CHARS + 1) }],
+      },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects more than MAX_MESSAGE_PARTS parts", () => {
+    const result = ChatRequestSchema.safeParse({
+      id: "c",
+      message: {
+        id: "m",
+        role: "user",
+        parts: Array.from({ length: MAX_MESSAGE_PARTS + 1 }, (_, index) => ({
+          type: "text",
+          text: `part-${index}`,
+        })),
+      },
     });
     expect(result.success).toBe(false);
   });
