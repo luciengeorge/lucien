@@ -71,7 +71,7 @@
     "motion": "^12.38.0",
     "nanoid": "^5.1.7",
     "next-themes": "^0.4.6",
-    "nitro": "3.0.260415-beta",
+    "nitro": "3.0.260429-beta",
     "openai": "^6.33.0",
     "posthog-js": "^1.358.1",
     "radix-ui": "^1.4.3",
@@ -109,9 +109,9 @@
     "oxlint": "^1.56.0",
     "tsx": "^4.21.0",
     "typescript": "^5.7.2",
-    "vite": "^7.3.2",
+    "vite": "^7.3.5",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^3.0.5"
+    "vitest": "^3.2.6"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
@@ -119,9 +119,9 @@
       "lightningcss"
     ],
     "overrides": {
-      "protobufjs": "^7.5.8",
+      "protobufjs": "^7.6.3",
       "@protobufjs/utf8": "^1.1.1",
-      "dompurify": "^3.4.0",
+      "dompurify": "^3.4.11",
       "ws": "^8.20.1",
       "qs": "^6.15.2",
       "postcss": "^8.5.10",
@@ -132,14 +132,22 @@
       "ip-address": "^10.1.1",
       "@hono/node-server": "^1.19.13",
       "kysely": "^0.28.17",
-      "hono": "^4.12.18",
+      "hono": "^4.12.25",
       "mermaid": "^11.15.0",
       "srvx": "^0.11.13",
       "picomatch@2": "^2.3.2",
       "picomatch@4": "^4.0.4",
       "brace-expansion@1": "^1.1.12",
       "brace-expansion@2": "^2.0.2",
-      "brace-expansion@5": "^5.0.6"
+      "brace-expansion@5": "^5.0.6",
+      "undici": "^7.28.0",
+      "lodash-es": "^4.18.0",
+      "shell-quote": "^1.8.4",
+      "@babel/core": "^7.29.6",
+      "js-yaml": "^4.2.0",
+      "@opentelemetry/core": "^2.8.0",
+      "esbuild": "^0.28.1",
+      "launch-editor": "^2.14.1"
     }
   }
 }
