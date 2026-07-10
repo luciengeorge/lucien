@@ -8,6 +8,7 @@ import { SiteNav } from "#/components/site-nav";
 import { Toaster } from "#/components/ui/sonner";
 import { useToast } from "#/hooks/use-toast";
 import { getToast } from "#/lib/functions/get-toast";
+import { OG_IMAGE_URL, SITE_URL } from "#/lib/site-config";
 import { SOCIAL_LINKS } from "#/lib/social-links";
 import { TanStackDevtools } from "@tanstack/react-devtools";
 import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from "@tanstack/react-router";
@@ -27,11 +28,9 @@ interface MyRouterContext {
   queryClient: QueryClient;
 }
 
-const SITE_URL = "https://www.luciengeorge.com";
 const TITLE = "Lucien George | Senior Product Engineer at Fyxer";
 const DESCRIPTION =
   "Senior Product Engineer at Fyxer. Explore Lucien George's work, projects, and interests via Poof, his AI portfolio assistant.";
-const OG_IMAGE_URL = `${SITE_URL}/cover.png`;
 const TWITTER_HANDLE = "@luciengeorge16";
 
 const structuredData = {

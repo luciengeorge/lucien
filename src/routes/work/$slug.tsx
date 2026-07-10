@@ -3,9 +3,8 @@ import { DownloadCvButton } from "#/components/download-cv-button";
 import { NotFound } from "#/components/not-found";
 import { CompanyLogo } from "#/components/resume/company-logo";
 import { findWorkEntry } from "#/lib/content/registry";
+import { SITE_URL } from "#/lib/site-config";
 import { createFileRoute, notFound } from "@tanstack/react-router";
-
-const SITE_URL = "https://www.luciengeorge.com";
 
 export const Route = createFileRoute("/work/$slug")({
   loader: ({ params }) => {

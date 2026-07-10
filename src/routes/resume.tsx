@@ -3,12 +3,12 @@ import type { ResumeRole } from "#/lib/resume/schema";
 import { CompanyLogo } from "#/components/resume/company-logo";
 import { buttonVariants } from "#/components/ui/button";
 import { formatExperienceDuration, formatPeriod, loadResume } from "#/lib/resume/load";
+import { OG_IMAGE_URL, SITE_URL } from "#/lib/site-config";
 import { cn } from "#/lib/utils";
 import { Download01Icon } from "@hugeicons-pro/core-stroke-rounded";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute } from "@tanstack/react-router";
 
-const SITE_URL = "https://www.luciengeorge.com";
 const RESUME_URL = `${SITE_URL}/resume`;
 const TITLE = "Lucien George | Resume";
 const DESCRIPTION =
@@ -62,11 +62,11 @@ export const Route = createFileRoute("/resume")({
         { property: "og:description", content: DESCRIPTION },
         { property: "og:url", content: RESUME_URL },
         { property: "og:type", content: "profile" },
-        { property: "og:image", content: `${SITE_URL}/cover.png` },
+        { property: "og:image", content: OG_IMAGE_URL },
         { name: "twitter:card", content: "summary_large_image" },
         { name: "twitter:title", content: TITLE },
         { name: "twitter:description", content: DESCRIPTION },
-        { name: "twitter:image", content: `${SITE_URL}/cover.png` },
+        { name: "twitter:image", content: OG_IMAGE_URL },
       ],
       links: [{ rel: "canonical", href: RESUME_URL }],
       scripts: [

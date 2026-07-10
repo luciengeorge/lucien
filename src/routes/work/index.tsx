@@ -1,11 +1,11 @@
 import { DownloadCvButton } from "#/components/download-cv-button";
 import { CompanyLogo } from "#/components/resume/company-logo";
 import { WORK_ENTRIES } from "#/lib/content/registry";
+import { SITE_URL } from "#/lib/site-config";
 import { ArrowRight01Icon } from "@hugeicons-pro/core-stroke-rounded";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Link, createFileRoute } from "@tanstack/react-router";
 
-const SITE_URL = "https://www.luciengeorge.com";
 const TITLE = "Lucien George | Work history";
 const DESCRIPTION =
   "Lucien George's work history: Fyxer, Localista, Skyla, Shopify, Le Wagon, Impact Lebanon, and early roles. Each role with context, scope, and outcomes.";

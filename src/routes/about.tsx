@@ -1,8 +1,8 @@
 import { ContentPage } from "#/components/content/content-page";
 import { ABOUT_SOURCES } from "#/lib/content/registry";
+import { SITE_URL } from "#/lib/site-config";
 import { createFileRoute } from "@tanstack/react-router";
 
-const SITE_URL = "https://www.luciengeorge.com";
 const TITLE = "About Lucien George";
 const DESCRIPTION =
   "Lucien George is a senior product engineer at Fyxer, based in London and originally from Beirut. He builds products, races karts, and runs ultras.";

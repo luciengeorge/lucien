@@ -1,10 +1,8 @@
 import { WORK_ENTRIES } from "#/lib/content/registry";
+import { CACHE_HEADER, SITE_URL } from "#/lib/site-config";
 import { createFileRoute } from "@tanstack/react-router";
 
 declare const __BUILD_DATE__: string;
-
-const SITE_URL = "https://www.luciengeorge.com";
-const CACHE_HEADER = "public, max-age=300, s-maxage=86400, stale-while-revalidate=604800";
 
 interface SitemapEntry {
   loc: string;
