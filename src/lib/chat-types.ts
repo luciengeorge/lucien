@@ -4,6 +4,10 @@ import { z } from "zod";
 
 import type { Id } from "../../convex/_generated/dataModel";
 
+export const MAX_MESSAGE_CHARS = 8000;
+export const MAX_MESSAGE_PARTS = 20;
+export const MAX_HISTORY_MESSAGES = 20;
+
 export const UIMessagePartSchema = z
   .object({
     type: z.string(),
@@ -41,11 +45,24 @@ export function parseSerializedMessages(serializedMessages: string[]): UIMessage
   return StoredUIMessagesSchema.parse(serializedMessages.map((message) => JSON.parse(message)));
 }
 
-const BasicUIMessageSchema = z.object({
-  id: z.string().min(1),
-  parts: z.array(z.record(z.string(), z.unknown())),
-  role: z.enum(["assistant", "system", "user"]),
-});
+const BasicUIMessageSchema = z
+  .object({
+    id: z.string().min(1),
+    parts: z.array(z.record(z.string(), z.unknown())).max(MAX_MESSAGE_PARTS),
+    role: z.literal("user"),
+  })
+  .superRefine((value, ctx) => {
+    const totalChars = value.parts.reduce((sum, part) => {
+      const text = part.text;
+      return typeof text === "string" ? sum + text.length : sum;
+    }, 0);
+    if (totalChars > MAX_MESSAGE_CHARS) {
+      ctx.addIssue({
+        code: "custom",
+        message: `combined message text exceeds ${MAX_MESSAGE_CHARS} characters`,
+      });
+    }
+  });
 
 const ConversationIdSchema = z.custom<Id<"conversations">>((value) => typeof value === "string" && value.length > 0);
 
