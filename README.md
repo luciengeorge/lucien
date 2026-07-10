@@ -91,11 +91,19 @@ Key files:
 
 ### 1. Install deps
 
+Before running `pnpm install`, set `HUGEICONS_TOKEN` in your environment. Two `@hugeicons-pro/*` deps resolve from a private registry (see `.npmrc`), so `pnpm install` fails without it. Get the token from your hugeicons.com account; CI reads it from the `HUGEICONS_TOKEN` GitHub Actions secret.
+
 ```bash
 pnpm install
 ```
 
 ### 2. Create `.env.local`
+
+Copy the template, then fill in values:
+
+```bash
+cp .env.example .env.local
+```
 
 Minimum local env:
 
