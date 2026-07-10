@@ -1,9 +1,9 @@
 import { ContentPage } from "#/components/content/content-page";
 import { EDUCATION_SOURCES } from "#/lib/content/registry";
 import { loadResume } from "#/lib/resume/load";
+import { SITE_URL } from "#/lib/site-config";
 import { createFileRoute } from "@tanstack/react-router";
 
-const SITE_URL = "https://www.luciengeorge.com";
 const TITLE = "Lucien George | Education";
 const DESCRIPTION =
   "Lucien George studied software engineering at McGill University, did an exchange at UNSW Sydney, attended Le Wagon London, and completed Harvard Business School's Families in Business program.";

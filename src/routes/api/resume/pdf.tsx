@@ -1,10 +1,10 @@
 import { loadResume } from "#/lib/resume/load";
 import { ResumeDocument } from "#/lib/resume/pdf-document";
+import { CACHE_HEADER } from "#/lib/site-config";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { createFileRoute } from "@tanstack/react-router";
 
 const RESUME_FILENAME = "lucien-george-resume.pdf";
-const CACHE_HEADER = "public, max-age=300, s-maxage=86400, stale-while-revalidate=604800";
 
 async function hashEtag(input: string) {
   const encoder = new TextEncoder();

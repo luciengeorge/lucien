@@ -1,9 +1,9 @@
 import { ContentPage } from "#/components/content/content-page";
 import { SKILLS_SOURCES } from "#/lib/content/registry";
 import { loadResume } from "#/lib/resume/load";
+import { SITE_URL } from "#/lib/site-config";
 import { createFileRoute } from "@tanstack/react-router";
 
-const SITE_URL = "https://www.luciengeorge.com";
 const TITLE = "Lucien George | Tech stack & skills";
 const DESCRIPTION =
   "Lucien George's tech stack: TypeScript, React, the TanStack ecosystem, Convex, Tailwind, Electron, Ruby on Rails, Python, native iOS/Android.";

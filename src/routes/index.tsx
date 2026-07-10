@@ -2,9 +2,8 @@ import type { ChatConversationState } from "#/lib/chat-types";
 
 import { ChatPage } from "#/components/chat/chat-page";
 import { fetchHomepageIntro } from "#/lib/homepage-intro";
+import { SITE_URL } from "#/lib/site-config";
 import { createFileRoute } from "@tanstack/react-router";
-
-const SITE_URL = "https://www.luciengeorge.com";
 
 // The homepage stays edge-cacheable: the loader fetches the (global) cached LLM
 // intro with a cookie-free Convex client, so the rendered document is identical

@@ -1,8 +1,6 @@
 import { ABOUT_SOURCES, EDUCATION_SOURCES, SKILLS_SOURCES, WORK_ENTRIES } from "#/lib/content/registry";
+import { CACHE_HEADER, SITE_URL } from "#/lib/site-config";
 import { createFileRoute } from "@tanstack/react-router";
-
-const SITE_URL = "https://www.luciengeorge.com";
-const CACHE_HEADER = "public, max-age=300, s-maxage=86400, stale-while-revalidate=604800";
 
 function buildLlmsFull(): string {
   const parts: string[] = [
