@@ -51,41 +51,6 @@
     "no-useless-catch": "warn",
     "no-useless-escape": "off",
     "no-useless-rename": "warn",
-    "no-restricted-imports": [
-      "error",
-      {
-        "paths": [
-          {
-            "name": "@/lib/zod",
-            "message": "Import from a specific zod module path (e.g. @/lib/zod/permissions).",
-          },
-          {
-            "name": "./zod",
-            "message": "Import from a specific zod module path.",
-          },
-          {
-            "name": "../zod",
-            "message": "Import from a specific zod module path.",
-          },
-          {
-            "name": "@/lib/main/sdk",
-            "message": "Import from concrete sdk modules (e.g. @/lib/main/sdk/sdk-state).",
-          },
-          {
-            "name": "@/lib/main/sdk/handlers",
-            "message": "Import from specific sdk handler modules.",
-          },
-          {
-            "name": "./sdk",
-            "message": "Import from concrete sdk modules.",
-          },
-          {
-            "name": "./sdk/handlers",
-            "message": "Import from specific sdk handler modules.",
-          },
-        ],
-      },
-    ],
     "no-with": "warn",
     "require-yield": "warn",
     "use-isnan": "warn",
@@ -151,9 +116,6 @@
       "polymorphicPropName": null,
       "components": {},
       "attributes": {},
-    },
-    "next": {
-      "rootDir": [],
     },
     "react": {
       "formComponents": [],
