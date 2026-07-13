@@ -9,7 +9,7 @@ export const searchContext = action({
     const { text } = await rag.search(ctx, {
       namespace: "portfolio",
       query,
-      limit: 5,
+      limit: 8,
       vectorScoreThreshold: 0.4,
     });
     return text;

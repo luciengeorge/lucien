@@ -28,3 +28,5 @@
 {"id":"personal-003","category":"factual","subcategory":"personal","question":"Did Lucien ski competitively?","expected_facts":["Lebanese","national","ski","team"]}
 {"id":"socials-001","category":"factual","subcategory":"socials","question":"What's Lucien's GitHub?","expected_facts":["github.com/luciengeorge"]}
 {"id":"socials-002","category":"factual","subcategory":"socials","question":"How can I find Lucien on LinkedIn?","expected_facts":["linkedin.com/in/luciengeorge"]}
+{"id":"synthesis-001","category":"factual","subcategory":"synthesis","question":"Which projects best show how Lucien thinks?","expected_facts":["Shopify","Fyxer"]}
+{"id":"synthesis-002","category":"factual","subcategory":"synthesis","question":"What is Lucien's most impactful work?","expected_facts":["Impact Lebanon"]}
