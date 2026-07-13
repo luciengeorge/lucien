@@ -1,0 +1,62 @@
+name: Seed RAG
+
+# Reseed the prod portfolio RAG namespace whenever the source content (or the
+# seeding code) lands on main, so the live Poof chat always reflects content/.
+# Also runnable on demand via the Actions tab (workflow_dispatch), e.g. to seed
+# prod for content that merged before this workflow existed.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "content/**"
+      - "scripts/seed.ts"
+      - "convex/seed.ts"
+      - "convex/rag.ts"
+      - ".github/workflows/seed.yml"
+  workflow_dispatch: {}
+
+# Serialize runs: seed.ts does resetNamespace then re-adds every doc, so two
+# overlapping runs (or a cancelled one mid-reset) could leave a partial index.
+concurrency:
+  group: seed-prod
+  cancel-in-progress: false
+
+env:
+  PNPM_VERSION: 10.33.0
+  NODE_VERSION: 22
+  HUGEICONS_TOKEN: ${{ secrets.HUGEICONS_TOKEN }}
+
+jobs:
+  seed:
+    name: Seed prod portfolio namespace
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Check deploy key is configured
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+        run: |
+          if [ -z "$CONVEX_DEPLOY_KEY" ]; then
+            echo "::error::CONVEX_DEPLOY_KEY secret is not set. Add a PRODUCTION deploy key (Convex dashboard > Prod deployment > Settings > Deploy Keys) as the CONVEX_DEPLOY_KEY repo secret."
+            exit 1
+          fi
+
+      - name: Seed prod portfolio namespace
+        # CONVEX_DEPLOY_KEY must be a PRODUCTION deploy key. The Convex CLI is then
+        # scoped to that deployment, so `npx convex run` inside scripts/seed.ts
+        # (resetNamespace + addContent per content/*.md) targets prod. We call the
+        # script directly rather than `pnpm seed`, which wraps it in
+        # `dotenv -e .env.local` (absent in CI).
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+        run: pnpm tsx scripts/seed.ts
