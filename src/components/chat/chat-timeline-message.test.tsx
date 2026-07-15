@@ -51,17 +51,17 @@ describe("ChatTimelineMessage render order", () => {
     expect(textEl.compareDocumentPosition(cardEl) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it("holds the finished tool card until text has started while streaming", () => {
-    render(<ChatTimelineMessage message={message([resumeOutputPart()])} status="streaming" />);
+  it("holds the finished tool card until text has started on the active streaming turn", () => {
+    render(<ChatTimelineMessage isActive message={message([resumeOutputPart()])} status="streaming" />);
 
     expect(screen.queryByText("resume.pdf")).toBeNull();
     expect(screen.queryByText("Download")).toBeNull();
     expect(screen.getByText("Getting Lucien's resume…")).not.toBeNull();
   });
 
-  it("renders a labeled chip with a spinner while a tool call is input-streaming", () => {
+  it("renders a labeled chip with a spinner while a tool call is input-streaming on the active turn", () => {
     const { container } = render(
-      <ChatTimelineMessage message={message([workLinkInputPart("input-streaming")])} status="streaming" />,
+      <ChatTimelineMessage isActive message={message([workLinkInputPart("input-streaming")])} status="streaming" />,
     );
 
     expect(screen.getByText("Finding the right work…")).not.toBeNull();
@@ -69,17 +69,31 @@ describe("ChatTimelineMessage render order", () => {
     expect(screen.queryByText("View")).toBeNull();
   });
 
-  it("renders a labeled chip while a tool call is input-available", () => {
-    render(<ChatTimelineMessage message={message([workLinkInputPart("input-available")])} status="streaming" />);
+  it("renders a labeled chip while a tool call is input-available on the active turn", () => {
+    render(
+      <ChatTimelineMessage isActive message={message([workLinkInputPart("input-available")])} status="streaming" />,
+    );
 
     expect(screen.getByText("Finding the right work…")).not.toBeNull();
   });
 
-  it("renders the animated thinking indicator when streaming with no content yet", () => {
-    const { container } = render(<ChatTimelineMessage message={message([])} status="streaming" />);
+  it("renders the animated thinking indicator when streaming with no content yet on the active turn", () => {
+    const { container } = render(<ChatTimelineMessage isActive message={message([])} status="streaming" />);
 
     const label = screen.getByText("Generating response…");
     expect(label.className).toContain("shimmer");
     expect(container.querySelector("svg.animate-spin")).not.toBeNull();
+  });
+
+  it("regression: a past (non-active) tool-only turn keeps showing its card during a new global stream, not a chip", () => {
+    // chat-conversation.tsx passes the SAME global `status` to every rendered message. A past,
+    // already-settled turn (a tool card with no text) must not re-hide its card or show an
+    // in-progress chip just because the user started a new message and the global status flipped
+    // back to "streaming" for the newest turn.
+    render(<ChatTimelineMessage isActive={false} message={message([resumeOutputPart()])} status="streaming" />);
+
+    expect(screen.getByText("resume.pdf")).not.toBeNull();
+    expect(screen.getByText("Download")).not.toBeNull();
+    expect(screen.queryByText("Getting Lucien's resume…")).toBeNull();
   });
 });

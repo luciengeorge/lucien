@@ -61,7 +61,16 @@ export function hasRenderableContent({
   return textParts.length > 0 || reasoningParts.length > 0 || hasToolCard;
 }
 
-export function ChatTimelineMessage({ message, status }: { message: ChatMessage; status: ChatStatus }) {
+export function ChatTimelineMessage({
+  isActive,
+  message,
+  status,
+}: {
+  /** True only for the last/streaming assistant message. Past turns always reveal cards immediately. */
+  isActive: boolean;
+  message: ChatMessage;
+  status: ChatStatus;
+}) {
   const role = message.role === "user" ? "user" : "assistant";
   const reasoningParts = message.parts.flatMap((part, index) =>
     match(part)
@@ -125,24 +134,30 @@ export function ChatTimelineMessage({ message, status }: { message: ChatMessage;
 
   // Hold finished tool cards until text has started (or the turn settles), so a turn never
   // reads card-before-text: text (or a thinking/progress indicator) always occupies the slot
-  // above the card first.
-  const revealToolCards = textParts.length > 0 || isSettled;
+  // above the card first. Only the actively streaming turn holds; `status` is global to every
+  // message in the timeline, so past (non-active) turns must always reveal immediately and never
+  // show an in-progress chip, regardless of what the global status is doing for a newer turn.
+  const revealToolCards = textParts.length > 0 || isSettled || !isActive;
   const resumeIsPending = message.parts.some((part) => part.type === "tool-download_resume" && isToolPartPending(part));
   const workLinkIsPending = message.parts.some(
     (part) => part.type === "tool-link_work_entry" && isToolPartPending(part),
   );
   const contactIsPending = message.parts.some((part) => part.type === "tool-contact_lucien" && isToolPartPending(part));
-  const toolProgressChips = [
-    resumeIsPending || (resumeToolParts.length > 0 && !revealToolCards)
-      ? [{ key: `${message.id}-resume-progress`, label: TOOL_PROGRESS_LABELS.download_resume }]
-      : [],
-    workLinkIsPending || (workLinkToolParts.length > 0 && !revealToolCards)
-      ? [{ key: `${message.id}-work-link-progress`, label: TOOL_PROGRESS_LABELS.link_work_entry }]
-      : [],
-    contactIsPending || (contactToolParts.length > 0 && !revealToolCards)
-      ? [{ key: `${message.id}-contact-progress`, label: TOOL_PROGRESS_LABELS.contact_lucien }]
-      : [],
-  ].flat();
+  // A non-active (past) turn never shows an in-progress chip: it always reveals its card
+  // immediately above (see `revealToolCards`), so there's nothing left to hold a chip for.
+  const toolProgressChips = isActive
+    ? [
+        resumeIsPending || (resumeToolParts.length > 0 && !revealToolCards)
+          ? [{ key: `${message.id}-resume-progress`, label: TOOL_PROGRESS_LABELS.download_resume }]
+          : [],
+        workLinkIsPending || (workLinkToolParts.length > 0 && !revealToolCards)
+          ? [{ key: `${message.id}-work-link-progress`, label: TOOL_PROGRESS_LABELS.link_work_entry }]
+          : [],
+        contactIsPending || (contactToolParts.length > 0 && !revealToolCards)
+          ? [{ key: `${message.id}-contact-progress`, label: TOOL_PROGRESS_LABELS.contact_lucien }]
+          : [],
+      ].flat()
+    : [];
   const hasToolActivity = hasToolCard || toolProgressChips.length > 0;
 
   return (

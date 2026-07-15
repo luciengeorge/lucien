@@ -167,7 +167,11 @@ export function ChatConversation({
                     scrollAnchor={message.role === "user"}
                     className={entryItemClassName(index === 0)}
                   >
-                    <ChatTimelineMessage message={message} status={status} />
+                    <ChatTimelineMessage
+                      isActive={index === visibleMessages.length - 1}
+                      message={message}
+                      status={status}
+                    />
                   </MessageScrollerItem>
                 ))}
                 {showPendingReply ? <ChatPendingReply isFirst={visibleMessages.length === 0} /> : null}
