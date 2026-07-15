@@ -9,8 +9,11 @@
  */
 
 import type * as conversations from "../conversations.js";
+import type * as crons from "../crons.js";
+import type * as digest from "../digest.js";
 import type * as http from "../http.js";
 import type * as intro from "../intro.js";
+import type * as migrations from "../migrations.js";
 import type * as rag from "../rag.js";
 import type * as rateLimits from "../rateLimits.js";
 import type * as search from "../search.js";
@@ -24,8 +27,11 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   conversations: typeof conversations;
+  crons: typeof crons;
+  digest: typeof digest;
   http: typeof http;
   intro: typeof intro;
+  migrations: typeof migrations;
   rag: typeof rag;
   rateLimits: typeof rateLimits;
   search: typeof search;
