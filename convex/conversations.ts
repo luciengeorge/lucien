@@ -205,6 +205,7 @@ export const upsertConversationMessage = mutation({
         const partType = parsedPart.type;
 
         await ctx.db.insert("messageParts", {
+          conversationId: conversationRecord._id,
           messageId: existingMessage._id,
           order,
           partJson: serializeJson(parsedPart),
@@ -235,6 +236,7 @@ export const upsertConversationMessage = mutation({
         const partType = parsedPart.type;
 
         await ctx.db.insert("messageParts", {
+          conversationId: conversationRecord._id,
           messageId: insertedMessageId,
           order,
           partJson: serializeJson(parsedPart),
