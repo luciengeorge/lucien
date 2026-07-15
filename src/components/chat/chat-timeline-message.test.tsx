@@ -59,22 +59,25 @@ describe("ChatTimelineMessage render order", () => {
     expect(screen.getByText("Getting Lucien's resume…")).not.toBeNull();
   });
 
-  it("renders a labeled chip with a spinner while a tool call is input-streaming on the active turn", () => {
+  it("renders the in-progress tool indicator as a status marker (no box) while a tool call is input-streaming on the active turn", () => {
     const { container } = render(
       <ChatTimelineMessage isActive message={message([workLinkInputPart("input-streaming")])} status="streaming" />,
     );
 
-    expect(screen.getByText("Finding the right work…")).not.toBeNull();
+    const label = screen.getByText("Finding the right work…");
+    expect(label.getAttribute("data-slot")).toBe("shimmering-text");
     expect(container.querySelector("svg.animate-spin")).not.toBeNull();
+    expect(container.querySelector('[data-slot="attachment"]')).toBeNull();
     expect(screen.queryByText("View")).toBeNull();
   });
 
-  it("renders a labeled chip while a tool call is input-available on the active turn", () => {
-    render(
+  it("renders the in-progress tool indicator as a status marker (no box) while a tool call is input-available on the active turn", () => {
+    const { container } = render(
       <ChatTimelineMessage isActive message={message([workLinkInputPart("input-available")])} status="streaming" />,
     );
 
     expect(screen.getByText("Finding the right work…")).not.toBeNull();
+    expect(container.querySelector('[data-slot="attachment"]')).toBeNull();
   });
 
   it("renders the animated thinking indicator when streaming with no content yet on the active turn", () => {

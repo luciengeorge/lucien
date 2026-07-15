@@ -8,7 +8,6 @@ import { ChatContactCard } from "./chat-contact-card";
 import { ChatMarkdown } from "./chat-markdown";
 import { ChatResumeCard } from "./chat-resume-card";
 import { ChatStatusMarker } from "./chat-status-marker";
-import { ChatToolProgressChip } from "./chat-tool-progress-chip";
 import { ChatWorkLinkCard } from "./chat-work-link-card";
 import { TOOL_PROGRESS_LABELS } from "./chat.constants";
 
@@ -231,7 +230,7 @@ export function ChatTimelineMessage({
       {toolProgressChips.length > 0 ? (
         <div className="space-y-2">
           {toolProgressChips.map((chip) => (
-            <ChatToolProgressChip key={chip.key} label={chip.label} />
+            <ChatStatusMarker key={chip.key} label={chip.label} />
           ))}
         </div>
       ) : null}
