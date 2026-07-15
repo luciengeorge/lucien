@@ -6,6 +6,7 @@ vi.mock("#/lib/auth-server", () => ({
   fetchAuthQuery: vi.fn(),
 }));
 vi.mock("#/lib/conversation-session.server", () => ({ getConversationSession: vi.fn() }));
+vi.mock("#/lib/notify-slack", () => ({ postContactToSlack: vi.fn() }));
 vi.mock("ai", async (importOriginal) => {
   const actual = await importOriginal<typeof import("ai")>();
   return { ...actual, generateText: vi.fn(), streamText: vi.fn(), validateUIMessages: vi.fn() };
@@ -15,6 +16,7 @@ import type { UIMessage, UIMessageStreamOnFinishCallback } from "ai";
 
 import { fetchAuthAction, fetchAuthMutation, fetchAuthQuery } from "#/lib/auth-server";
 import { getConversationSession } from "#/lib/conversation-session.server";
+import { postContactToSlack } from "#/lib/notify-slack";
 import { generateText, streamText, validateUIMessages } from "ai";
 
 import { Route } from "./index";
@@ -166,6 +168,61 @@ describe("POST /api/chat", () => {
         conversationId: "conv-123",
         messageJson: JSON.stringify(responseMessage),
         sessionId: "sess-1",
+      });
+    });
+  });
+
+  describe("tools", () => {
+    const execOptions = { messages: [], toolCallId: "test-call" };
+
+    function getRegisteredTools() {
+      const call = vi.mocked(streamText).mock.calls[0]?.[0];
+      const tools = call?.tools;
+      if (typeof tools !== "object" || tools === null) {
+        throw new Error("streamText was not called with a tools object");
+      }
+      return tools;
+    }
+
+    it("registers download_resume, link_work_entry, and contact_lucien", async () => {
+      await invokePost(postRequest(validBody));
+      const tools = getRegisteredTools();
+      expect(Object.keys(tools)).toEqual(
+        expect.arrayContaining(["download_resume", "link_work_entry", "contact_lucien"]),
+      );
+    });
+
+    it("link_work_entry returns the case study url for a known slug", async () => {
+      await invokePost(postRequest(validBody));
+      const tools = getRegisteredTools();
+      await expect(tools.link_work_entry?.execute?.({ slug: "fyxer" }, execOptions)).resolves.toEqual({
+        company: "Fyxer",
+        role: "Senior Product Engineer",
+        slug: "fyxer",
+        url: "/work/fyxer",
+      });
+    });
+
+    it("contact_lucien returns status 'sent' when the Slack post succeeds", async () => {
+      vi.mocked(postContactToSlack).mockResolvedValue(true);
+      await invokePost(postRequest(validBody));
+      const tools = getRegisteredTools();
+      await expect(tools.contact_lucien?.execute?.({ message: "hi Lucien" }, execOptions)).resolves.toEqual({
+        status: "sent",
+      });
+      expect(vi.mocked(postContactToSlack)).toHaveBeenCalledWith({
+        conversationId: "conv-123",
+        from: undefined,
+        message: "hi Lucien",
+      });
+    });
+
+    it("contact_lucien returns status 'failed' when the Slack post fails", async () => {
+      vi.mocked(postContactToSlack).mockResolvedValue(false);
+      await invokePost(postRequest(validBody));
+      const tools = getRegisteredTools();
+      await expect(tools.contact_lucien?.execute?.({ message: "hi Lucien" }, execOptions)).resolves.toEqual({
+        status: "failed",
       });
     });
   });
