@@ -21,14 +21,25 @@ function createAssistantMessage(text: string) {
   };
 }
 
-export async function createConversationWithIntro(sessionId: string): Promise<ChatConversationState> {
+export async function createConversationWithIntro(
+  sessionId: string,
+  correlationId: string,
+): Promise<ChatConversationState> {
+  const startedAt = Date.now();
+  logger.info("conversation intro started", { correlationId, operation: "create-conversation-with-intro" });
+
   const conversationId = await fetchAuthMutation(api.conversations.createConversation, { sessionId });
   let introText = FALLBACK_INTRO_TEXT;
 
   try {
     introText = await fetchAuthAction(api.intro.getCachedIntro, {});
   } catch (error) {
-    logger.error("cached intro failed", { conversationId, error });
+    logger.error("cached intro failed", {
+      conversationId,
+      correlationId,
+      error,
+      operation: "create-conversation-with-intro",
+    });
   }
 
   await fetchAuthMutation(api.conversations.upsertConversationMessage, {
@@ -43,8 +54,23 @@ export async function createConversationWithIntro(sessionId: string): Promise<Ch
   });
 
   if (!conversation) {
+    logger.error("conversation intro failed", {
+      conversationId,
+      correlationId,
+      durationMs: Date.now() - startedAt,
+      operation: "create-conversation-with-intro",
+      outcome: "not_found_after_create",
+    });
     throw new Error("Conversation creation failed");
   }
+
+  logger.info("conversation intro completed", {
+    conversationId,
+    correlationId,
+    durationMs: Date.now() - startedAt,
+    operation: "create-conversation-with-intro",
+    outcome: "success",
+  });
 
   return conversation;
 }

@@ -113,6 +113,7 @@ export function ChatTimelineMessage({
         company: part.output.company,
         key: `${message.id}-work-link-${index}`,
         role: part.output.role,
+        slug: part.output.slug,
         url: part.output.url,
       },
     ];
@@ -214,7 +215,7 @@ export function ChatTimelineMessage({
       {revealToolCards && workLinkToolParts.length > 0 ? (
         <div className="space-y-2">
           {workLinkToolParts.map((part) => (
-            <ChatWorkLinkCard key={part.key} company={part.company} role={part.role} url={part.url} />
+            <ChatWorkLinkCard key={part.key} company={part.company} role={part.role} slug={part.slug} url={part.url} />
           ))}
         </div>
       ) : null}
