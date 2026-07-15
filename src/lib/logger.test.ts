@@ -1,5 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("@sentry/tanstackstart-react", () => ({
+  captureException: vi.fn(),
+  captureMessage: vi.fn(),
+}));
+
+import * as Sentry from "@sentry/tanstackstart-react";
+
 import { createLogger } from "./logger";
 
 interface ConsoleCall {
@@ -30,6 +37,8 @@ describe("createLogger", () => {
 
   beforeEach(() => {
     originalNodeEnv = process.env.NODE_ENV;
+    vi.mocked(Sentry.captureException).mockClear();
+    vi.mocked(Sentry.captureMessage).mockClear();
   });
 
   afterEach(() => {
@@ -189,6 +198,60 @@ describe("createLogger", () => {
     expect(payload.Password).toBe("[REDACTED]");
     expect(payload.SECRET).toBe("[REDACTED]");
     expect(payload.AuthOrization).toBe("[REDACTED]");
+    capture.restore();
+  });
+
+  it("does not forward to Sentry outside of production", () => {
+    process.env.NODE_ENV = "test";
+    const capture = captureConsole();
+    const log = createLogger("test");
+
+    log.error("boom");
+
+    expect(Sentry.captureMessage).not.toHaveBeenCalled();
+    expect(Sentry.captureException).not.toHaveBeenCalled();
+    capture.restore();
+  });
+
+  it("forwards an Error in meta to Sentry.captureException in production", () => {
+    process.env.NODE_ENV = "production";
+    const capture = captureConsole();
+    const log = createLogger("test");
+    const err = new Error("kaboom");
+
+    log.error("crashed", { err, requestId: "req-1" });
+
+    expect(Sentry.captureException).toHaveBeenCalledWith(err, {
+      extra: { err: { message: "kaboom", name: "Error", stack: err.stack }, requestId: "req-1" },
+    });
+    expect(Sentry.captureMessage).not.toHaveBeenCalled();
+    capture.restore();
+  });
+
+  it("forwards a message to Sentry.captureMessage in production when meta has no Error", () => {
+    process.env.NODE_ENV = "production";
+    const capture = captureConsole();
+    const log = createLogger("test");
+
+    log.error("something failed", { requestId: "req-1" });
+
+    expect(Sentry.captureMessage).toHaveBeenCalledWith("something failed", {
+      extra: { requestId: "req-1" },
+      level: "error",
+    });
+    expect(Sentry.captureException).not.toHaveBeenCalled();
+    capture.restore();
+  });
+
+  it("never throws even if Sentry forwarding fails", () => {
+    process.env.NODE_ENV = "production";
+    vi.mocked(Sentry.captureMessage).mockImplementation(() => {
+      throw new Error("sentry down");
+    });
+    const capture = captureConsole();
+    const log = createLogger("test");
+
+    expect(() => log.error("boom")).not.toThrow();
     capture.restore();
   });
 

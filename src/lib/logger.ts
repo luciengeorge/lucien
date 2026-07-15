@@ -1,3 +1,5 @@
+import * as Sentry from "@sentry/tanstackstart-react";
+
 type LogLevel = "debug" | "info" | "warn" | "error";
 
 type LogValue = string | number | boolean | null | undefined | LogValue[] | { [key: string]: LogValue };
@@ -59,6 +61,27 @@ function redactMeta(meta: LogMeta): Record<string, LogValue> {
   return Object.fromEntries(Object.entries(meta).map(([key, value]) => [key, redactValue(value, key)]));
 }
 
+/**
+ * Forwards ERROR-level logs to Sentry. Prod-only (matching instrument.server.mjs's guard) and
+ * fail-safe: any failure here must never break logging, so every path is wrapped in try/catch.
+ */
+function forwardErrorToSentry(message: string, meta?: LogMeta) {
+  if (process.env.NODE_ENV !== "production") return;
+
+  try {
+    const rawError = meta && Object.values(meta).find((value): value is Error => value instanceof Error);
+    const extra = meta ? redactMeta(meta) : undefined;
+
+    if (rawError) {
+      Sentry.captureException(rawError, { extra });
+    } else {
+      Sentry.captureMessage(message, { extra, level: "error" });
+    }
+  } catch {
+    // Sentry must never break logging.
+  }
+}
+
 function writeLog(level: LogLevel, scope: string, message: string, meta?: LogMeta) {
   if (level === "debug" && process.env.NODE_ENV === "production") {
     return;
@@ -97,6 +120,7 @@ function writeLog(level: LogLevel, scope: string, message: string, meta?: LogMet
       return;
     case "error":
       console.error(line);
+      forwardErrorToSentry(message, meta);
       return;
   }
 }

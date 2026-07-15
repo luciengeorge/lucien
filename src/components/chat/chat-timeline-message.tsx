@@ -41,6 +41,19 @@ function isContactToolOutput(value: unknown): value is ContactToolOutput {
   return ContactToolOutputSchema.safeParse(value).success;
 }
 
+/** True when there's anything to show for an assistant message: text, reasoning, or a tool card. */
+export function hasRenderableContent({
+  hasToolCard,
+  reasoningParts,
+  textParts,
+}: {
+  hasToolCard: boolean;
+  reasoningParts: unknown[];
+  textParts: unknown[];
+}): boolean {
+  return textParts.length > 0 || reasoningParts.length > 0 || hasToolCard;
+}
+
 export function ChatTimelineMessage({ message, status }: { message: ChatMessage; status: ChatStatus }) {
   const role = message.role === "user" ? "user" : "assistant";
   const reasoningParts = message.parts.flatMap((part, index) =>
@@ -100,6 +113,8 @@ export function ChatTimelineMessage({ message, status }: { message: ChatMessage;
     ];
   });
   const hasToolCard = resumeToolParts.length > 0 || workLinkToolParts.length > 0 || contactToolParts.length > 0;
+  const isSettled = status !== "streaming" && status !== "submitted";
+  const messageHasRenderableContent = hasRenderableContent({ hasToolCard, reasoningParts, textParts });
 
   return (
     <div className="space-y-4">
@@ -138,6 +153,10 @@ export function ChatTimelineMessage({ message, status }: { message: ChatMessage;
         </div>
       ) : role === "assistant" && status === "streaming" && !hasToolCard ? (
         <ChatStatusMarker label="Generating response…" />
+      ) : role === "assistant" && isSettled && !messageHasRenderableContent ? (
+        <p className="max-w-[62ch] text-sm text-pretty text-neutral-400 italic">
+          Sorry, I didn't catch that. Mind rephrasing?
+        </p>
       ) : null}
 
       {resumeToolParts.length > 0 ? (

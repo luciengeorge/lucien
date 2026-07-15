@@ -6,6 +6,7 @@ import {
   ChatConversationStateSchema,
   ChatRequestSchema,
   getTextFromMessage,
+  hasRenderableMessageContent,
   MAX_MESSAGE_CHARS,
   MAX_MESSAGE_PARTS,
   parseSerializedMessages,
@@ -198,6 +199,38 @@ describe("getTextFromMessage", () => {
 
   it("trims leading/trailing whitespace", () => {
     expect(getTextFromMessage(uiMessage([{ type: "text", text: "  spaced  " }]))).toBe("spaced");
+  });
+});
+
+describe("hasRenderableMessageContent", () => {
+  function uiMessage(parts: Array<Record<string, unknown>>): UIMessage {
+    return StoredUIMessageSchema.parse({ id: "m", role: "assistant", parts });
+  }
+
+  it("returns false for a message with no parts", () => {
+    expect(hasRenderableMessageContent(uiMessage([]))).toBe(false);
+  });
+
+  it("returns false for a message with only an empty text part", () => {
+    expect(hasRenderableMessageContent(uiMessage([{ type: "text", text: "" }]))).toBe(false);
+  });
+
+  it("returns false for a message with only whitespace text", () => {
+    expect(hasRenderableMessageContent(uiMessage([{ type: "text", text: "   " }]))).toBe(false);
+  });
+
+  it("returns true for a message with non-empty text", () => {
+    expect(hasRenderableMessageContent(uiMessage([{ type: "text", text: "hi" }]))).toBe(true);
+  });
+
+  it("returns true for a message with a tool part, even without text", () => {
+    expect(hasRenderableMessageContent(uiMessage([{ type: "tool-download_resume", state: "input-available" }]))).toBe(
+      true,
+    );
+  });
+
+  it("returns false for a message with only a reasoning part", () => {
+    expect(hasRenderableMessageContent(uiMessage([{ type: "reasoning", text: "thinking" }]))).toBe(false);
   });
 });
 
