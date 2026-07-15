@@ -34,7 +34,12 @@ describe("postContactToSlack", () => {
     process.env.SLACK_WEBHOOK_URL = "https://hooks.slack.test/webhook";
     vi.mocked(global.fetch).mockResolvedValue(new Response(null, { status: 200 }));
 
-    const sent = await postContactToSlack({ conversationId: "conv-1", from: "Ada", message: "hello there" });
+    const sent = await postContactToSlack({
+      contact: "ada@example.com",
+      conversationId: "conv-1",
+      message: "hello there",
+      name: "Ada",
+    });
 
     expect(sent).toBe(true);
     expect(global.fetch).toHaveBeenCalledWith(
@@ -47,17 +52,35 @@ describe("postContactToSlack", () => {
     const blockText = JSON.stringify(parseFetchBody(0));
     expect(blockText).toContain("hello there");
     expect(blockText).toContain("Ada");
+    expect(blockText).toContain("ada@example.com");
     expect(blockText).toContain("conv-1");
   });
 
-  it("omits a from block when from is not provided", async () => {
+  it("uses fallback copy when name and contact are not provided", async () => {
     process.env.SLACK_WEBHOOK_URL = "https://hooks.slack.test/webhook";
     vi.mocked(global.fetch).mockResolvedValue(new Response(null, { status: 200 }));
 
     await postContactToSlack({ conversationId: "conv-2", message: "no name given" });
 
     const blockText = JSON.stringify(parseFetchBody(0));
-    expect(blockText).not.toContain("From:");
+    expect(blockText).toContain("anonymous visitor");
+    expect(blockText).toContain("not provided");
+  });
+
+  it("only uses plain_text blocks (never mrkdwn) to stay injection-safe", async () => {
+    process.env.SLACK_WEBHOOK_URL = "https://hooks.slack.test/webhook";
+    vi.mocked(global.fetch).mockResolvedValue(new Response(null, { status: 200 }));
+
+    await postContactToSlack({
+      contact: "ada@example.com",
+      conversationId: "conv-1",
+      message: "hello there",
+      name: "Ada",
+    });
+
+    const blockText = JSON.stringify(parseFetchBody(0));
+    expect(blockText).not.toContain("mrkdwn");
+    expect(blockText).toContain("plain_text");
   });
 
   it("returns false when the webhook responds with a non-ok status", async () => {

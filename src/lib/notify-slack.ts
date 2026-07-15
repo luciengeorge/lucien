@@ -3,20 +3,26 @@ import { createLogger } from "#/lib/logger";
 const logger = createLogger("notify-slack");
 
 export interface ContactSlackPayload {
+  contact?: string;
   conversationId: string;
-  from?: string;
   message: string;
+  name?: string;
 }
 
 /**
- * Posts a visitor's `contact_lucien` message to Slack as plain-text Block Kit blocks
- * (never mrkdwn/HTML) so untrusted visitor input can't be used to inject formatting
- * or links into Slack's render.
+ * Posts a visitor's `contact_lucien` message to Slack as a lead notification, using
+ * plain-text Block Kit blocks (never mrkdwn/HTML) so untrusted visitor input can't be
+ * used to inject formatting or links into Slack's render.
  *
  * Graceful degradation: returns false (never throws) when SLACK_WEBHOOK_URL is unset
  * or the POST fails, so callers can report an honest "couldn't send" outcome.
  */
-export async function postContactToSlack({ conversationId, from, message }: ContactSlackPayload): Promise<boolean> {
+export async function postContactToSlack({
+  contact,
+  conversationId,
+  message,
+  name,
+}: ContactSlackPayload): Promise<boolean> {
   const webhookUrl = process.env.SLACK_WEBHOOK_URL;
   if (!webhookUrl) {
     logger.warn("SLACK_WEBHOOK_URL not set, skipping contact notification", { conversationId });
@@ -25,16 +31,19 @@ export async function postContactToSlack({ conversationId, from, message }: Cont
 
   const blocks = [
     {
-      text: { text: "New portfolio contact request", type: "plain_text" },
-      type: "section",
+      text: { text: "New portfolio contact", type: "plain_text" },
+      type: "header",
     },
     {
       text: { text: message, type: "plain_text" },
       type: "section",
     },
-    ...(from ? [{ elements: [{ text: `From: ${from}`, type: "plain_text" }], type: "context" }] : []),
     {
-      elements: [{ text: `Conversation: ${conversationId}`, type: "plain_text" }],
+      elements: [
+        { text: `From: ${name ?? "anonymous visitor"}`, type: "plain_text" },
+        { text: `Reply to: ${contact ?? "not provided"}`, type: "plain_text" },
+        { text: `Conversation: ${conversationId}`, type: "plain_text" },
+      ],
       type: "context",
     },
   ];
