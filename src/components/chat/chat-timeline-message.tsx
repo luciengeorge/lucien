@@ -4,9 +4,11 @@ import { z } from "zod";
 
 import type { ChatMessage, ChatStatus } from "./chat.types";
 
+import { ChatContactCard } from "./chat-contact-card";
 import { ChatMarkdown } from "./chat-markdown";
 import { ChatResumeCard } from "./chat-resume-card";
 import { ChatStatusMarker } from "./chat-status-marker";
+import { ChatWorkLinkCard } from "./chat-work-link-card";
 
 const ResumeToolOutputSchema = z.object({
   filename: z.string(),
@@ -16,6 +18,27 @@ type ResumeToolOutput = z.infer<typeof ResumeToolOutputSchema>;
 
 function isResumeToolOutput(value: unknown): value is ResumeToolOutput {
   return ResumeToolOutputSchema.safeParse(value).success;
+}
+
+const WorkLinkToolOutputSchema = z.object({
+  company: z.string(),
+  role: z.string(),
+  slug: z.string(),
+  url: z.string(),
+});
+type WorkLinkToolOutput = z.infer<typeof WorkLinkToolOutputSchema>;
+
+function isWorkLinkToolOutput(value: unknown): value is WorkLinkToolOutput {
+  return WorkLinkToolOutputSchema.safeParse(value).success;
+}
+
+const ContactToolOutputSchema = z.object({
+  status: z.enum(["failed", "sent"]),
+});
+type ContactToolOutput = z.infer<typeof ContactToolOutputSchema>;
+
+function isContactToolOutput(value: unknown): value is ContactToolOutput {
+  return ContactToolOutputSchema.safeParse(value).success;
 }
 
 export function ChatTimelineMessage({ message, status }: { message: ChatMessage; status: ChatStatus }) {
@@ -52,6 +75,31 @@ export function ChatTimelineMessage({ message, status }: { message: ChatMessage;
       },
     ];
   });
+  const workLinkToolParts = message.parts.flatMap((part, index) => {
+    if (part.type !== "tool-link_work_entry") return [];
+    if (!("state" in part) || part.state !== "output-available") return [];
+    if (!("output" in part) || !isWorkLinkToolOutput(part.output)) return [];
+    return [
+      {
+        company: part.output.company,
+        key: `${message.id}-work-link-${index}`,
+        role: part.output.role,
+        url: part.output.url,
+      },
+    ];
+  });
+  const contactToolParts = message.parts.flatMap((part, index) => {
+    if (part.type !== "tool-contact_lucien") return [];
+    if (!("state" in part) || part.state !== "output-available") return [];
+    if (!("output" in part) || !isContactToolOutput(part.output)) return [];
+    return [
+      {
+        key: `${message.id}-contact-${index}`,
+        status: part.output.status,
+      },
+    ];
+  });
+  const hasToolCard = resumeToolParts.length > 0 || workLinkToolParts.length > 0 || contactToolParts.length > 0;
 
   return (
     <div className="space-y-4">
@@ -88,7 +136,7 @@ export function ChatTimelineMessage({ message, status }: { message: ChatMessage;
             <ChatMarkdown key={part.key} isAnimating={status === "streaming"} text={part.text} />
           ))}
         </div>
-      ) : role === "assistant" && status === "streaming" && resumeToolParts.length === 0 ? (
+      ) : role === "assistant" && status === "streaming" && !hasToolCard ? (
         <ChatStatusMarker label="Generating response…" />
       ) : null}
 
@@ -96,6 +144,22 @@ export function ChatTimelineMessage({ message, status }: { message: ChatMessage;
         <div className="space-y-2">
           {resumeToolParts.map((part) => (
             <ChatResumeCard key={part.key} filename={part.filename} url={part.url} />
+          ))}
+        </div>
+      ) : null}
+
+      {workLinkToolParts.length > 0 ? (
+        <div className="space-y-2">
+          {workLinkToolParts.map((part) => (
+            <ChatWorkLinkCard key={part.key} company={part.company} role={part.role} url={part.url} />
+          ))}
+        </div>
+      ) : null}
+
+      {contactToolParts.length > 0 ? (
+        <div className="space-y-2">
+          {contactToolParts.map((part) => (
+            <ChatContactCard key={part.key} status={part.status} />
           ))}
         </div>
       ) : null}

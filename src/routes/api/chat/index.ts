@@ -1,7 +1,9 @@
 import { fetchAuthAction, fetchAuthMutation, fetchAuthQuery } from "#/lib/auth-server";
 import { ChatRequestSchema, getTextFromMessage, MAX_HISTORY_MESSAGES, parseSerializedMessages } from "#/lib/chat-types";
 import { getConversationSession } from "#/lib/conversation-session.server";
+import { buildLinkWorkEntryOutput, WORK_ENTRY_SLUGS } from "#/lib/link-work-entry";
 import { createLogger } from "#/lib/logger";
+import { postContactToSlack } from "#/lib/notify-slack";
 import { openai } from "@ai-sdk/openai";
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import {
@@ -140,6 +142,27 @@ export const Route = createFileRoute("/api/chat/")({
                 filename: "lucien-george-resume.pdf",
                 url: "/api/resume/pdf",
               }),
+            }),
+            link_work_entry: tool({
+              description:
+                "Link to the case study page for one of Lucien's work entries. Call this when pointing the user to more detail on a specific role or project.",
+              inputSchema: z.object({ slug: z.enum(WORK_ENTRY_SLUGS) }),
+              execute: async ({ slug }) => buildLinkWorkEntryOutput(slug),
+            }),
+            contact_lucien: tool({
+              description:
+                "Send a message to Lucien on the visitor's behalf. Call this when the visitor wants to get in touch with Lucien directly, or asks something Poof cannot answer from the available context.",
+              inputSchema: z.object({
+                from: z.string().max(200).optional(),
+                message: z.string().min(1).max(2000),
+              }),
+              execute: async ({ from, message }) => {
+                // Abuse posture v1: this endpoint is already rate-limited per-IP/per-session
+                // (checkChatRateLimit above, plan 002). A dedicated, tighter per-session cap
+                // specifically for contact sends is a future tightening, not required for v1.
+                const sent = await postContactToSlack({ conversationId: id, from, message });
+                return { status: sent ? "sent" : "failed" };
+              },
             }),
           },
         });
