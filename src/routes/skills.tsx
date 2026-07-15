@@ -1,6 +1,7 @@
 import { ContentPage } from "#/components/content/content-page";
 import { SKILLS_SOURCES } from "#/lib/content/registry";
 import { loadResume } from "#/lib/resume/load";
+import { buildSeoHead } from "#/lib/seo";
 import { SITE_URL } from "#/lib/site-config";
 import { createFileRoute } from "@tanstack/react-router";
 
@@ -28,26 +29,13 @@ export const Route = createFileRoute("/skills")({
   component: SkillsPage,
   head: ({ loaderData }) => {
     const programming = loaderData?.programming ?? [];
-    return {
-      meta: [
-        { title: TITLE },
-        { name: "description", content: DESCRIPTION },
-        { property: "og:title", content: TITLE },
-        { property: "og:description", content: DESCRIPTION },
-        { property: "og:url", content: URL },
-        { property: "og:type", content: "profile" },
-        { name: "twitter:card", content: "summary_large_image" },
-        { name: "twitter:title", content: TITLE },
-        { name: "twitter:description", content: DESCRIPTION },
-      ],
-      links: [{ rel: "canonical", href: URL }],
-      scripts: [
-        {
-          type: "application/ld+json",
-          children: JSON.stringify(structuredData(programming)),
-        },
-      ],
-    };
+    return buildSeoHead({
+      title: TITLE,
+      description: DESCRIPTION,
+      url: URL,
+      type: "profile",
+      jsonLd: [structuredData(programming)],
+    });
   },
 });
 

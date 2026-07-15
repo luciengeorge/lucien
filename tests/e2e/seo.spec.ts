@@ -46,8 +46,19 @@ test.describe("SEO / GEO / AEO routes", () => {
   });
 });
 
+interface RouteHeadCase {
+  path: string;
+  title: string;
+  description: string;
+  ogType: string;
+  canonical: string;
+  jsonLdType: string;
+  image?: string;
+  expectedOgImageCount: number;
+}
+
 test.describe("route <head> metadata", () => {
-  const cases = [
+  const cases: RouteHeadCase[] = [
     {
       path: "/about",
       title: "About Lucien George",
@@ -56,7 +67,6 @@ test.describe("route <head> metadata", () => {
       ogType: "profile",
       canonical: "https://www.luciengeorge.com/about",
       jsonLdType: "AboutPage",
-      image: undefined as string | undefined,
       expectedOgImageCount: 1,
     },
     {
@@ -67,7 +77,6 @@ test.describe("route <head> metadata", () => {
       ogType: "profile",
       canonical: "https://www.luciengeorge.com/skills",
       jsonLdType: "ProfilePage",
-      image: undefined as string | undefined,
       expectedOgImageCount: 1,
     },
     {
@@ -78,7 +87,6 @@ test.describe("route <head> metadata", () => {
       ogType: "profile",
       canonical: "https://www.luciengeorge.com/education",
       jsonLdType: "ProfilePage",
-      image: undefined as string | undefined,
       expectedOgImageCount: 1,
     },
     {
@@ -103,7 +111,6 @@ test.describe("route <head> metadata", () => {
       ogType: "website",
       canonical: "https://www.luciengeorge.com/work",
       jsonLdType: "CollectionPage",
-      image: undefined as string | undefined,
       expectedOgImageCount: 1,
     },
     {
@@ -113,7 +120,6 @@ test.describe("route <head> metadata", () => {
       ogType: "article",
       canonical: "https://www.luciengeorge.com/work/fyxer",
       jsonLdType: "Article",
-      image: undefined as string | undefined,
       expectedOgImageCount: 1,
     },
   ];
