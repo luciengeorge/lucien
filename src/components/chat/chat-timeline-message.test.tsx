@@ -81,7 +81,7 @@ describe("ChatTimelineMessage render order", () => {
     const { container } = render(<ChatTimelineMessage isActive message={message([])} status="streaming" />);
 
     const label = screen.getByText("Generating response…");
-    expect(label.className).toContain("shimmer");
+    expect(label.getAttribute("data-slot")).toBe("shimmering-text");
     expect(container.querySelector("svg.animate-spin")).not.toBeNull();
   });
 
