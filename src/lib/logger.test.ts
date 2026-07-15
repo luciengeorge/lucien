@@ -191,4 +191,18 @@ describe("createLogger", () => {
     expect(payload.AuthOrization).toBe("[REDACTED]");
     capture.restore();
   });
+
+  it("does not throw on a circular object and still emits a line", () => {
+    const capture = captureConsole();
+    const log = createLogger("test");
+
+    const circular: Record<string, unknown> = { name: "node" };
+    circular.self = circular;
+
+    expect(() => log.info("cycle", { circular })).not.toThrow();
+    expect(capture.calls).toHaveLength(1);
+    const payload = firstPayload(capture);
+    expect(payload.message).toBe("cycle");
+    capture.restore();
+  });
 });

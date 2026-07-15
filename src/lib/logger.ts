@@ -6,8 +6,9 @@ type LogMeta = Record<string, unknown>;
 
 const SENSITIVE_KEY_PATTERN = /pass|secret|token|cookie|authorization|apikey|api_key/i;
 const MAX_ARRAY_PREVIEW = 10;
+const MAX_DEPTH = 8;
 
-function redactValue(value: unknown, key?: string): LogValue {
+function redactValue(value: unknown, key?: string, seen: WeakSet<object> = new WeakSet(), depth = 0): LogValue {
   if (key && SENSITIVE_KEY_PATTERN.test(key)) {
     return "[REDACTED]";
   }
@@ -20,13 +21,24 @@ function redactValue(value: unknown, key?: string): LogValue {
     };
   }
 
-  if (Array.isArray(value)) {
-    return value.slice(0, MAX_ARRAY_PREVIEW).map((item) => redactValue(item));
-  }
-
   if (value && typeof value === "object") {
+    if (seen.has(value)) {
+      return "[Circular]";
+    }
+    if (depth >= MAX_DEPTH) {
+      return "[MaxDepth]";
+    }
+    seen.add(value);
+
+    if (Array.isArray(value)) {
+      return value.slice(0, MAX_ARRAY_PREVIEW).map((item) => redactValue(item, undefined, seen, depth + 1));
+    }
+
     return Object.fromEntries(
-      Object.entries(value).map(([nestedKey, nestedValue]) => [nestedKey, redactValue(nestedValue, nestedKey)]),
+      Object.entries(value).map(([nestedKey, nestedValue]) => [
+        nestedKey,
+        redactValue(nestedValue, nestedKey, seen, depth + 1),
+      ]),
     );
   }
 
@@ -60,7 +72,18 @@ function writeLog(level: LogLevel, scope: string, message: string, meta?: LogMet
     ...(meta ? redactMeta(meta) : {}),
   };
 
-  const line = JSON.stringify(payload);
+  let line: string;
+  try {
+    line = JSON.stringify(payload);
+  } catch {
+    line = JSON.stringify({
+      timestamp: new Date().toISOString(),
+      level,
+      scope,
+      message,
+      meta: "[unserializable]",
+    });
+  }
 
   switch (level) {
     case "debug":
