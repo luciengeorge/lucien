@@ -114,30 +114,41 @@ export const getConversationById = query({
       .withIndex("by_conversation_id", (q) => q.eq("conversationId", conversation._id))
       .collect();
 
-    const hydratedMessages = (
-      await Promise.all(
-        messages.map(async (message) => {
-          const parts = await ctx.db
-            .query("messageParts")
-            .withIndex("by_message_id", (q) => q.eq("messageId", message._id))
-            .collect();
+    const allParts = await ctx.db
+      .query("messageParts")
+      .withIndex("by_conversation", (q) => q.eq("conversationId", conversation._id))
+      .collect();
 
-          const parsedParts = parts
-            .map((part) => MessagePartShapeSchema.safeParse(deserializeJson(part.partJson)).data)
-            .filter((part): part is MessagePart => part !== undefined);
+    const partsByMessageId = new Map<string, typeof allParts>();
+    for (const part of allParts) {
+      const existing = partsByMessageId.get(part.messageId);
+      if (existing) {
+        existing.push(part);
+      } else {
+        partsByMessageId.set(part.messageId, [part]);
+      }
+    }
 
-          if (isLegacyIntroBootstrapMessage(message.role, parsedParts)) {
-            return null;
-          }
+    const hydratedMessages = messages
+      .map((message) => {
+        const rawParts = partsByMessageId.get(message._id) ?? [];
+        const parsedParts = rawParts
+          .slice()
+          .sort((a, b) => a.order - b.order)
+          .map((part) => MessagePartShapeSchema.safeParse(deserializeJson(part.partJson)).data)
+          .filter((part): part is MessagePart => part !== undefined);
 
-          return serializeJson({
-            id: message.uiMessageId,
-            parts: parsedParts,
-            role: message.role,
-          });
-        }),
-      )
-    ).filter((value): value is string => typeof value === "string");
+        if (isLegacyIntroBootstrapMessage(message.role, parsedParts)) {
+          return null;
+        }
+
+        return serializeJson({
+          id: message.uiMessageId,
+          parts: parsedParts,
+          role: message.role,
+        });
+      })
+      .filter((value): value is string => typeof value === "string");
 
     return {
       conversation: {

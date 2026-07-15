@@ -113,6 +113,51 @@ describe("getConversationById", () => {
     expect(result?.serializedMessages).toHaveLength(1);
     expect(JSON.parse(result!.serializedMessages[0]!).id).toBe("real");
   });
+
+  test("preserves per-message part order when parts interleave across messages in the by_conversation index", async () => {
+    const t = convexTest(schema, modules);
+    const id = await t.mutation(api.conversations.createConversation, { sessionId: SESSION_A });
+
+    await t.mutation(api.conversations.upsertConversationMessage, {
+      conversationId: id,
+      sessionId: SESSION_A,
+      messageJson: persistedMessage({
+        id: "msg-a",
+        role: "assistant",
+        parts: [
+          { type: "text", text: "a-first" },
+          { type: "text", text: "a-second" },
+          { type: "text", text: "a-third" },
+        ],
+      }),
+    });
+    await t.mutation(api.conversations.upsertConversationMessage, {
+      conversationId: id,
+      sessionId: SESSION_A,
+      messageJson: persistedMessage({
+        id: "msg-b",
+        role: "assistant",
+        parts: [
+          { type: "text", text: "b-first" },
+          { type: "text", text: "b-second" },
+          { type: "text", text: "b-third" },
+        ],
+      }),
+    });
+
+    const result = await t.query(api.conversations.getConversationById, {
+      conversationId: id,
+      sessionId: SESSION_A,
+    });
+    expect(result?.serializedMessages).toHaveLength(2);
+
+    const parsed = result!.serializedMessages.map((serialized) => JSON.parse(serialized));
+    const messageA = parsed.find((message) => message.id === "msg-a");
+    const messageB = parsed.find((message) => message.id === "msg-b");
+
+    expect(messageA.parts.map((part: { text: string }) => part.text)).toEqual(["a-first", "a-second", "a-third"]);
+    expect(messageB.parts.map((part: { text: string }) => part.text)).toEqual(["b-first", "b-second", "b-third"]);
+  });
 });
 
 describe("upsertConversationMessage", () => {
