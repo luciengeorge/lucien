@@ -24,6 +24,7 @@ export default defineSchema({
     .index("by_conversation_and_ui_message_id", ["conversationId", "uiMessageId"])
     .index("by_created_at", ["createdAt"]),
   messageParts: defineTable({
+    conversationId: v.optional(v.id("conversations")),
     messageId: v.id("messages"),
     order: v.number(),
     partJson: v.string(),
@@ -32,5 +33,7 @@ export default defineSchema({
     toolName: v.optional(v.string()),
     toolState: v.optional(v.string()),
     type: v.string(),
-  }).index("by_message_id", ["messageId", "order"]),
+  })
+    .index("by_message_id", ["messageId", "order"])
+    .index("by_conversation", ["conversationId", "order"]),
 });

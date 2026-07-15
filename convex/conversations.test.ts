@@ -172,12 +172,14 @@ describe("upsertConversationMessage", () => {
     expect(parts).toHaveLength(2);
     const textPart = parts.find((p) => p.type === "text");
     expect(textPart?.textPreview).toBe("Lucien works at Fyxer.");
+    expect(textPart?.conversationId).toBe(conversationId);
     const toolPart = parts.find((p) => p.type === "tool-download_resume");
     expect(toolPart).toMatchObject({
       toolCallId: "call_1",
       toolName: "download_resume",
       toolState: "input-available",
     });
+    expect(toolPart?.conversationId).toBe(conversationId);
   });
 
   test("updates an existing message in place (same uiMessageId): replaces parts atomically", async () => {
