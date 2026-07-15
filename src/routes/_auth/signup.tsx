@@ -6,7 +6,7 @@ import { NavLink } from "#/components/ui/nav-link";
 import { Spinner } from "#/components/ui/spinner";
 import { AnalyticsEvent, useAnalytics } from "#/lib/analytics";
 import { authClient } from "#/lib/auth-client";
-import { EmailSchema, NameSchema, PasswordSchema } from "#/lib/schemas/auth";
+import { EmailSchema, NameSchema, PasswordSchema, SignupFormSchema } from "#/lib/schemas/auth";
 import { useForm } from "@tanstack/react-form";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -30,6 +30,7 @@ function SignupPage() {
       confirmPassword: "",
     },
     validators: {
+      onSubmit: SignupFormSchema,
       onSubmitAsync: async ({ value: { name, email, password } }) => {
         capture(AnalyticsEvent.userSignupSubmitted, {
           signup_method: "email",
