@@ -1,6 +1,7 @@
 import { DownloadCvButton } from "#/components/download-cv-button";
 import { CompanyLogo } from "#/components/resume/company-logo";
 import { WORK_ENTRIES } from "#/lib/content/registry";
+import { buildSeoHead } from "#/lib/seo";
 import { SITE_URL } from "#/lib/site-config";
 import { ArrowRight01Icon } from "@hugeicons-pro/core-stroke-rounded";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -30,26 +31,8 @@ const structuredData = {
 
 export const Route = createFileRoute("/work/")({
   component: WorkIndexPage,
-  head: () => ({
-    meta: [
-      { title: TITLE },
-      { name: "description", content: DESCRIPTION },
-      { property: "og:title", content: TITLE },
-      { property: "og:description", content: DESCRIPTION },
-      { property: "og:url", content: URL },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: TITLE },
-      { name: "twitter:description", content: DESCRIPTION },
-    ],
-    links: [{ rel: "canonical", href: URL }],
-    scripts: [
-      {
-        type: "application/ld+json",
-        children: JSON.stringify(structuredData),
-      },
-    ],
-  }),
+  head: () =>
+    buildSeoHead({ title: TITLE, description: DESCRIPTION, url: URL, type: "website", jsonLd: [structuredData] }),
 });
 
 function WorkIndexPage() {

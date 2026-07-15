@@ -3,6 +3,7 @@ import { DownloadCvButton } from "#/components/download-cv-button";
 import { NotFound } from "#/components/not-found";
 import { CompanyLogo } from "#/components/resume/company-logo";
 import { findWorkEntry } from "#/lib/content/registry";
+import { buildSeoHead } from "#/lib/seo";
 import { SITE_URL } from "#/lib/site-config";
 import { createFileRoute, notFound } from "@tanstack/react-router";
 
@@ -38,24 +39,7 @@ export const Route = createFileRoute("/work/$slug")({
         { "@type": "ListItem", position: 3, name: loaderData.company, item: url },
       ],
     };
-    return {
-      meta: [
-        { title },
-        { name: "description", content: description },
-        { property: "og:title", content: title },
-        { property: "og:description", content: description },
-        { property: "og:url", content: url },
-        { property: "og:type", content: "article" },
-        { name: "twitter:card", content: "summary_large_image" },
-        { name: "twitter:title", content: title },
-        { name: "twitter:description", content: description },
-      ],
-      links: [{ rel: "canonical", href: url }],
-      scripts: [
-        { type: "application/ld+json", children: JSON.stringify(structuredData) },
-        { type: "application/ld+json", children: JSON.stringify(breadcrumb) },
-      ],
-    };
+    return buildSeoHead({ title, description, url, type: "article", jsonLd: [structuredData, breadcrumb] });
   },
 });
 

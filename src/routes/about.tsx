@@ -1,5 +1,6 @@
 import { ContentPage } from "#/components/content/content-page";
 import { ABOUT_SOURCES } from "#/lib/content/registry";
+import { buildSeoHead } from "#/lib/seo";
 import { SITE_URL } from "#/lib/site-config";
 import { createFileRoute } from "@tanstack/react-router";
 
@@ -19,26 +20,8 @@ const structuredData = {
 
 export const Route = createFileRoute("/about")({
   component: AboutPage,
-  head: () => ({
-    meta: [
-      { title: TITLE },
-      { name: "description", content: DESCRIPTION },
-      { property: "og:type", content: "profile" },
-      { property: "og:title", content: TITLE },
-      { property: "og:description", content: DESCRIPTION },
-      { property: "og:url", content: URL },
-      { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: TITLE },
-      { name: "twitter:description", content: DESCRIPTION },
-    ],
-    links: [{ rel: "canonical", href: URL }],
-    scripts: [
-      {
-        type: "application/ld+json",
-        children: JSON.stringify(structuredData),
-      },
-    ],
-  }),
+  head: () =>
+    buildSeoHead({ title: TITLE, description: DESCRIPTION, url: URL, type: "profile", jsonLd: [structuredData] }),
 });
 
 function AboutPage() {
