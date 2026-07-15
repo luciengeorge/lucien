@@ -84,10 +84,11 @@ export const Route = createFileRoute("/api/chat/")({
           });
         }
 
-        const conversation = await fetchAuthQuery(api.conversations.getConversationById, {
-          conversationId: id,
-          sessionId,
-        });
+        const query = getTextFromMessage(message);
+        const [conversation, expandedQuery] = await Promise.all([
+          fetchAuthQuery(api.conversations.getConversationById, { conversationId: id, sessionId }),
+          expandQuery(query),
+        ]);
         if (!conversation) {
           logger.warn("conversation not found", { conversationId: id, requestId });
           return new Response("Conversation not found", { status: 404 });
@@ -101,11 +102,6 @@ export const Route = createFileRoute("/api/chat/")({
           messageCount: messages.length,
           requestId,
         });
-
-        const lastUserMessage = [...messages].reverse().find((candidate) => candidate.role === "user");
-        const query = getTextFromMessage(lastUserMessage);
-
-        const expandedQuery = await expandQuery(query);
         logger.info("chat query expanded", {
           expandedQueryLength: expandedQuery.length,
           queryLength: query.length,
@@ -119,11 +115,13 @@ export const Route = createFileRoute("/api/chat/")({
           logger.error("rag search failed", { error: e, requestId });
         }
 
-        await fetchAuthMutation(api.conversations.upsertConversationMessage, {
+        const userMessageWrite = fetchAuthMutation(api.conversations.upsertConversationMessage, {
           conversationId: id,
           messageJson: JSON.stringify(message),
           sessionId,
         });
+        // Fired off the critical path; real error handling happens when it's awaited in onFinish.
+        userMessageWrite.catch(() => {});
 
         const prompt = systemPrompt.replace("{retrieved_context}", context);
         const modelMessages = messages.slice(-MAX_HISTORY_MESSAGES);
@@ -156,6 +154,7 @@ export const Route = createFileRoute("/api/chat/")({
           generateMessageId: generateId,
           onFinish: async ({ responseMessage }) => {
             try {
+              await userMessageWrite;
               await fetchAuthMutation(api.conversations.upsertConversationMessage, {
                 conversationId: id,
                 messageJson: JSON.stringify(responseMessage),
