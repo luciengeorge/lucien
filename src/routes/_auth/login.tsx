@@ -8,7 +8,7 @@ import { AnalyticsEvent, useAnalytics } from "#/lib/analytics";
 import { authClient } from "#/lib/auth-client";
 import { LoginFormSchema } from "#/lib/schemas/auth";
 import { useForm } from "@tanstack/react-form";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_auth/login")({
@@ -105,15 +105,7 @@ function LoginPage() {
               <form.Field name="password">
                 {(field) => (
                   <Field>
-                    <div className="flex items-center">
-                      <FieldLabel htmlFor={field.name}>Password</FieldLabel>
-                      <Link
-                        to="/api/auth/$"
-                        className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
-                      >
-                        Forgot your password?
-                      </Link>
-                    </div>
+                    <FieldLabel htmlFor={field.name}>Password</FieldLabel>
                     <Input
                       id={field.name}
                       name={field.name}
