@@ -155,17 +155,30 @@ export const Route = createFileRoute("/api/chat/")({
         return result.toUIMessageStreamResponse({
           generateMessageId: generateId,
           onFinish: async ({ responseMessage }) => {
-            await fetchAuthMutation(api.conversations.upsertConversationMessage, {
-              conversationId: id,
-              messageJson: JSON.stringify(responseMessage),
-              sessionId,
-            });
-            logger.info("chat response completed", {
-              assistantMessageId: responseMessage.id,
-              conversationId: id,
-              durationMs: Date.now() - startedAt,
-              requestId,
-            });
+            try {
+              await fetchAuthMutation(api.conversations.upsertConversationMessage, {
+                conversationId: id,
+                messageJson: JSON.stringify(responseMessage),
+                sessionId,
+              });
+              logger.info("chat response completed", {
+                assistantMessageId: responseMessage.id,
+                conversationId: id,
+                durationMs: Date.now() - startedAt,
+                requestId,
+              });
+            } catch (error) {
+              logger.error("chat response persist failed", {
+                assistantMessageId: responseMessage.id,
+                conversationId: id,
+                error,
+                requestId,
+              });
+            }
+          },
+          onError: (error) => {
+            logger.error("chat stream error", { conversationId: id, error, requestId });
+            return "An error occurred.";
           },
           originalMessages: messages,
         });
