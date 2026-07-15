@@ -22,7 +22,7 @@ import { ChatNewConversationBar } from "./chat-new-conversation-bar";
 import { ChatPendingReply } from "./chat-pending-reply";
 import { ChatStarterPrompts } from "./chat-starter-prompts";
 import { ChatTimelineMessage } from "./chat-timeline-message";
-import { entryItemClassName } from "./chat.utils";
+import { createRateLimitAwareFetch, entryItemClassName, getSettledAssistantAnalyticsEvents } from "./chat.utils";
 
 export function ChatConversation({
   chatState,
@@ -63,6 +63,7 @@ export function ChatConversation({
     messages: initialMessages,
     transport: new DefaultChatTransport({
       api: "/api/chat",
+      fetch: createRateLimitAwareFetch(fetch, () => capture(AnalyticsEvent.chatRateLimited)),
       prepareSendMessagesRequest: ({ id, messages }) => ({
         body: {
           id,
@@ -103,6 +104,10 @@ export function ChatConversation({
       response_length: responseTextLength,
       visible_message_count: visibleMessages.length,
     });
+
+    for (const { event, properties } of getSettledAssistantAnalyticsEvents(lastAssistantMessage.parts)) {
+      capture(event, properties);
+    }
   }, [capture, status, visibleMessages]);
 
   const isBusy = status === "submitted" || status === "streaming" || !chatState.conversation;

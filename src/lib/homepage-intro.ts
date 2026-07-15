@@ -2,6 +2,7 @@ import { ConvexHttpClient } from "convex/browser";
 
 import { api } from "../../convex/_generated/api";
 import { HOMEPAGE_INTRO_FALLBACK } from "./chat-intro";
+import { getOrCreateCorrelationId } from "./correlation-id";
 import { createLogger } from "./logger";
 
 const logger = createLogger("homepage.intro");
@@ -18,7 +19,17 @@ const INTRO_TIMEOUT_MS = 3000;
  * fast (and the resulting HTML stays identical for every visitor → cacheable).
  */
 export async function fetchHomepageIntro(): Promise<string> {
+  // Generated fresh per invocation (not derived from the request) so log lines for this
+  // call correlate together without making the cacheable response request-specific.
+  const correlationId = getOrCreateCorrelationId(undefined);
+  const startedAt = Date.now();
+
   if (!CONVEX_URL) {
+    logger.info("homepage intro skipped", {
+      correlationId,
+      operation: "fetch-homepage-intro",
+      outcome: "no_convex_url",
+    });
     return HOMEPAGE_INTRO_FALLBACK;
   }
 
@@ -31,10 +42,22 @@ export async function fetchHomepageIntro(): Promise<string> {
     });
 
     const result = await Promise.race([client.action(api.intro.getCachedIntro, {}), timeout]);
+    const intro = typeof result === "string" && result.trim().length > 0 ? result : HOMEPAGE_INTRO_FALLBACK;
 
-    return typeof result === "string" && result.trim().length > 0 ? result : HOMEPAGE_INTRO_FALLBACK;
+    logger.info("homepage intro completed", {
+      correlationId,
+      durationMs: Date.now() - startedAt,
+      operation: "fetch-homepage-intro",
+      outcome: "success",
+    });
+    return intro;
   } catch (error) {
-    logger.error("homepage intro fetch failed", { error });
+    logger.error("homepage intro fetch failed", {
+      correlationId,
+      durationMs: Date.now() - startedAt,
+      error,
+      operation: "fetch-homepage-intro",
+    });
     return HOMEPAGE_INTRO_FALLBACK;
   } finally {
     if (timer) clearTimeout(timer);
