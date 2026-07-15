@@ -1,9 +1,12 @@
+import type { TextStreamPart, ToolSet, UIMessage } from "ai";
+
 import { fetchAuthAction, fetchAuthMutation, fetchAuthQuery } from "#/lib/auth-server";
 import { ChatRequestSchema, getTextFromMessage, MAX_HISTORY_MESSAGES, parseSerializedMessages } from "#/lib/chat-types";
 import { getConversationSession } from "#/lib/conversation-session.server";
 import { buildLinkWorkEntryOutput, WORK_ENTRY_SLUGS } from "#/lib/link-work-entry";
 import { createLogger } from "#/lib/logger";
 import { postContactToSlack } from "#/lib/notify-slack";
+import { stripDashes } from "#/lib/strip-dashes";
 import { openai } from "@ai-sdk/openai";
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import {
@@ -32,6 +35,25 @@ Examples:
 - "what's your stack?" → "Lucien George tech stack programming languages frameworks tools TypeScript React"
 - "any side projects?" → "Lucien George side projects startups co-founder Localista Skyla open source"
 - "where did you study?" → "Lucien George education university McGill Le Wagon Harvard degree"`;
+
+/**
+ * Rewrites streamed text-delta chunks through stripDashes so the client never sees
+ * an em-dash or en-dash, even mid-stream. Non-text chunks pass through unchanged.
+ */
+function stripDashesFromStream(): TransformStream<TextStreamPart<ToolSet>, TextStreamPart<ToolSet>> {
+  return new TransformStream({
+    transform(chunk, controller) {
+      controller.enqueue(chunk.type === "text-delta" ? { ...chunk, text: stripDashes(chunk.text) } : chunk);
+    },
+  });
+}
+
+function sanitizeMessageForPersistence(message: UIMessage): UIMessage {
+  return {
+    ...message,
+    parts: message.parts.map((part) => (part.type === "text" ? { ...part, text: stripDashes(part.text) } : part)),
+  };
+}
 
 async function expandQuery(query: string): Promise<string> {
   try {
@@ -133,6 +155,7 @@ export const Route = createFileRoute("/api/chat/")({
           system: prompt,
           messages: await convertToModelMessages(modelMessages),
           stopWhen: stepCountIs(3),
+          experimental_transform: stripDashesFromStream,
           tools: {
             download_resume: tool({
               description:
@@ -151,16 +174,17 @@ export const Route = createFileRoute("/api/chat/")({
             }),
             contact_lucien: tool({
               description:
-                "Send a message to Lucien on the visitor's behalf. Call this when the visitor wants to get in touch with Lucien directly, or asks something Poof cannot answer from the available context.",
+                "Send a message to Lucien on the visitor's behalf. Call this once the visitor has given a genuine message to send, along with their name and/or contact info if available.",
               inputSchema: z.object({
-                from: z.string().max(200).optional(),
+                contact: z.string().max(200).optional(),
                 message: z.string().min(1).max(2000),
+                name: z.string().max(120).optional(),
               }),
-              execute: async ({ from, message }) => {
+              execute: async ({ contact, message, name }) => {
                 // Abuse posture v1: this endpoint is already rate-limited per-IP/per-session
                 // (checkChatRateLimit above, plan 002). A dedicated, tighter per-session cap
                 // specifically for contact sends is a future tightening, not required for v1.
-                const sent = await postContactToSlack({ conversationId: id, from, message });
+                const sent = await postContactToSlack({ contact, conversationId: id, message, name });
                 return { status: sent ? "sent" : "failed" };
               },
             }),
@@ -178,9 +202,12 @@ export const Route = createFileRoute("/api/chat/")({
           onFinish: async ({ responseMessage }) => {
             try {
               await userMessageWrite;
+              // Belt-and-suspenders: the stream transform already strips dashes from what
+              // onFinish receives, but sanitize again before persisting so the stored
+              // message stays dash-free even if the stream pipeline changes.
               await fetchAuthMutation(api.conversations.upsertConversationMessage, {
                 conversationId: id,
-                messageJson: JSON.stringify(responseMessage),
+                messageJson: JSON.stringify(sanitizeMessageForPersistence(responseMessage)),
                 sessionId,
               });
               logger.info("chat response completed", {

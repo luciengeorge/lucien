@@ -12,7 +12,7 @@ vi.mock("ai", async (importOriginal) => {
   return { ...actual, generateText: vi.fn(), streamText: vi.fn(), validateUIMessages: vi.fn() };
 });
 
-import type { UIMessage, UIMessageStreamOnFinishCallback } from "ai";
+import type { TextStreamPart, ToolSet, UIMessage, UIMessageStreamOnFinishCallback } from "ai";
 
 import { fetchAuthAction, fetchAuthMutation, fetchAuthQuery } from "#/lib/auth-server";
 import { getConversationSession } from "#/lib/conversation-session.server";
@@ -170,6 +170,56 @@ describe("POST /api/chat", () => {
         sessionId: "sess-1",
       });
     });
+
+    it("strips em-dashes and en-dashes from the persisted assistant message", async () => {
+      let captured: UIMessageStreamOnFinishCallback<UIMessage> | undefined;
+      vi.mocked(streamText, { partial: true }).mockReturnValue({
+        toUIMessageStreamResponse: (options?: { onFinish?: UIMessageStreamOnFinishCallback<UIMessage> }) => {
+          captured = options?.onFinish;
+          return new Response("stream", { status: 200 });
+        },
+      });
+
+      await invokePost(postRequest(validBody));
+      const responseMessage: UIMessage = {
+        id: "asst-1",
+        parts: [{ text: "Yes — I've sent your message, 2020–2024.", type: "text" }],
+        role: "assistant",
+      };
+      const sanitizedMessage: UIMessage = {
+        id: "asst-1",
+        parts: [{ text: "Yes - I've sent your message, 2020-2024.", type: "text" }],
+        role: "assistant",
+      };
+      await captured?.({ isAborted: false, isContinuation: false, messages: [], responseMessage });
+
+      expect(vi.mocked(fetchAuthMutation)).toHaveBeenCalledWith(expect.anything(), {
+        conversationId: "conv-123",
+        messageJson: JSON.stringify(sanitizedMessage),
+        sessionId: "sess-1",
+      });
+    });
+
+    it("registers a stream transform that strips dashes from streamed text", async () => {
+      await invokePost(postRequest(validBody));
+      const call = vi.mocked(streamText).mock.calls[0]?.[0];
+      const transform = call?.experimental_transform;
+      if (typeof transform !== "function") {
+        throw new Error("streamText was not called with a function experimental_transform");
+      }
+
+      const transformStream: TransformStream<TextStreamPart<ToolSet>, TextStreamPart<ToolSet>> = transform({
+        stopStream: () => {},
+        tools: {},
+      });
+      const writer = transformStream.writable.getWriter();
+      const reader = transformStream.readable.getReader();
+      const readPromise = reader.read();
+      await writer.write({ id: "t1", text: "Yes — I've sent it.", type: "text-delta" });
+      const { value } = await readPromise;
+      expect(value).toEqual({ id: "t1", text: "Yes - I've sent it.", type: "text-delta" });
+      await writer.close();
+    });
   });
 
   describe("tools", () => {
@@ -211,9 +261,26 @@ describe("POST /api/chat", () => {
         status: "sent",
       });
       expect(vi.mocked(postContactToSlack)).toHaveBeenCalledWith({
+        contact: undefined,
         conversationId: "conv-123",
-        from: undefined,
         message: "hi Lucien",
+        name: undefined,
+      });
+    });
+
+    it("contact_lucien passes the visitor's name and contact through to Slack", async () => {
+      vi.mocked(postContactToSlack).mockResolvedValue(true);
+      await invokePost(postRequest(validBody));
+      const tools = getRegisteredTools();
+      await tools.contact_lucien?.execute?.(
+        { contact: "ada@example.com", message: "please reach out", name: "Ada" },
+        execOptions,
+      );
+      expect(vi.mocked(postContactToSlack)).toHaveBeenCalledWith({
+        contact: "ada@example.com",
+        conversationId: "conv-123",
+        message: "please reach out",
+        name: "Ada",
       });
     });
 
