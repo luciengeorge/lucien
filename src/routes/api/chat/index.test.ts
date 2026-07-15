@@ -200,6 +200,38 @@ describe("POST /api/chat", () => {
       });
     });
 
+    it("skips persisting an empty assistant message and warns instead", async () => {
+      let captured: UIMessageStreamOnFinishCallback<UIMessage> | undefined;
+      vi.mocked(streamText, { partial: true }).mockReturnValue({
+        toUIMessageStreamResponse: (options?: { onFinish?: UIMessageStreamOnFinishCallback<UIMessage> }) => {
+          captured = options?.onFinish;
+          return new Response("stream", { status: 200 });
+        },
+      });
+
+      await invokePost(postRequest(validBody));
+      const emptyResponseMessage: UIMessage = {
+        id: "asst-1",
+        parts: [{ text: "", type: "text" }],
+        role: "assistant",
+      };
+      const persistCallsBefore = vi.mocked(fetchAuthMutation).mock.calls.length;
+      await captured?.({
+        isAborted: false,
+        isContinuation: false,
+        messages: [],
+        responseMessage: emptyResponseMessage,
+      });
+
+      // No additional fetchAuthMutation call beyond what already happened (rate limit + user message persist).
+      expect(vi.mocked(fetchAuthMutation).mock.calls.length).toBe(persistCallsBefore);
+      expect(vi.mocked(fetchAuthMutation)).not.toHaveBeenCalledWith(expect.anything(), {
+        conversationId: "conv-123",
+        messageJson: JSON.stringify(emptyResponseMessage),
+        sessionId: "sess-1",
+      });
+    });
+
     it("registers a stream transform that strips dashes from streamed text", async () => {
       await invokePost(postRequest(validBody));
       const call = vi.mocked(streamText).mock.calls[0]?.[0];

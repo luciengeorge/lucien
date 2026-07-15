@@ -1,7 +1,13 @@
 import type { TextStreamPart, ToolSet, UIMessage } from "ai";
 
 import { fetchAuthAction, fetchAuthMutation, fetchAuthQuery } from "#/lib/auth-server";
-import { ChatRequestSchema, getTextFromMessage, MAX_HISTORY_MESSAGES, parseSerializedMessages } from "#/lib/chat-types";
+import {
+  ChatRequestSchema,
+  getTextFromMessage,
+  hasRenderableMessageContent,
+  MAX_HISTORY_MESSAGES,
+  parseSerializedMessages,
+} from "#/lib/chat-types";
 import { getConversationSession } from "#/lib/conversation-session.server";
 import { buildLinkWorkEntryOutput, WORK_ENTRY_SLUGS } from "#/lib/link-work-entry";
 import { createLogger } from "#/lib/logger";
@@ -156,6 +162,25 @@ export const Route = createFileRoute("/api/chat/")({
           messages: await convertToModelMessages(modelMessages),
           stopWhen: stepCountIs(3),
           experimental_transform: stripDashesFromStream,
+          onFinish: ({ finishReason, steps, text, toolCalls, usage }) => {
+            const hadText = text.length > 0;
+            const hadToolCall = toolCalls.length > 0;
+            logger.info("chat stream finished", {
+              conversationId: id,
+              durationMs: Date.now() - startedAt,
+              finishReason,
+              hadText,
+              hadToolCall,
+              requestId,
+              stepCount: steps.length,
+              textLength: text.length,
+              toolNames: toolCalls.map((toolCall) => toolCall.toolName),
+              usage,
+            });
+            if (!hadText && !hadToolCall) {
+              logger.warn("chat response empty", { conversationId: id, finishReason, requestId, usage });
+            }
+          },
           tools: {
             download_resume: tool({
               description:
@@ -202,6 +227,10 @@ export const Route = createFileRoute("/api/chat/")({
           onFinish: async ({ responseMessage }) => {
             try {
               await userMessageWrite;
+              if (!hasRenderableMessageContent(responseMessage)) {
+                logger.warn("chat response empty persisted-skip", { conversationId: id, requestId });
+                return;
+              }
               // Belt-and-suspenders: the stream transform already strips dashes from what
               // onFinish receives, but sanitize again before persisting so the stored
               // message stays dash-free even if the stream pipeline changes.

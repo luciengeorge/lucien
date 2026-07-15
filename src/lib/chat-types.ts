@@ -80,3 +80,11 @@ export function getTextFromMessage(message: UIMessage | undefined): string {
     return `${text} ${part.text}`.trim();
   }, "");
 }
+
+/**
+ * True when a message has anything worth persisting or showing: non-empty text,
+ * or a tool part (any state, since a pending/in-flight tool call is still content).
+ */
+export function hasRenderableMessageContent(message: UIMessage): boolean {
+  return getTextFromMessage(message).length > 0 || message.parts.some((part) => part.type.startsWith("tool-"));
+}
