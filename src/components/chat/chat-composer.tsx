@@ -1,5 +1,5 @@
 import { Button } from "#/components/ui/button";
-import { Input } from "#/components/ui/input";
+import { InputGroup, InputGroupAddon, InputGroupTextarea } from "#/components/ui/input-group";
 import { Spinner } from "#/components/ui/spinner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "#/components/ui/tooltip";
 import { File01Icon, Navigation03Icon } from "@hugeicons-pro/core-stroke-rounded";
@@ -19,27 +19,38 @@ export function ChatComposer({
   disabled: boolean;
   isSubmitting: boolean;
   message: string;
-  onBlur: React.FocusEventHandler<HTMLInputElement>;
+  onBlur: React.FocusEventHandler<HTMLTextAreaElement>;
   onChange: (value: string) => void;
   onResumeRequest: () => void;
   onSubmit: React.SubmitEventHandler<HTMLFormElement>;
 }) {
   const isInputBusy = disabled || isSubmitting;
+  const canSend = !isInputBusy && canSubmit && message.length > 0;
 
   return (
     <form className="border-t border-neutral-950/8 pt-2.5 pb-2 sm:pt-4 sm:pb-3" onSubmit={onSubmit}>
-      <div className="relative">
-        <Input
+      <InputGroup className="rounded-3xl border-transparent bg-neutral-950/3 ring-1 ring-neutral-950/10 has-[[data-slot=input-group-control]:focus-visible]:border-transparent has-[[data-slot=input-group-control]:focus-visible]:ring-2 has-[[data-slot=input-group-control]:focus-visible]:ring-neutral-950/15">
+        <InputGroupTextarea
           aria-label="Ask Poof about Lucien"
-          className="h-12 w-full rounded-full border-transparent bg-neutral-950/3 pr-24 pl-4 text-base shadow-none ring-1 ring-neutral-950/10 placeholder:text-neutral-500 focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-neutral-950/15 sm:h-13 sm:pr-28 sm:pl-5 sm:text-base"
+          className="max-h-40 min-h-0 resize-none overflow-y-auto py-3 pl-4 text-base placeholder:text-neutral-500 sm:py-3.5 sm:pl-5 sm:text-base"
           disabled={isInputBusy}
           name="message"
           onBlur={onBlur}
           onChange={(event) => onChange(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing) {
+              return;
+            }
+            event.preventDefault();
+            if (canSend) {
+              event.currentTarget.form?.requestSubmit();
+            }
+          }}
           placeholder="Ask about Lucien's work, background, projects, or interests"
+          rows={1}
           value={message}
         />
-        <div className="absolute inset-y-0 right-1.5 flex items-center gap-1 sm:right-2">
+        <InputGroupAddon align="block-end" className="justify-end gap-1 px-2 pb-2 sm:px-2.5">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger
@@ -60,17 +71,12 @@ export function ChatComposer({
               <TooltipContent>Get Lucien's resume</TooltipContent>
             </Tooltip>
           </TooltipProvider>
-          <Button
-            className="size-9 shrink-0 rounded-full sm:size-10"
-            disabled={isInputBusy || !canSubmit || message.length === 0}
-            size="icon"
-            type="submit"
-          >
+          <Button className="size-9 shrink-0 rounded-full sm:size-10" disabled={!canSend} size="icon" type="submit">
             {isSubmitting ? <Spinner /> : <HugeiconsIcon icon={Navigation03Icon} />}
             <span className="sr-only">Send</span>
           </Button>
-        </div>
-      </div>
+        </InputGroupAddon>
+      </InputGroup>
     </form>
   );
 }
