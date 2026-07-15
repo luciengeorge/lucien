@@ -62,6 +62,9 @@ export default defineNitroConfig({
     "/resume.pdf": {
       redirect: { status: 301, to: "/api/resume/pdf" },
     },
+    "/favicon.ico": {
+      redirect: { status: 301, to: "/favicon.png" },
+    },
     "/cover.png": {
       headers: embeddableAssetHeaders,
     },
