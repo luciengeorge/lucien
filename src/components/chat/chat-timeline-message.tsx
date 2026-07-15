@@ -8,7 +8,9 @@ import { ChatContactCard } from "./chat-contact-card";
 import { ChatMarkdown } from "./chat-markdown";
 import { ChatResumeCard } from "./chat-resume-card";
 import { ChatStatusMarker } from "./chat-status-marker";
+import { ChatToolProgressChip } from "./chat-tool-progress-chip";
 import { ChatWorkLinkCard } from "./chat-work-link-card";
+import { TOOL_PROGRESS_LABELS } from "./chat.constants";
 
 const ResumeToolOutputSchema = z.object({
   filename: z.string(),
@@ -41,6 +43,11 @@ function isContactToolOutput(value: unknown): value is ContactToolOutput {
   return ContactToolOutputSchema.safeParse(value).success;
 }
 
+/** True while a tool call's input is being streamed in or has arrived but hasn't resolved to a result yet. */
+function isToolPartPending(part: ChatMessage["parts"][number]): boolean {
+  return "state" in part && (part.state === "input-streaming" || part.state === "input-available");
+}
+
 /** True when there's anything to show for an assistant message: text, reasoning, or a tool card. */
 export function hasRenderableContent({
   hasToolCard,
@@ -54,7 +61,16 @@ export function hasRenderableContent({
   return textParts.length > 0 || reasoningParts.length > 0 || hasToolCard;
 }
 
-export function ChatTimelineMessage({ message, status }: { message: ChatMessage; status: ChatStatus }) {
+export function ChatTimelineMessage({
+  isActive,
+  message,
+  status,
+}: {
+  /** True only for the last/streaming assistant message. Past turns always reveal cards immediately. */
+  isActive: boolean;
+  message: ChatMessage;
+  status: ChatStatus;
+}) {
   const role = message.role === "user" ? "user" : "assistant";
   const reasoningParts = message.parts.flatMap((part, index) =>
     match(part)
@@ -116,6 +132,34 @@ export function ChatTimelineMessage({ message, status }: { message: ChatMessage;
   const isSettled = status !== "streaming" && status !== "submitted";
   const messageHasRenderableContent = hasRenderableContent({ hasToolCard, reasoningParts, textParts });
 
+  // Hold finished tool cards until text has started (or the turn settles), so a turn never
+  // reads card-before-text: text (or a thinking/progress indicator) always occupies the slot
+  // above the card first. Only the actively streaming turn holds; `status` is global to every
+  // message in the timeline, so past (non-active) turns must always reveal immediately and never
+  // show an in-progress chip, regardless of what the global status is doing for a newer turn.
+  const revealToolCards = textParts.length > 0 || isSettled || !isActive;
+  const resumeIsPending = message.parts.some((part) => part.type === "tool-download_resume" && isToolPartPending(part));
+  const workLinkIsPending = message.parts.some(
+    (part) => part.type === "tool-link_work_entry" && isToolPartPending(part),
+  );
+  const contactIsPending = message.parts.some((part) => part.type === "tool-contact_lucien" && isToolPartPending(part));
+  // A non-active (past) turn never shows an in-progress chip: it always reveals its card
+  // immediately above (see `revealToolCards`), so there's nothing left to hold a chip for.
+  const toolProgressChips = isActive
+    ? [
+        resumeIsPending || (resumeToolParts.length > 0 && !revealToolCards)
+          ? [{ key: `${message.id}-resume-progress`, label: TOOL_PROGRESS_LABELS.download_resume }]
+          : [],
+        workLinkIsPending || (workLinkToolParts.length > 0 && !revealToolCards)
+          ? [{ key: `${message.id}-work-link-progress`, label: TOOL_PROGRESS_LABELS.link_work_entry }]
+          : [],
+        contactIsPending || (contactToolParts.length > 0 && !revealToolCards)
+          ? [{ key: `${message.id}-contact-progress`, label: TOOL_PROGRESS_LABELS.contact_lucien }]
+          : [],
+      ].flat()
+    : [];
+  const hasToolActivity = hasToolCard || toolProgressChips.length > 0;
+
   return (
     <div className="space-y-4">
       <p
@@ -151,7 +195,7 @@ export function ChatTimelineMessage({ message, status }: { message: ChatMessage;
             <ChatMarkdown key={part.key} isAnimating={status === "streaming"} text={part.text} />
           ))}
         </div>
-      ) : role === "assistant" && status === "streaming" && !hasToolCard ? (
+      ) : role === "assistant" && status === "streaming" && !hasToolActivity ? (
         <ChatStatusMarker label="Generating response…" />
       ) : role === "assistant" && isSettled && !messageHasRenderableContent ? (
         <p className="max-w-[62ch] text-sm text-pretty text-neutral-400 italic">
@@ -159,7 +203,7 @@ export function ChatTimelineMessage({ message, status }: { message: ChatMessage;
         </p>
       ) : null}
 
-      {resumeToolParts.length > 0 ? (
+      {revealToolCards && resumeToolParts.length > 0 ? (
         <div className="space-y-2">
           {resumeToolParts.map((part) => (
             <ChatResumeCard key={part.key} filename={part.filename} url={part.url} />
@@ -167,7 +211,7 @@ export function ChatTimelineMessage({ message, status }: { message: ChatMessage;
         </div>
       ) : null}
 
-      {workLinkToolParts.length > 0 ? (
+      {revealToolCards && workLinkToolParts.length > 0 ? (
         <div className="space-y-2">
           {workLinkToolParts.map((part) => (
             <ChatWorkLinkCard key={part.key} company={part.company} role={part.role} url={part.url} />
@@ -175,10 +219,18 @@ export function ChatTimelineMessage({ message, status }: { message: ChatMessage;
         </div>
       ) : null}
 
-      {contactToolParts.length > 0 ? (
+      {revealToolCards && contactToolParts.length > 0 ? (
         <div className="space-y-2">
           {contactToolParts.map((part) => (
             <ChatContactCard key={part.key} status={part.status} />
+          ))}
+        </div>
+      ) : null}
+
+      {toolProgressChips.length > 0 ? (
+        <div className="space-y-2">
+          {toolProgressChips.map((chip) => (
+            <ChatToolProgressChip key={chip.key} label={chip.label} />
           ))}
         </div>
       ) : null}
