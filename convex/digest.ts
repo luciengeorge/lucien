@@ -7,9 +7,8 @@ import { internal } from "./_generated/api";
 import { internalAction, internalQuery } from "./_generated/server";
 
 const WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
-const MAX_QUESTIONS = 200;
-const MAX_MESSAGES_SCANNED = 1000;
-const PAGE_SIZE = 200;
+const MAX_QUESTIONS = 150;
+const MAX_MESSAGES_SCANNED = 400;
 const DIGEST_MODEL = "gpt-5.4-mini";
 
 const TopicSchema = z.object({
@@ -76,40 +75,26 @@ export const getRecentUserQuestions = internalQuery({
     const maxQuestions = args.maxQuestions ?? MAX_QUESTIONS;
     const maxMessagesScanned = args.maxMessagesScanned ?? MAX_MESSAGES_SCANNED;
 
+    const messages = await ctx.db
+      .query("messages")
+      .withIndex("by_created_at", (q) => q.gte("createdAt", args.sinceMs))
+      .order("desc")
+      .take(maxMessagesScanned);
+
     const questions: string[] = [];
-    let cursor: string | null = null;
-    let scanned = 0;
-    let windowExceeded = false;
+    for (const message of messages) {
+      if (message.role !== "user") continue;
 
-    while (questions.length < maxQuestions && scanned < maxMessagesScanned && !windowExceeded) {
-      const page = await ctx.db.query("messages").withIndex("by_created_at").order("desc").paginate({
-        cursor,
-        numItems: PAGE_SIZE,
-      });
-
-      for (const message of page.page) {
-        scanned += 1;
-        if (message.createdAt < args.sinceMs) {
-          windowExceeded = true;
-          break;
-        }
-
-        if (message.role === "user") {
-          const parts = await ctx.db
-            .query("messageParts")
-            .withIndex("by_message_id", (q) => q.eq("messageId", message._id))
-            .collect();
-          const textPart = parts.find((part) => part.type === "text" && part.textPreview);
-          if (textPart?.textPreview) {
-            questions.push(textPart.textPreview);
-          }
-        }
-
-        if (questions.length >= maxQuestions) break;
+      const parts = await ctx.db
+        .query("messageParts")
+        .withIndex("by_message_id", (q) => q.eq("messageId", message._id))
+        .collect();
+      const textPart = parts.find((part) => part.type === "text" && part.textPreview);
+      if (textPart?.textPreview) {
+        questions.push(textPart.textPreview);
       }
 
-      if (page.isDone || windowExceeded) break;
-      cursor = page.continueCursor;
+      if (questions.length >= maxQuestions) break;
     }
 
     return questions;
@@ -120,7 +105,14 @@ export const run = internalAction({
   args: {},
   handler: async (ctx) => {
     const sinceMs = Date.now() - WINDOW_MS;
-    const questions: string[] = await ctx.runQuery(internal.digest.getRecentUserQuestions, { sinceMs });
+
+    let questions: string[];
+    try {
+      questions = await ctx.runQuery(internal.digest.getRecentUserQuestions, { sinceMs });
+    } catch (error) {
+      console.warn("[digest] failed to read recent user questions", error);
+      return;
+    }
 
     if (questions.length === 0) {
       console.warn("[digest] no user questions in the last 7 days, skipping digest");
