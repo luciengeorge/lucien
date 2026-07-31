@@ -17,7 +17,7 @@ on:
       actor_model:
         description: "Actor model"
         required: false
-        default: "gpt-5.4-mini"
+        default: "gpt-5.6-luna"
       judge_model:
         description: "Judge model"
         required: false
@@ -60,7 +60,7 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           VITE_CONVEX_URL: ${{ secrets.VITE_CONVEX_URL }}
-          EVAL_ACTOR_MODEL: ${{ github.event.inputs.actor_model || 'gpt-5.4-mini' }}
+          EVAL_ACTOR_MODEL: ${{ github.event.inputs.actor_model || 'gpt-5.6-luna' }}
           EVAL_JUDGE_MODEL: ${{ github.event.inputs.judge_model || 'gpt-5.4-mini' }}
         run: pnpm tsx evals/run.ts
 
