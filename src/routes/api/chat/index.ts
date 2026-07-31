@@ -64,7 +64,7 @@ function sanitizeMessageForPersistence(message: UIMessage): UIMessage {
 async function expandQuery(query: string): Promise<string> {
   try {
     const { text } = await generateText({
-      model: openai("gpt-5.4-nano"),
+      model: openai("gpt-5.6-luna"),
       system: QUERY_EXPANSION_PROMPT,
       prompt: query,
     });
@@ -157,7 +157,7 @@ export const Route = createFileRoute("/api/chat/")({
         const modelMessages = messages.slice(-MAX_HISTORY_MESSAGES);
 
         const result = streamText({
-          model: openai("gpt-5.4-mini"),
+          model: openai("gpt-5.6-luna"),
           system: prompt,
           messages: await convertToModelMessages(modelMessages),
           stopWhen: stepCountIs(3),

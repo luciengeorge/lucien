@@ -7,7 +7,7 @@ import { components, internal } from "./_generated/api";
 import { action, internalAction } from "./_generated/server";
 import { rag } from "./rag";
 
-const INTRO_CACHE_VERSION = "portfolio-intro:gpt-5.4-mini:v3";
+const INTRO_CACHE_VERSION = "portfolio-intro:gpt-5.6-luna:v4";
 const INTRO_QUERY = "Lucien George bio current role Fyxer product engineer projects background personal intro";
 const INTRO_SYSTEM_PROMPT = `You are Poof, Lucien George's AI portfolio assistant.
 
@@ -52,7 +52,7 @@ export const generateIntro = internalAction({
     });
 
     const { text } = await generateText({
-      model: openai("gpt-5.4-mini"),
+      model: openai("gpt-5.6-luna"),
       system: INTRO_SYSTEM_PROMPT.replace("{retrieved_context}", context),
       prompt: "Write the first assistant message.",
     });

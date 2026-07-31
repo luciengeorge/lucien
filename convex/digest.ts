@@ -9,7 +9,7 @@ import { internalAction, internalQuery } from "./_generated/server";
 const WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 const MAX_QUESTIONS = 150;
 const MAX_MESSAGES_SCANNED = 400;
-const DIGEST_MODEL = "gpt-5.4-mini";
+const DIGEST_MODEL = "gpt-5.6-luna";
 
 const TopicSchema = z.object({
   topics: z
