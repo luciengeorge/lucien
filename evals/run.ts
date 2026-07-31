@@ -15,9 +15,9 @@ import { EvalCaseSchema } from "./types";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const ACTOR_MODEL = process.env.EVAL_ACTOR_MODEL ?? "gpt-5.4-mini";
+const ACTOR_MODEL = process.env.EVAL_ACTOR_MODEL ?? "gpt-5.6-luna";
 const JUDGE_MODEL = process.env.EVAL_JUDGE_MODEL ?? "gpt-5.4-mini";
-const EXPANSION_MODEL = process.env.EVAL_EXPANSION_MODEL ?? "gpt-5.4-nano";
+const EXPANSION_MODEL = process.env.EVAL_EXPANSION_MODEL ?? "gpt-5.6-luna";
 // Fixed seed + temperature 0 for reproducible actor/expansion output. These are
 // best-effort on reasoning models (which ignore temperature) but make the run
 // fully deterministic on non-reasoning models. Override via EVAL_SEED.
