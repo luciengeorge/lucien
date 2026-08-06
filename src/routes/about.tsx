@@ -1,12 +1,11 @@
 import { ContentPage } from "#/components/content/content-page";
+import { ABOUT_META } from "#/lib/content/page-meta";
 import { ABOUT_SOURCES } from "#/lib/content/registry";
 import { buildSeoHead } from "#/lib/seo";
 import { SITE_URL } from "#/lib/site-config";
 import { createFileRoute } from "@tanstack/react-router";
 
-const TITLE = "About Lucien George";
-const DESCRIPTION =
-  "Lucien George is a senior product engineer at Fyxer, based in London and originally from Beirut. He builds products, races karts, and runs ultras.";
+const { title: TITLE, description: DESCRIPTION } = ABOUT_META;
 const URL = `${SITE_URL}/about`;
 
 const structuredData = {
@@ -21,7 +20,14 @@ const structuredData = {
 export const Route = createFileRoute("/about")({
   component: AboutPage,
   head: () =>
-    buildSeoHead({ title: TITLE, description: DESCRIPTION, url: URL, type: "profile", jsonLd: [structuredData] }),
+    buildSeoHead({
+      title: TITLE,
+      description: DESCRIPTION,
+      url: URL,
+      type: "profile",
+      jsonLd: [structuredData],
+      markdownUrl: `${URL}.md`,
+    }),
 });
 
 function AboutPage() {

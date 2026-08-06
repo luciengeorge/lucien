@@ -1,4 +1,6 @@
 import { ABOUT_SOURCES, EDUCATION_SOURCES, SKILLS_SOURCES, WORK_ENTRIES } from "#/lib/content/registry";
+import { loadResume } from "#/lib/resume/load";
+import { renderResumeMarkdown } from "#/lib/resume/markdown";
 import { CACHE_HEADER, SITE_URL } from "#/lib/site-config";
 import { createFileRoute } from "@tanstack/react-router";
 
@@ -34,6 +36,11 @@ function buildLlmsFull(): string {
     parts.push(entry.source.trim());
     parts.push(``);
   }
+
+  parts.push(`## Resume (${SITE_URL}/resume)`);
+  parts.push(``);
+  parts.push(renderResumeMarkdown(loadResume()));
+  parts.push(``);
 
   return parts.join("\n");
 }

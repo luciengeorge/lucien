@@ -1,13 +1,12 @@
 import { ContentPage } from "#/components/content/content-page";
+import { SKILLS_META } from "#/lib/content/page-meta";
 import { SKILLS_SOURCES } from "#/lib/content/registry";
 import { loadResume } from "#/lib/resume/load";
 import { buildSeoHead } from "#/lib/seo";
 import { SITE_URL } from "#/lib/site-config";
 import { createFileRoute } from "@tanstack/react-router";
 
-const TITLE = "Lucien George | Tech stack & skills";
-const DESCRIPTION =
-  "Lucien George's tech stack: TypeScript, React, the TanStack ecosystem, Convex, Tailwind, Electron, Ruby on Rails, Python, native iOS/Android.";
+const { title: TITLE, description: DESCRIPTION } = SKILLS_META;
 const URL = `${SITE_URL}/skills`;
 
 const structuredData = (programming: string[]) => ({
@@ -35,6 +34,7 @@ export const Route = createFileRoute("/skills")({
       url: URL,
       type: "profile",
       jsonLd: [structuredData(programming)],
+      markdownUrl: `${URL}.md`,
     });
   },
 });

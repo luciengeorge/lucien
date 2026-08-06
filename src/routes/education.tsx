@@ -1,13 +1,12 @@
 import { ContentPage } from "#/components/content/content-page";
+import { EDUCATION_META } from "#/lib/content/page-meta";
 import { EDUCATION_SOURCES } from "#/lib/content/registry";
 import { loadResume } from "#/lib/resume/load";
 import { buildSeoHead } from "#/lib/seo";
 import { SITE_URL } from "#/lib/site-config";
 import { createFileRoute } from "@tanstack/react-router";
 
-const TITLE = "Lucien George | Education";
-const DESCRIPTION =
-  "Lucien George studied software engineering at McGill University, did an exchange at UNSW Sydney, attended Le Wagon London, and completed Harvard Business School's Families in Business program.";
+const { title: TITLE, description: DESCRIPTION } = EDUCATION_META;
 const URL = `${SITE_URL}/education`;
 
 const structuredData = (alumniOf: string[]) => ({
@@ -34,6 +33,7 @@ export const Route = createFileRoute("/education")({
       url: URL,
       type: "profile",
       jsonLd: [structuredData(alumniOf)],
+      markdownUrl: `${URL}.md`,
     });
   },
 });

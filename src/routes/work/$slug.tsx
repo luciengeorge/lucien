@@ -2,6 +2,7 @@ import { ContentPage } from "#/components/content/content-page";
 import { DownloadCvButton } from "#/components/download-cv-button";
 import { NotFound } from "#/components/not-found";
 import { CompanyLogo } from "#/components/resume/company-logo";
+import { buildWorkEntryMeta } from "#/lib/content/page-meta";
 import { findWorkEntry } from "#/lib/content/registry";
 import { buildSeoHead } from "#/lib/seo";
 import { SITE_URL } from "#/lib/site-config";
@@ -18,8 +19,7 @@ export const Route = createFileRoute("/work/$slug")({
   head: ({ loaderData }) => {
     if (!loaderData) return {};
     const url = `${SITE_URL}/work/${loaderData.slug}`;
-    const title = `${loaderData.role} at ${loaderData.company} | Lucien George`;
-    const description = loaderData.summary;
+    const { title, description } = buildWorkEntryMeta(loaderData);
     const structuredData = {
       "@context": "https://schema.org",
       "@type": "Article",
@@ -39,7 +39,14 @@ export const Route = createFileRoute("/work/$slug")({
         { "@type": "ListItem", position: 3, name: loaderData.company, item: url },
       ],
     };
-    return buildSeoHead({ title, description, url, type: "article", jsonLd: [structuredData, breadcrumb] });
+    return buildSeoHead({
+      title,
+      description,
+      url,
+      type: "article",
+      jsonLd: [structuredData, breadcrumb],
+      markdownUrl: `${url}.md`,
+    });
   },
 });
 
