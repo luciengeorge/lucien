@@ -1,0 +1,87 @@
+name: IndexNow submission
+
+# Pings Bing, Yandex, Seznam, and Naver via the IndexNow API whenever
+# production updates, so those search engines pick up sitemap changes fast.
+# Google does NOT support IndexNow (https://www.indexnow.org/documentation) -
+# this has no effect on Google indexing.
+#
+# Vercel deploys via its Git integration, not GitHub Actions, so there is no
+# deploy workflow in this repo to chain from. Vercel's GitHub App creates a
+# GitHub Deployment for every push and reports status via the
+# deployment_status event, setting deployment.environment to "Production" for
+# pushes to the Production Branch (main) and "Preview" otherwise
+# (https://vercel.com/docs/git/vercel-for-github#silence-deployment-notifications-on-pull-requests
+# confirms Vercel emits deployment_status by default). The job below filters
+# on that environment value plus state == success, so preview deploys and
+# in-flight statuses are skipped rather than failed.
+on:
+  deployment_status: {}
+  workflow_dispatch: {}
+
+concurrency:
+  group: indexnow
+  cancel-in-progress: false
+
+env:
+  SITE_URL: https://www.luciengeorge.com
+  INDEXNOW_KEY: a0aae45c9447df85d4cda41abc5dc0a5
+
+jobs:
+  submit:
+    name: Submit sitemap URLs to IndexNow
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: github.event_name == 'workflow_dispatch' || (github.event.deployment_status.state == 'success' && github.event.deployment_status.environment == 'Production')
+    steps:
+      - name: Fetch live sitemap
+        run: curl -sSf --max-time 30 "$SITE_URL/sitemap.xml" -o sitemap.xml
+
+      - name: Extract URLs from sitemap
+        run: grep -oP '(?<=<loc>)[^<]+' sitemap.xml > urls.txt
+
+      - name: Fail if sitemap yielded no URLs
+        # A silent no-op here is worse than useless: submitting an empty
+        # urlList would still count as a "used" IndexNow request against the
+        # docs' "don't submit too often" guidance for no benefit.
+        run: |
+          if [ ! -s urls.txt ]; then
+            echo "::error::sitemap.xml produced zero URLs; refusing to submit an empty urlList."
+            exit 1
+          fi
+          echo "Extracted $(wc -l < urls.txt) URL(s):"
+          cat urls.txt
+
+      - name: Submit to IndexNow
+        run: |
+          python3 - <<'PY' > body.json
+          import json
+          import os
+          from urllib.parse import urlparse
+
+          with open("urls.txt") as f:
+              urls = [line.strip() for line in f if line.strip()]
+
+          host = urlparse(os.environ["SITE_URL"]).netloc
+          key = os.environ["INDEXNOW_KEY"]
+
+          print(json.dumps({
+              "host": host,
+              "key": key,
+              "keyLocation": f"{os.environ['SITE_URL']}/{key}.txt",
+              "urlList": urls,
+          }))
+          PY
+
+          HTTP_STATUS=$(curl -sS --max-time 30 -o response.txt -w "%{http_code}" \
+            -X POST "https://api.indexnow.org/indexnow" \
+            -H "Content-Type: application/json; charset=utf-8" \
+            --data @body.json)
+
+          echo "IndexNow responded with HTTP $HTTP_STATUS"
+          echo "Response body:"
+          cat response.txt
+
+          if [ "$HTTP_STATUS" -lt 200 ] || [ "$HTTP_STATUS" -ge 300 ]; then
+            echo "::error::IndexNow submission failed with HTTP $HTTP_STATUS"
+            exit 1
+          fi
