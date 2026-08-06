@@ -16,3 +16,6 @@ test-results/
 playwright-report/
 tests/e2e/.auth/
 .tmp-*
+
+# Isolated git worktrees created by Claude Code agents
+.claude/worktrees/

@@ -86,11 +86,11 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       },
       {
         property: "og:image:width",
-        content: "1200",
+        content: "2400",
       },
       {
         property: "og:image:height",
-        content: "630",
+        content: "1260",
       },
       {
         property: "og:image:type",
