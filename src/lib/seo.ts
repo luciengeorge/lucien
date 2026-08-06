@@ -5,15 +5,31 @@ interface SeoHeadInput {
   type: string; // og:type - pass explicitly per route ("profile" | "website" | "article")
   image?: string; // when present, adds og:image AND twitter:image (resume only today)
   jsonLd?: ReadonlyArray<unknown>; // one <script> per non-nullish entry, in order
+  /** URL of this page's sibling `.md` version, when one exists. Adds a rel=alternate link. */
+  markdownUrl?: string;
+}
+
+interface SeoHeadLink {
+  rel: string;
+  href: string;
+  type?: string;
 }
 
 interface SeoHead {
   meta: Array<Record<string, string>>;
-  links: Array<{ rel: string; href: string }>;
+  links: SeoHeadLink[];
   scripts: Array<{ type: string; children: string }>;
 }
 
-export function buildSeoHead({ title, description, url, type, image, jsonLd = [] }: SeoHeadInput): SeoHead {
+export function buildSeoHead({
+  title,
+  description,
+  url,
+  type,
+  image,
+  jsonLd = [],
+  markdownUrl,
+}: SeoHeadInput): SeoHead {
   const meta: Array<Record<string, string>> = [
     { title },
     { name: "description", content: description },
@@ -30,5 +46,9 @@ export function buildSeoHead({ title, description, url, type, image, jsonLd = []
   const scripts = jsonLd
     .filter((entry) => entry != null)
     .map((entry) => ({ type: "application/ld+json", children: JSON.stringify(entry) }));
-  return { meta, links: [{ rel: "canonical", href: url }], scripts };
+  const links: SeoHeadLink[] = [
+    { rel: "canonical", href: url },
+    ...(markdownUrl ? [{ rel: "alternate", type: "text/markdown", href: markdownUrl }] : []),
+  ];
+  return { meta, links, scripts };
 }

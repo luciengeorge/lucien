@@ -43,6 +43,54 @@ test.describe("SEO / GEO / AEO routes", () => {
     expect(body).toContain("## About (https://www.luciengeorge.com/about)");
     expect(body).toContain("## Work history (https://www.luciengeorge.com/work)");
     expect(body).toContain("### Senior Product Engineer at Fyxer");
+    expect(body).toContain("## Resume (https://www.luciengeorge.com/resume)");
+  });
+});
+
+test.describe("per-page markdown (.md) endpoints", () => {
+  // The dev server (nitro's vite plugin) treats extensioned paths as static
+  // assets and skips the app for requests without a browser-like Accept
+  // header - a dev-only heuristic, verified not to affect the production
+  // build (a `vite build` + `vite preview` smoke test returned 200 for these
+  // same paths with a plain curl, no Accept header at all). Passing
+  // `Accept: text/html` here mirrors what any real navigation sends, so
+  // these assertions exercise the actual route handler rather than the dev
+  // server's asset short-circuit.
+  const HTML_ACCEPT = { Accept: "text/html" };
+
+  test("/about.md and /work/fyxer.md return markdown with frontmatter matching the HTML page's SEO metadata", async ({
+    request,
+  }) => {
+    const aboutRes = await request.get("/about.md", { headers: HTML_ACCEPT });
+    expect(aboutRes.status()).toBe(200);
+    expect(aboutRes.headers()["content-type"]).toMatch(/text\/markdown/);
+    const aboutBody = await aboutRes.text();
+    expect(aboutBody).toContain("title: About Lucien George");
+    expect(aboutBody).toContain("url: https://www.luciengeorge.com/about");
+
+    const workRes = await request.get("/work/fyxer.md", { headers: HTML_ACCEPT });
+    expect(workRes.status()).toBe(200);
+    expect(workRes.headers()["content-type"]).toMatch(/text\/markdown/);
+    const workBody = await workRes.text();
+    expect(workBody).toContain("url: https://www.luciengeorge.com/work/fyxer");
+    expect(workBody).toContain("company: Fyxer");
+  });
+
+  test("/work/<unknown-slug>.md returns 404", async ({ request }) => {
+    const res = await request.get("/work/does-not-exist.md", { headers: HTML_ACCEPT });
+    expect(res.status()).toBe(404);
+  });
+
+  test("/about.md renders as inline text in a real browser rather than triggering a download", async ({ page }) => {
+    let downloadFired = false;
+    page.on("download", () => {
+      downloadFired = true;
+    });
+    const response = await page.goto("/about.md");
+    expect(response?.status()).toBe(200);
+    expect(downloadFired).toBe(false);
+    const bodyText = await page.evaluate(() => document.body?.innerText ?? "");
+    expect(bodyText).toContain("title: About Lucien George");
   });
 });
 
@@ -55,6 +103,8 @@ interface RouteHeadCase {
   jsonLdType: string;
   image?: string;
   expectedOgImageCount: number;
+  /** Sibling `.md` URL this page declares via rel="alternate". */
+  markdownUrl: string;
 }
 
 test.describe("route <head> metadata", () => {
@@ -68,6 +118,7 @@ test.describe("route <head> metadata", () => {
       canonical: "https://www.luciengeorge.com/about",
       jsonLdType: "AboutPage",
       expectedOgImageCount: 1,
+      markdownUrl: "https://www.luciengeorge.com/about.md",
     },
     {
       path: "/skills",
@@ -78,6 +129,7 @@ test.describe("route <head> metadata", () => {
       canonical: "https://www.luciengeorge.com/skills",
       jsonLdType: "ProfilePage",
       expectedOgImageCount: 1,
+      markdownUrl: "https://www.luciengeorge.com/skills.md",
     },
     {
       path: "/education",
@@ -88,6 +140,7 @@ test.describe("route <head> metadata", () => {
       canonical: "https://www.luciengeorge.com/education",
       jsonLdType: "ProfilePage",
       expectedOgImageCount: 1,
+      markdownUrl: "https://www.luciengeorge.com/education.md",
     },
     {
       path: "/resume",
@@ -102,6 +155,7 @@ test.describe("route <head> metadata", () => {
       // key (route overrides root), so only one og:image tag survives even
       // though both __root.tsx and resume.tsx declare og:image.
       expectedOgImageCount: 1,
+      markdownUrl: "https://www.luciengeorge.com/resume.md",
     },
     {
       path: "/work",
@@ -112,6 +166,7 @@ test.describe("route <head> metadata", () => {
       canonical: "https://www.luciengeorge.com/work",
       jsonLdType: "CollectionPage",
       expectedOgImageCount: 1,
+      markdownUrl: "https://www.luciengeorge.com/work.md",
     },
     {
       path: "/work/fyxer",
@@ -121,6 +176,7 @@ test.describe("route <head> metadata", () => {
       canonical: "https://www.luciengeorge.com/work/fyxer",
       jsonLdType: "Article",
       expectedOgImageCount: 1,
+      markdownUrl: "https://www.luciengeorge.com/work/fyxer.md",
     },
   ];
 
@@ -137,6 +193,7 @@ test.describe("route <head> metadata", () => {
       await expect(page.locator('meta[name="twitter:title"]')).toHaveAttribute("content", c.title);
       await expect(page.locator('meta[name="twitter:description"]')).toHaveAttribute("content", c.description);
       await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", c.canonical);
+      await expect(page.locator('link[rel="alternate"][type="text/markdown"]')).toHaveAttribute("href", c.markdownUrl);
 
       await expect(page.locator('meta[property="og:image"]')).toHaveCount(c.expectedOgImageCount);
       if (c.image) {

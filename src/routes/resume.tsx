@@ -2,6 +2,7 @@ import type { ResumeRole } from "#/lib/resume/schema";
 
 import { CompanyLogo } from "#/components/resume/company-logo";
 import { buttonVariants } from "#/components/ui/button";
+import { RESUME_META } from "#/lib/content/page-meta";
 import { formatExperienceDuration, formatPeriod, loadResume } from "#/lib/resume/load";
 import { buildSeoHead } from "#/lib/seo";
 import { OG_IMAGE_URL, SITE_URL } from "#/lib/site-config";
@@ -11,9 +12,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute } from "@tanstack/react-router";
 
 const RESUME_URL = `${SITE_URL}/resume`;
-const TITLE = "Lucien George | Resume";
-const DESCRIPTION =
-  "Resume of Lucien George, Senior Product Engineer at Fyxer. Past: Shopify, Le Wagon, and startups. McGill BEng in Software Engineering.";
+const { title: TITLE, description: DESCRIPTION } = RESUME_META;
 
 export const Route = createFileRoute("/resume")({
   component: ResumePage,
@@ -62,6 +61,7 @@ export const Route = createFileRoute("/resume")({
       type: "profile",
       image: OG_IMAGE_URL,
       jsonLd: [structuredData, breadcrumb],
+      markdownUrl: `${RESUME_URL}.md`,
     });
   },
 });

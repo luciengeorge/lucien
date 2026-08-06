@@ -1,5 +1,6 @@
 import { DownloadCvButton } from "#/components/download-cv-button";
 import { CompanyLogo } from "#/components/resume/company-logo";
+import { WORK_INDEX_META } from "#/lib/content/page-meta";
 import { WORK_ENTRIES } from "#/lib/content/registry";
 import { buildSeoHead } from "#/lib/seo";
 import { SITE_URL } from "#/lib/site-config";
@@ -7,9 +8,7 @@ import { ArrowRight01Icon } from "@hugeicons-pro/core-stroke-rounded";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Link, createFileRoute } from "@tanstack/react-router";
 
-const TITLE = "Lucien George | Work history";
-const DESCRIPTION =
-  "Lucien George's work history: Fyxer, Localista, Skyla, Shopify, Le Wagon, Impact Lebanon, and early roles. Each role with context, scope, and outcomes.";
+const { title: TITLE, description: DESCRIPTION } = WORK_INDEX_META;
 const URL = `${SITE_URL}/work`;
 
 const structuredData = {
@@ -32,7 +31,14 @@ const structuredData = {
 export const Route = createFileRoute("/work/")({
   component: WorkIndexPage,
   head: () =>
-    buildSeoHead({ title: TITLE, description: DESCRIPTION, url: URL, type: "website", jsonLd: [structuredData] }),
+    buildSeoHead({
+      title: TITLE,
+      description: DESCRIPTION,
+      url: URL,
+      type: "website",
+      jsonLd: [structuredData],
+      markdownUrl: `${URL}.md`,
+    }),
 });
 
 function WorkIndexPage() {
