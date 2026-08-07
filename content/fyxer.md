@@ -10,6 +10,7 @@ That work has included:
 - **ROI dashboards.** Reporting that shows an organisation what it is actually getting back from the product, released to enterprise customers and extended with all-time reporting and historical backfill.
 - **Outlook classic support.** Staged support for the older Outlook rendering engine, which meant rebuilding how Fyxer composes its emails and adding a blocking lint gate in CI so templates cannot silently regress.
 - **Email signature handling.** Preserving rich pasted signatures instead of flattening them to images, syncing the most recent signature, and stopping AI signature extraction from picking up quoted reply chains.
+- **SCIM provisioning.** Bringing Fyxer's SCIM 2.0 endpoint into line with RFC 7644 so enterprise identity providers can provision and deprovision users automatically. Microsoft Entra ID was sending standard, spec-compliant requests the endpoint could not handle, and the same users failed on every sync cycle. The fix meant supporting the whole PATCH operation set instead of a single case, and correcting error shapes, resource metadata and content types until the endpoint passed Microsoft's SCIM validator cleanly.
 - **Managed settings.** Organisation-level configuration an administrator sets on behalf of their users, including custom brand fonts.
 - **Enterprise onboarding and identity.** Fixing dead ends for SSO and SAML users, correcting invite and sign-up routing, and hardening sign-in.
 
