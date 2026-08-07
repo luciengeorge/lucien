@@ -4,10 +4,19 @@ import { AnalyticsEvent, useAnalytics } from "#/lib/analytics";
 import { useEffect, useState } from "react";
 
 import { ChatConversation } from "./chat-conversation";
+import { shouldResetConversationView } from "./chat-view-reset";
 
 export function ChatPage({ initialChatState }: { initialChatState: ChatConversationState }) {
   const [chatState, setChatState] = useState(initialChatState);
+  const [viewGeneration, setViewGeneration] = useState(0);
   const { capture } = useAnalytics();
+
+  const handleConversationChange = (next: ChatConversationState) => {
+    if (shouldResetConversationView(chatState.conversation, next.conversation)) {
+      setViewGeneration((generation) => generation + 1);
+    }
+    setChatState(next);
+  };
 
   useEffect(() => {
     capture(AnalyticsEvent.portfolioViewed, {
@@ -22,10 +31,6 @@ export function ChatPage({ initialChatState }: { initialChatState: ChatConversat
   }, [capture, initialChatState.conversation, initialChatState.serializedMessages.length]);
 
   return (
-    <ChatConversation
-      key={chatState.conversation?.id ?? "new-conversation"}
-      chatState={chatState}
-      onConversationChange={setChatState}
-    />
+    <ChatConversation key={viewGeneration} chatState={chatState} onConversationChange={handleConversationChange} />
   );
 }
