@@ -2,9 +2,9 @@ import type { Toast } from "#/lib/toast";
 import type { QueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 
+import { JournalNav } from "#/components/field-notes/journal-nav";
 import { GlobalLoading } from "#/components/global-loading";
 import { NotFound } from "#/components/not-found";
-import { SiteNav } from "#/components/site-nav";
 import { Toaster } from "#/components/ui/sonner";
 import { useToast } from "#/hooks/use-toast";
 import { getToast } from "#/lib/functions/get-toast";
@@ -15,6 +15,7 @@ import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from "@tanst
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
+import { MotionConfig } from "motion/react";
 import { useEffect, useState } from "react";
 
 import ConvexProvider from "../integrations/convex/provider";
@@ -190,31 +191,38 @@ function RootDocument({ children }: { children: ReactNode }) {
         <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
         <GoogleAnalyticsScripts />
       </head>
-      <body className="font-sans wrap-anywhere antialiased">
+      <body className="dot-grid font-sans wrap-anywhere antialiased">
         <GlobalLoading />
         <Analytics />
         <SpeedInsights />
         <GoogleAnalyticsPageViews />
         <ConvexProvider>
           <TanStackQueryProvider>
-            <PostHogInit />
-            <Toaster closeButton richColors />
-            <SiteNav />
-            <main className="isolate flex h-dvh min-h-0 w-full flex-col overflow-hidden pt-14 pb-2 sm:pt-16 sm:pb-6">
-              {children}
-            </main>
-            <TanStackDevtools
-              config={{
-                position: "bottom-right",
-              }}
-              plugins={[
-                {
-                  name: "Tanstack Router",
-                  render: <TanStackRouterDevtoolsPanel />,
-                },
-                TanStackQueryDevtools,
-              ]}
-            />
+            {/*
+              reducedMotion="user" is the single place this contract is set: it
+              strips transform and layout animations for anyone who has asked
+              their OS for less motion, while leaving opacity alone so content
+              still arrives. SVG path drawing is geometry rather than transform,
+              so it is opted out separately inside the illustrations themselves.
+            */}
+            <MotionConfig reducedMotion="user">
+              <PostHogInit />
+              <Toaster closeButton richColors />
+              <JournalNav />
+              <main className="isolate w-full">{children}</main>
+              <TanStackDevtools
+                config={{
+                  position: "bottom-right",
+                }}
+                plugins={[
+                  {
+                    name: "Tanstack Router",
+                    render: <TanStackRouterDevtoolsPanel />,
+                  },
+                  TanStackQueryDevtools,
+                ]}
+              />
+            </MotionConfig>
           </TanStackQueryProvider>
         </ConvexProvider>
         <Scripts />

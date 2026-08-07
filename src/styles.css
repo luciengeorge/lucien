@@ -6,82 +6,98 @@
 @import "shadcn/tailwind.css";
 
 @import "@fontsource-variable/geist";
+@import "@fontsource-variable/fraunces";
+@import "@fontsource-variable/geist-mono";
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * Field Notes.
+ *
+ * A naturalist's journal: warm dot-grid paper, brown ink rather than black,
+ * one pen-blue for annotation and one rust for the marks a hand would make.
+ * Nothing here is pure #000 or #FFF on purpose - the paper is the ground and
+ * the ink sits on it, so both carry a little warmth.
+ */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.141 0.005 285.823);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.141 0.005 285.823);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.141 0.005 285.823);
-  --primary: oklch(0.508 0.118 165.612);
-  --primary-foreground: oklch(0.979 0.021 166.113);
-  --secondary: oklch(0.967 0.001 286.375);
-  --secondary-foreground: oklch(0.21 0.006 285.885);
-  --muted: oklch(0.967 0.001 286.375);
-  --muted-foreground: oklch(0.552 0.016 285.938);
-  --accent: oklch(0.967 0.001 286.375);
-  --accent-foreground: oklch(0.21 0.006 285.885);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: oklch(0.92 0.004 286.32);
-  --input: oklch(0.92 0.004 286.32);
-  --ring: oklch(0.705 0.015 286.067);
-  --chart-1: oklch(0.845 0.143 164.978);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.596 0.145 163.225);
-  --chart-4: oklch(0.508 0.118 165.612);
-  --chart-5: oklch(0.432 0.095 166.913);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.141 0.005 285.823);
-  --sidebar-primary: oklch(0.596 0.145 163.225);
-  --sidebar-primary-foreground: oklch(0.979 0.021 166.113);
-  --sidebar-accent: oklch(0.967 0.001 286.375);
-  --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
-  --sidebar-border: oklch(0.92 0.004 286.32);
-  --sidebar-ring: oklch(0.705 0.015 286.067);
+  --fn-paper: #ece7d8;
+  --fn-paper-shade: #d6cdb6;
+  --fn-ink: #3a2e22;
+  --fn-ink-soft: #5a4b3a;
+  --fn-pen: #28506e;
+  --fn-rust: #b5503a;
+  --fn-label: #8a7f66;
+  --fn-label-strong: #6e6453;
+  --fn-dot: #c9c0ab;
+
+  --background: var(--fn-paper);
+  --foreground: var(--fn-ink);
+  --card: var(--fn-paper);
+  --card-foreground: var(--fn-ink);
+  --popover: var(--fn-paper);
+  --popover-foreground: var(--fn-ink);
+  --primary: var(--fn-ink);
+  --primary-foreground: var(--fn-paper);
+  --secondary: var(--fn-paper-shade);
+  --secondary-foreground: var(--fn-ink);
+  --muted: var(--fn-paper-shade);
+  --muted-foreground: var(--fn-label-strong);
+  --accent: var(--fn-rust);
+  --accent-foreground: var(--fn-paper);
+  --destructive: #a3352a;
+  --destructive-foreground: var(--fn-paper);
+  --border: var(--fn-dot);
+  --input: var(--fn-dot);
+  --ring: var(--fn-pen);
+  --chart-1: var(--fn-rust);
+  --chart-2: #c2714f;
+  --chart-3: var(--fn-ink);
+  --chart-4: var(--fn-pen);
+  --chart-5: var(--fn-label);
+  --radius: 0.25rem;
+  --sidebar: var(--fn-paper);
+  --sidebar-foreground: var(--fn-ink);
+  --sidebar-primary: var(--fn-ink);
+  --sidebar-primary-foreground: var(--fn-paper);
+  --sidebar-accent: var(--fn-paper-shade);
+  --sidebar-accent-foreground: var(--fn-ink);
+  --sidebar-border: var(--fn-dot);
+  --sidebar-ring: var(--fn-pen);
 }
 
+/*
+ * The same journal after hours: warm ink ground rather than pure black, so it
+ * reads as a lit room at night instead of a dark-mode toggle. Brass replaces
+ * pen-blue, which is the only accent that holds up on a ground this dark.
+ */
 .dark {
-  --background: oklch(0.141 0.005 285.823);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.21 0.006 285.885);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.21 0.006 285.885);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.432 0.095 166.913);
-  --primary-foreground: oklch(0.979 0.021 166.113);
-  --secondary: oklch(0.274 0.006 286.033);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.274 0.006 286.033);
-  --muted-foreground: oklch(0.705 0.015 286.067);
-  --accent: oklch(0.274 0.006 286.033);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.552 0.016 285.938);
-  --chart-1: oklch(0.845 0.143 164.978);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.596 0.145 163.225);
-  --chart-4: oklch(0.508 0.118 165.612);
-  --chart-5: oklch(0.432 0.095 166.913);
-  --sidebar: oklch(0.21 0.006 285.885);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.696 0.17 162.48);
-  --sidebar-primary-foreground: oklch(0.262 0.051 172.552);
-  --sidebar-accent: oklch(0.274 0.006 286.033);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.552 0.016 285.938);
+  --fn-paper: #141210;
+  --fn-paper-shade: #2a251f;
+  --fn-ink: #efe9dc;
+  --fn-ink-soft: #dcd4c5;
+  --fn-pen: #c29b54;
+  --fn-rust: #d0664b;
+  --fn-label: #8c8172;
+  --fn-label-strong: #a2967f;
+  --fn-dot: #3a332b;
+
+  --destructive: #d0664b;
+  --destructive-foreground: var(--fn-paper);
 }
 
 @theme inline {
   --font-sans: "Geist Variable", sans-serif;
+  --font-display: "Fraunces Variable", ui-serif, Georgia, serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, SFMono-Regular, monospace;
+  --color-paper: var(--fn-paper);
+  --color-paper-shade: var(--fn-paper-shade);
+  --color-ink: var(--fn-ink);
+  --color-ink-soft: var(--fn-ink-soft);
+  --color-pen: var(--fn-pen);
+  --color-rust: var(--fn-rust);
+  --color-label: var(--fn-label);
+  --color-label-strong: var(--fn-label-strong);
+  --color-dot: var(--fn-dot);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -158,27 +174,57 @@ body {
     @apply font-sans;
   }
 
+  /*
+   * Headings are the journal's hand: Fraunces italic, medium rather than bold.
+   * Bold italic at display size gets muddy; 500 keeps the stroke contrast that
+   * makes the face worth using.
+   */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-display font-medium italic tracking-tight;
+  }
+
   h1 {
-    @apply text-4xl font-bold tracking-tight sm:text-6xl;
+    @apply text-5xl sm:text-7xl;
   }
 
   h2 {
-    @apply text-3xl font-bold tracking-tight sm:text-5xl;
+    @apply text-3xl sm:text-5xl;
   }
 
   h3 {
-    @apply text-2xl font-bold tracking-tight sm:text-4xl;
+    @apply text-2xl sm:text-3xl;
   }
 
   h4 {
-    @apply text-xl font-bold tracking-tight sm:text-3xl;
+    @apply text-xl sm:text-2xl;
   }
 
   h5 {
-    @apply text-lg font-bold tracking-tight sm:text-2xl;
+    @apply text-lg sm:text-xl;
   }
 
   h6 {
-    @apply text-base font-bold tracking-tight sm:text-xl;
+    @apply text-base sm:text-lg;
   }
+}
+
+/*
+ * Dot-grid paper. A repeating radial-gradient rather than a tiled SVG: no extra
+ * DOM node, no network request, and the browser composites it as part of the
+ * background so it never becomes a paint cost during scroll.
+ */
+@utility dot-grid {
+  background-image: radial-gradient(circle at 2px 2px, var(--fn-dot) 1.2px, transparent 0);
+  background-size: 20px 20px;
+}
+
+/* The hairline the journal is ruled with. Dashed everywhere, never solid. */
+@utility rule-dashed {
+  border-color: var(--fn-dot);
+  border-style: dashed;
 }
