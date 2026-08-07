@@ -1,6 +1,6 @@
-import { DownloadCvLink } from "#/components/field-notes/download-cv-link";
-import { JournalPage, MarginNote, MarginVoice, PageHeader } from "#/components/field-notes/journal-page";
-import { WorkRegister, specimenNumeral } from "#/components/field-notes/work-register";
+import { AsideNote, AsideVoice, CedarPage, PageHeader } from "#/components/cedar/cedar-page";
+import { DownloadCvLink } from "#/components/cedar/download-cv-link";
+import { WorkRegister } from "#/components/cedar/work-register";
 import { WORK_INDEX_META } from "#/lib/content/page-meta";
 import { WORK_ENTRIES } from "#/lib/content/registry";
 import { workPeriodStart } from "#/lib/content/work-period";
@@ -41,23 +41,24 @@ export const Route = createFileRoute("/work/")({
     }),
 });
 
-const SPECIMEN_COUNT = specimenNumeral(WORK_ENTRIES.length - 1);
+const PLACE_COUNT = WORK_ENTRIES.length;
 const FIRST_YEAR = workPeriodStart(WORK_ENTRIES[WORK_ENTRIES.length - 1].period);
 
 function WorkIndexPage() {
   return (
-    <JournalPage
-      margin={
+    <CedarPage
+      aside={
         <>
-          <MarginVoice>Seven records, in reverse order of sighting. The most recent is still in progress.</MarginVoice>
-          <MarginNote label="RANGE">Teaching, engineering leadership, founding, and building.</MarginNote>
+          <AsideVoice>Most recent first. The one at the top is still going.</AsideVoice>
+          <AsideNote label="SPAN">{`${PLACE_COUNT} places, ${FIRST_YEAR} to now.`}</AsideNote>
+          <AsideNote label="RANGE">Teaching, engineering leadership, founding, and building.</AsideNote>
         </>
       }
     >
-      <PageHeader meta={`collected records · ${SPECIMEN_COUNT} specimens · ${FIRST_YEAR} to present`} title="Work">
-        <DownloadCvLink className="mt-2" />
+      <PageHeader leadIn="built at" title="Work">
+        <DownloadCvLink className="mt-4" />
       </PageHeader>
       <WorkRegister />
-    </JournalPage>
+    </CedarPage>
   );
 }

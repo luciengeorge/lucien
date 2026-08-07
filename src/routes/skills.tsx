@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
-import { FrequencyPlot } from "#/components/field-notes/illustrations/frequency-plot";
-import { JournalPage, MarginNote, MarginVoice, PageHeader } from "#/components/field-notes/journal-page";
+import { AsideNote, AsideVoice, CedarPage, PageHeader } from "#/components/cedar/cedar-page";
+import { FrequencyPlot } from "#/components/cedar/illustrations/frequency-plot";
 import { RevealGroup, RevealItem } from "#/components/field-notes/reveal";
 import { SKILLS_META } from "#/lib/content/page-meta";
 import { loadResume } from "#/lib/resume/load";
@@ -44,24 +44,29 @@ export const Route = createFileRoute("/skills")({
 
 const PACKAGES = ["remix-auth-salesforce", "stimulus-lazy-loader", "stimulus-checkbox"];
 
-interface FieldMark {
+interface Group {
   content: ReactNode;
   label: string;
 }
 
-const FIELD_MARKS: FieldMark[] = [
+/*
+ * PRIMARY and ALSO FLUENT are statements rather than prose, so they carry
+ * Fraunces at display scale. Everything below them is body copy and stays in
+ * Geist, which is what keeps the page from reading as a set of headlines.
+ */
+const GROUPS: Group[] = [
   {
     label: "PRIMARY",
-    content: <span className="font-display text-2xl text-ink italic">TypeScript, JavaScript, React</span>,
+    content: <span className="font-display text-3xl font-semibold text-ink">TypeScript, JavaScript, React</span>,
   },
   {
     label: "ALSO FLUENT",
-    content: <span className="font-display text-xl text-ink">Ruby on Rails, Python</span>,
+    content: <span className="font-display text-xl font-semibold text-ink">Ruby on Rails, Python</span>,
   },
   {
     label: "CURRENT STACK",
     content: (
-      <span className="font-display text-lg/relaxed text-ink-soft">
+      <span className="font-sans text-base/relaxed text-ink-soft">
         TanStack Start, Router, Query and Form. Tailwind with shadcn/ui. Convex for the backend, plus long experience
         with SQL.
       </span>
@@ -70,7 +75,7 @@ const FIELD_MARKS: FieldMark[] = [
   {
     label: "ALSO SEEN IN",
     content: (
-      <span className="font-display text-lg/relaxed text-ink-soft">
+      <span className="font-sans text-base/relaxed text-ink-soft">
         React Router and Remix, Next.js, and Electron for native desktop.
       </span>
     ),
@@ -78,7 +83,7 @@ const FIELD_MARKS: FieldMark[] = [
   {
     label: "MOBILE",
     content: (
-      <span className="font-display text-lg/relaxed text-ink-soft">
+      <span className="font-sans text-base/relaxed text-ink-soft">
         Native iOS in Swift, Android in Kotlin and Java, React Native. Built both native SDKs at Shopify.
       </span>
     ),
@@ -86,11 +91,11 @@ const FIELD_MARKS: FieldMark[] = [
   {
     label: "PUBLISHED",
     content: (
-      <span className="font-display text-lg/relaxed text-ink-soft">
+      <span className="font-sans text-base/relaxed text-ink-soft">
         {PACKAGES.map((name, index) => (
           <span key={name}>
             <a
-              className="text-pen transition-colors hover:text-ink"
+              className="text-cedar underline decoration-cedar/30 underline-offset-4 transition-colors hover:text-ink hover:decoration-ink/40"
               href={`https://www.npmjs.com/package/${name}`}
               rel="noreferrer"
               target="_blank"
@@ -106,7 +111,7 @@ const FIELD_MARKS: FieldMark[] = [
   {
     label: "CURRENTLY TRACKING",
     content: (
-      <span className="font-display text-lg/relaxed text-pen italic">
+      <span className="font-sans text-base/relaxed text-ink-soft">
         AI application development. OpenAI APIs, TanStack AI, and RAG over Convex vector search. This page is the
         experiment.
       </span>
@@ -116,32 +121,32 @@ const FIELD_MARKS: FieldMark[] = [
 
 export function SkillsPage() {
   return (
-    <JournalPage
-      margin={
+    <CedarPage
+      aside={
         <>
-          <MarginVoice>Listed by how often it shows up in the wild, not by how well he scores it.</MarginVoice>
-          <MarginNote label="FREQUENCY OF SIGHTING">
+          <AsideVoice>Listed by how often it shows up in the work, not by how well he scores it.</AsideVoice>
+          <AsideNote label="HOW OFTEN">
             <FrequencyPlot />
-          </MarginNote>
+          </AsideNote>
         </>
       }
     >
-      <PageHeader meta="identification key · what to look for" title="Field marks" />
+      <PageHeader leadIn="works in" title="Craft" />
 
-      <RevealGroup as="ul" className="flex max-w-[900px] flex-col">
-        {FIELD_MARKS.map((mark) => (
+      <RevealGroup as="ul" className="flex max-w-[860px] flex-col">
+        {GROUPS.map((group) => (
           <RevealItem
             as="li"
-            className="flex flex-col gap-2 border-t rule-dashed py-6 last:border-b lg:flex-row lg:gap-10"
-            key={mark.label}
+            className="flex flex-col gap-2 border-t rule-stone py-6 last:border-b lg:flex-row lg:gap-10"
+            key={group.label}
           >
-            <p className="pt-1.5 font-mono text-[11px] tracking-[0.14em] text-rust lg:w-[170px] lg:shrink-0">
-              {mark.label}
+            <p className="pt-2 font-mono text-[11px] tracking-[0.14em] text-cedar lg:w-[170px] lg:shrink-0">
+              {group.label}
             </p>
-            <div className="min-w-0 flex-1">{mark.content}</div>
+            <div className="min-w-0 flex-1">{group.content}</div>
           </RevealItem>
         ))}
       </RevealGroup>
-    </JournalPage>
+    </CedarPage>
   );
 }

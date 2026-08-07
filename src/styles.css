@@ -12,92 +12,82 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Field Notes.
+ * Cedar.
  *
- * A naturalist's journal: warm dot-grid paper, brown ink rather than black,
- * one pen-blue for annotation and one rust for the marks a hand would make.
- * Nothing here is pure #000 or #FFF on purpose - the paper is the ground and
- * the ink sits on it, so both carry a little warmth.
+ * Heritage as the brand: limestone ground, cedar green, one terracotta. The
+ * palette is the Levantine coast rather than a stationery set, so the rules
+ * are solid and the paper is plain. Warmth here comes from the stone, not
+ * from texture.
  */
 :root {
-  --fn-paper: #ece7d8;
-  --fn-paper-shade: #d6cdb6;
-  --fn-ink: #3a2e22;
-  --fn-ink-soft: #5a4b3a;
-  --fn-pen: #28506e;
-  --fn-rust: #b5503a;
-  --fn-label: #8a7f66;
-  --fn-label-strong: #6e6453;
-  --fn-dot: #c9c0ab;
+  --cd-limestone: #ece5d8;
+  --cd-limestone-shade: #dcd3c2;
+  --cd-ink: #1c1b17;
+  --cd-ink-soft: #56524d;
+  --cd-cedar: #2c5545;
+  --cd-terracotta: #b06a3a;
+  --cd-label: #8a8275;
 
-  --background: var(--fn-paper);
-  --foreground: var(--fn-ink);
-  --card: var(--fn-paper);
-  --card-foreground: var(--fn-ink);
-  --popover: var(--fn-paper);
-  --popover-foreground: var(--fn-ink);
-  --primary: var(--fn-ink);
-  --primary-foreground: var(--fn-paper);
-  --secondary: var(--fn-paper-shade);
-  --secondary-foreground: var(--fn-ink);
-  --muted: var(--fn-paper-shade);
-  --muted-foreground: var(--fn-label-strong);
-  --accent: var(--fn-rust);
-  --accent-foreground: var(--fn-paper);
-  --destructive: #a3352a;
-  --destructive-foreground: var(--fn-paper);
-  --border: var(--fn-dot);
-  --input: var(--fn-dot);
-  --ring: var(--fn-pen);
-  --chart-1: var(--fn-rust);
-  --chart-2: #c2714f;
-  --chart-3: var(--fn-ink);
-  --chart-4: var(--fn-pen);
-  --chart-5: var(--fn-label);
+  --background: var(--cd-limestone);
+  --foreground: var(--cd-ink);
+  --card: var(--cd-limestone);
+  --card-foreground: var(--cd-ink);
+  --popover: var(--cd-limestone);
+  --popover-foreground: var(--cd-ink);
+  --primary: var(--cd-cedar);
+  --primary-foreground: var(--cd-limestone);
+  --secondary: var(--cd-limestone-shade);
+  --secondary-foreground: var(--cd-ink);
+  --muted: var(--cd-limestone-shade);
+  --muted-foreground: var(--cd-ink-soft);
+  --accent: var(--cd-terracotta);
+  --accent-foreground: var(--cd-limestone);
+  --destructive: #9e3b28;
+  --destructive-foreground: var(--cd-limestone);
+  --border: var(--cd-limestone-shade);
+  --input: var(--cd-limestone-shade);
+  --ring: var(--cd-cedar);
+  --chart-1: var(--cd-cedar);
+  --chart-2: #4a7a66;
+  --chart-3: var(--cd-terracotta);
+  --chart-4: var(--cd-ink);
+  --chart-5: var(--cd-label);
   --radius: 0.25rem;
-  --sidebar: var(--fn-paper);
-  --sidebar-foreground: var(--fn-ink);
-  --sidebar-primary: var(--fn-ink);
-  --sidebar-primary-foreground: var(--fn-paper);
-  --sidebar-accent: var(--fn-paper-shade);
-  --sidebar-accent-foreground: var(--fn-ink);
-  --sidebar-border: var(--fn-dot);
-  --sidebar-ring: var(--fn-pen);
+  --sidebar: var(--cd-limestone);
+  --sidebar-foreground: var(--cd-ink);
+  --sidebar-primary: var(--cd-cedar);
+  --sidebar-primary-foreground: var(--cd-limestone);
+  --sidebar-accent: var(--cd-limestone-shade);
+  --sidebar-accent-foreground: var(--cd-ink);
+  --sidebar-border: var(--cd-limestone-shade);
+  --sidebar-ring: var(--cd-cedar);
 }
 
-/*
- * The same journal after hours: warm ink ground rather than pure black, so it
- * reads as a lit room at night instead of a dark-mode toggle. Brass replaces
- * pen-blue, which is the only accent that holds up on a ground this dark.
- */
+/* Evening on the same coast: the stone goes dark, the cedar stays. */
 .dark {
-  --fn-paper: #141210;
-  --fn-paper-shade: #2a251f;
-  --fn-ink: #efe9dc;
-  --fn-ink-soft: #dcd4c5;
-  --fn-pen: #c29b54;
-  --fn-rust: #d0664b;
-  --fn-label: #8c8172;
-  --fn-label-strong: #a2967f;
-  --fn-dot: #3a332b;
+  --cd-limestone: #161a17;
+  --cd-limestone-shade: #232a25;
+  --cd-ink: #ece5d8;
+  --cd-ink-soft: #b8b2a6;
+  --cd-cedar: #6aa88d;
+  --cd-terracotta: #cf8558;
+  --cd-label: #8a8275;
 
-  --destructive: #d0664b;
-  --destructive-foreground: var(--fn-paper);
+  --destructive: #cf6d58;
+  --destructive-foreground: var(--cd-limestone);
 }
 
 @theme inline {
   --font-sans: "Geist Variable", sans-serif;
   --font-display: "Fraunces Variable", ui-serif, Georgia, serif;
   --font-mono: "Geist Mono Variable", ui-monospace, SFMono-Regular, monospace;
-  --color-paper: var(--fn-paper);
-  --color-paper-shade: var(--fn-paper-shade);
-  --color-ink: var(--fn-ink);
-  --color-ink-soft: var(--fn-ink-soft);
-  --color-pen: var(--fn-pen);
-  --color-rust: var(--fn-rust);
-  --color-label: var(--fn-label);
-  --color-label-strong: var(--fn-label-strong);
-  --color-dot: var(--fn-dot);
+  --color-limestone: var(--cd-limestone);
+  --color-limestone-shade: var(--cd-limestone-shade);
+  --color-ink: var(--cd-ink);
+  --color-ink-soft: var(--cd-ink-soft);
+  --color-cedar: var(--cd-cedar);
+  --color-terracotta: var(--cd-terracotta);
+  --color-label: var(--cd-label);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -185,7 +175,7 @@ body {
   h4,
   h5,
   h6 {
-    @apply font-display font-medium tracking-tight italic;
+    @apply font-display font-semibold tracking-tight;
   }
 
   h1 {
@@ -213,18 +203,8 @@ body {
   }
 }
 
-/*
- * Dot-grid paper. A repeating radial-gradient rather than a tiled SVG: no extra
- * DOM node, no network request, and the browser composites it as part of the
- * background so it never becomes a paint cost during scroll.
- */
-@utility dot-grid {
-  background-image: radial-gradient(circle at 2px 2px, var(--fn-dot) 1.2px, transparent 0);
-  background-size: 20px 20px;
-}
-
-/* The hairline the journal is ruled with. Dashed everywhere, never solid. */
-@utility rule-dashed {
-  border-color: var(--fn-dot);
-  border-style: dashed;
+/* Cedar rules with a solid hairline in stone. Nothing is dashed here. */
+@utility rule-stone {
+  border-color: var(--cd-limestone-shade);
+  border-style: solid;
 }

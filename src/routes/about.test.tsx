@@ -12,6 +12,7 @@ describe("AboutPage", () => {
     render(<AboutPage />);
 
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("About Lucien George");
+    expect(screen.getByText("made in")).toBeTruthy();
   });
 
   it("opens with the subject's standing and background", () => {
@@ -21,10 +22,10 @@ describe("AboutPage", () => {
     expect(screen.getByText(/would rather own the whole problem than a slice of it/)).toBeTruthy();
   });
 
-  it("logs every behaviour observed in the wild", () => {
+  it("lists how he spends his time", () => {
     render(<AboutPage />);
 
-    expect(screen.getByText("BEHAVIOUR IN THE WILD")).toBeTruthy();
+    expect(screen.getByText("HOW HE SPENDS HIS TIME")).toBeTruthy();
     for (const label of ["ENDURANCE", "SNOW", "MOTORSPORT", "AT REST"]) {
       expect(screen.getByText(label)).toBeTruthy();
     }
@@ -34,7 +35,7 @@ describe("AboutPage", () => {
     expect(screen.getByText(/Dogs, hiking, travelling/)).toBeTruthy();
   });
 
-  it("annotates the margin with the field notes and the migration figure", () => {
+  it("carries the languages, family and route in the aside", () => {
     render(<AboutPage />);
 
     expect(screen.getByText("French, English, Arabic.")).toBeTruthy();

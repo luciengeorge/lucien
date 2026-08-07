@@ -2,7 +2,7 @@ import type { Toast } from "#/lib/toast";
 import type { QueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 
-import { JournalFooter, JournalNav } from "#/components/field-notes/journal-nav";
+import { CedarFooter, CedarNav } from "#/components/cedar/cedar-nav";
 import { GlobalLoading } from "#/components/global-loading";
 import { NotFound } from "#/components/not-found";
 import { Toaster } from "#/components/ui/sonner";
@@ -191,7 +191,7 @@ function RootDocument({ children }: { children: ReactNode }) {
         <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
         <GoogleAnalyticsScripts />
       </head>
-      <body className="dot-grid font-sans wrap-anywhere antialiased">
+      <body className="font-sans wrap-anywhere antialiased">
         <GlobalLoading />
         <Analytics />
         <SpeedInsights />
@@ -208,14 +208,14 @@ function RootDocument({ children }: { children: ReactNode }) {
             <MotionConfig reducedMotion="user">
               <PostHogInit />
               <Toaster closeButton richColors />
-              <JournalNav />
+              <CedarNav />
               <main className="isolate w-full">{children}</main>
               {/*
                 The colophon lives outside <main> on purpose: a <footer> nested
                 inside main does not expose the contentinfo role, and this is
                 site-level furniture rather than page content.
               */}
-              <JournalFooter className="mx-auto w-full max-w-[1680px] px-6 pb-16 sm:px-10 lg:px-16" />
+              <CedarFooter className="mx-auto w-full max-w-[1500px] px-6 pb-16 sm:px-10 lg:px-14" />
               <TanStackDevtools
                 config={{
                   position: "bottom-right",

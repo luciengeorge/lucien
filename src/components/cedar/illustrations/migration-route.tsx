@@ -2,7 +2,7 @@ import { cn } from "#/lib/utils";
 import { motion, useReducedMotion } from "motion/react";
 import { useId } from "react";
 
-import { DrawnCircle, DrawnFigure, DrawnLabel } from "./drawn";
+import { DrawnCircle, DrawnFigure, DrawnLabel } from "../../field-notes/illustrations/drawn";
 
 const ROUTE = "M18 88 C70 52, 108 96, 152 44 C176 16, 200 34, 224 22";
 
@@ -27,15 +27,17 @@ const LABEL_LAG = 0.15;
 /**
  * Beirut to Montreal to London, drawn as a migration route.
  *
- * The dashes have to stay dashes while the route is revealed, and Motion's
- * pathLength drawing would overwrite the dash pattern to do it (see DrawnPath).
- * So the dashed route is static and a mask travels along it instead: a thick
- * stroke of the same path, drawn with pathLength, used as the reveal window.
- * The result is dashes appearing in travel order, which pathLength alone
- * cannot produce.
+ * The route is a static stroke and a mask travels along it instead of the
+ * stroke being drawn directly: a thick copy of the same path, animated with
+ * pathLength, used as the reveal window. Keeping the reveal in the mask means
+ * the route's own stroke settings are never overwritten by Motion's dasharray
+ * bookkeeping, so the line stays exactly as authored.
  *
  * Each stop then lands as the reveal crosses it, so the labels read as places
  * being reached rather than as decoration fading in.
+ *
+ * Terracotta carries the route and the arrival; the stops along the way stay
+ * in ink, so London reads as the end of the line rather than one more dot.
  */
 export function MigrationRoute({ className }: { className?: string }) {
   const reduced = useReducedMotion();
@@ -55,7 +57,7 @@ export function MigrationRoute({ className }: { className?: string }) {
             stroke="#fff"
             strokeLinecap="round"
             // Comfortably wider than the route's own stroke so the mask never
-            // clips the dash caps as it passes over them.
+            // clips the round caps as it passes over them.
             strokeWidth={12}
             variants={{
               hidden: { pathLength: reduced ? 1 : 0 },
@@ -67,19 +69,18 @@ export function MigrationRoute({ className }: { className?: string }) {
       </defs>
 
       <path
-        className="text-rust"
+        className="text-terracotta"
         d={ROUTE}
         fill="none"
         mask={`url(#${maskId})`}
         stroke="currentColor"
-        strokeDasharray="5 4"
         strokeLinecap="round"
         strokeWidth={1.5}
       />
 
       <DrawnCircle cx={18} cy={88} delay={stopDelay(AT_BEY)} r={4.5} stroke="currentColor" strokeWidth={1.5} />
       <DrawnCircle cx={152} cy={44} delay={stopDelay(AT_YUL)} r={4.5} stroke="currentColor" strokeWidth={1.5} />
-      <DrawnCircle className="text-rust" cx={224} cy={22} delay={stopDelay(AT_LDN)} fill="currentColor" r={5.5} />
+      <DrawnCircle className="text-terracotta" cx={224} cy={22} delay={stopDelay(AT_LDN)} fill="currentColor" r={5.5} />
 
       <DrawnLabel className="fill-label font-mono text-[10px]" delay={stopDelay(AT_BEY) + LABEL_LAG} x={6} y={108}>
         BEY

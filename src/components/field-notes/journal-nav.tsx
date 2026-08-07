@@ -29,7 +29,7 @@ export const NAV_ITEMS: NavItem[] = [
  */
 export function JournalNav() {
   return (
-    <header className="border-b rule-dashed">
+    <header className="rule-dashed border-b">
       <nav
         aria-label="Primary"
         className="mx-auto flex max-w-[1680px] flex-col gap-3 px-6 py-5 sm:px-10 md:flex-row md:items-center md:justify-between lg:px-16"
@@ -38,7 +38,7 @@ export function JournalNav() {
           <Link
             to="/"
             aria-label="Lucien George | Home"
-            className="font-mono text-[11px] font-medium tracking-[0.3em] text-ink transition-colors hover:text-pen"
+            className="hover:text-pen font-mono text-[11px] font-medium tracking-[0.3em] text-ink transition-colors"
           >
             LUCIEN GEORGE
           </Link>
@@ -53,7 +53,7 @@ export function JournalNav() {
               <Link
                 to={item.to}
                 activeOptions={{ exact: item.to === "/" }}
-                className="font-mono text-xs tracking-[0.08em] whitespace-nowrap text-label-strong transition-colors hover:text-ink"
+                className="text-label-strong font-mono text-xs tracking-[0.08em] whitespace-nowrap transition-colors hover:text-ink"
                 activeProps={{
                   className: "font-display text-[15px] italic tracking-normal text-pen hover:text-pen",
                 }}
@@ -74,9 +74,9 @@ export function JournalNav() {
  */
 export function JournalFooter({ className }: { className?: string }) {
   return (
-    <footer className={cn("mt-20 border-t rule-dashed pt-5", className)}>
+    <footer className={cn("rule-dashed mt-20 border-t pt-5", className)}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <p className="font-mono text-[11px] tracking-[0.08em] text-label-strong">
+        <p className="text-label-strong font-mono text-[11px] tracking-[0.08em]">
           SPECIMEN: builder · teacher · racer · habitat: the mountains
         </p>
         <ul className="flex items-center gap-5 sm:gap-6">
@@ -86,7 +86,7 @@ export function JournalFooter({ className }: { className?: string }) {
                 href={link.href}
                 target="_blank"
                 rel="noreferrer"
-                className="font-mono text-[11px] tracking-[0.08em] text-label-strong transition-colors hover:text-ink"
+                className="text-label-strong font-mono text-[11px] tracking-[0.08em] transition-colors hover:text-ink"
               >
                 {link.label}
               </a>

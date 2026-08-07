@@ -24,7 +24,7 @@ export function JournalPage({ children, margin }: JournalPageProps) {
       <div className="flex flex-col gap-12 lg:flex-row lg:items-start lg:gap-[88px]">
         <div className="flex min-w-0 flex-1 flex-col gap-12 sm:gap-14">{children}</div>
         {margin ? (
-          <aside className="flex w-full flex-col gap-8 border-t rule-dashed pt-8 lg:w-[300px] lg:shrink-0 lg:border-t-0 lg:border-l lg:pt-11 lg:pl-[30px]">
+          <aside className="rule-dashed flex w-full flex-col gap-8 border-t pt-8 lg:w-[300px] lg:shrink-0 lg:border-t-0 lg:border-l lg:pt-11 lg:pl-[30px]">
             {margin}
           </aside>
         ) : null}
@@ -73,7 +73,7 @@ export function MarginNote({ children, className, label }: MarginNoteProps) {
 /** The pen-blue aside voice - used when the margin is speaking, not labelling. */
 export function MarginVoice({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <Reveal className={cn("font-display text-base leading-relaxed text-pen italic", className)}>{children}</Reveal>
+    <Reveal className={cn("text-pen font-display text-base leading-relaxed italic", className)}>{children}</Reveal>
   );
 }
 
@@ -89,7 +89,7 @@ interface SectionProps {
 
 export function Section({ children, className, title }: SectionProps) {
   return (
-    <section className={cn("flex flex-col gap-6 border-t rule-dashed pt-4", className)}>
+    <section className={cn("rule-dashed flex flex-col gap-6 border-t pt-4", className)}>
       <Reveal>
         <h2 className="font-mono text-[11px] font-medium tracking-[0.3em] text-label not-italic">{title}</h2>
       </Reveal>

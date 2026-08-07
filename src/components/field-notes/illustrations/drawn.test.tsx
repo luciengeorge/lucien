@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { DrawnFigure, DrawnPath } from "./drawn";
+import { DrawnFigure, DrawnPath, DrawnRect } from "./drawn";
 
 afterEach(() => {
   cleanup();
@@ -28,6 +28,48 @@ describe("DrawnFigure", () => {
     const svg = container.querySelector("svg");
     expect(svg?.getAttribute("aria-hidden")).toBe("true");
     expect(screen.queryByRole("img")).toBeNull();
+  });
+});
+
+/*
+ * These live at the primitive rather than on whichever illustration currently
+ * happens to draw a dashed rect. The dash/pathLength collision was a real bug,
+ * and its only coverage used to be an incidental assertion in a figure that a
+ * later redesign removed. Contract-level tests survive redesigns.
+ */
+describe("DrawnRect", () => {
+  it("keeps an authored dash pattern intact", () => {
+    const { container } = render(
+      <DrawnFigure decorative viewBox="0 0 100 100">
+        <DrawnRect height={40} strokeDasharray="6 4" width={60} x={10} y={10} />
+      </DrawnFigure>,
+    );
+
+    expect(container.querySelector("rect")?.getAttribute("stroke-dasharray")).toBe("6 4");
+  });
+
+  it("never fills, so a box reads as a drawn outline", () => {
+    const { container } = render(
+      <DrawnFigure decorative viewBox="0 0 100 100">
+        <DrawnRect height={40} width={60} x={10} y={10} />
+      </DrawnFigure>,
+    );
+
+    expect(container.querySelector("rect")?.getAttribute("fill")).toBe("none");
+  });
+
+  it("renders at the position and size it was given", () => {
+    const { container } = render(
+      <DrawnFigure decorative viewBox="0 0 100 100">
+        <DrawnRect height={40} width={60} x={10} y={12} />
+      </DrawnFigure>,
+    );
+
+    const rect = container.querySelector("rect");
+    expect(rect?.getAttribute("x")).toBe("10");
+    expect(rect?.getAttribute("y")).toBe("12");
+    expect(rect?.getAttribute("width")).toBe("60");
+    expect(rect?.getAttribute("height")).toBe("40");
   });
 });
 

@@ -1,4 +1,4 @@
-import { JournalPage, MarginNote, MarginVoice, PageHeader } from "#/components/field-notes/journal-page";
+import { AsideNote, AsideVoice, CedarPage, PageHeader } from "#/components/cedar/cedar-page";
 import { RevealGroup, RevealItem } from "#/components/field-notes/reveal";
 import { EDUCATION_META } from "#/lib/content/page-meta";
 import { loadResume } from "#/lib/resume/load";
@@ -73,32 +73,32 @@ const ENTRIES: Entry[] = [
 
 export function EducationPage() {
   return (
-    <JournalPage
-      margin={
+    <CedarPage
+      aside={
         <>
-          <MarginVoice>The interesting part is the gap in 2018, where he nearly stopped altogether.</MarginVoice>
-          <MarginNote label="ALSO OBSERVED">
+          <AsideVoice>The interesting part is the gap in 2018, where he nearly stopped altogether.</AsideVoice>
+          <AsideNote label="ALSO">
             Two internships at Dataflow in Beirut. A government education site, then an interactive reader for schools.
-          </MarginNote>
+          </AsideNote>
         </>
       }
     >
-      <PageHeader meta="chronology · 2013 to 2022" title="Education" />
+      <PageHeader leadIn="learned in" title="Education" />
 
-      <RevealGroup as="ol" className="flex flex-col gap-12 border-l rule-dashed pl-10">
+      <RevealGroup as="ol" className="flex flex-col gap-12 border-l rule-stone pl-8 sm:pl-10">
         {ENTRIES.map((entry) => (
           <RevealItem as="li" className="flex flex-col gap-3 sm:flex-row sm:gap-8" key={entry.institution}>
-            <p className="w-[104px] shrink-0 font-mono text-[11px] tracking-[0.14em] text-rust">{entry.years}</p>
-            <div className="flex flex-col gap-2">
+            <p className="w-[104px] shrink-0 pt-2 font-mono text-[11px] tracking-[0.14em] text-cedar">{entry.years}</p>
+            <div className="flex flex-col gap-1.5">
               <h2 className="text-2xl text-ink">{entry.institution}</h2>
-              <p className="font-mono text-[11px] tracking-[0.14em] text-pen">{entry.qualification}</p>
+              <p className="font-mono text-[11px] tracking-[0.14em] text-label">{entry.qualification}</p>
               {entry.note ? (
-                <p className="mt-1 max-w-[760px] font-display text-lg/relaxed text-ink-soft">{entry.note}</p>
+                <p className="mt-2 max-w-[680px] font-sans text-base/relaxed text-ink-soft">{entry.note}</p>
               ) : null}
             </div>
           </RevealItem>
         ))}
       </RevealGroup>
-    </JournalPage>
+    </CedarPage>
   );
 }

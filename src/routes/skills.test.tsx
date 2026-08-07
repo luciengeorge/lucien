@@ -8,13 +8,14 @@ afterEach(() => {
 });
 
 describe("SkillsPage", () => {
-  it("titles the page as an identification key", () => {
+  it("titles the page after the craft", () => {
     render(<SkillsPage />);
 
-    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Field marks");
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Craft");
+    expect(screen.getByText("works in")).toBeTruthy();
   });
 
-  it("keys every field mark, most frequent first", () => {
+  it("lists every group, most frequent first", () => {
     render(<SkillsPage />);
 
     for (const label of [
@@ -44,11 +45,11 @@ describe("SkillsPage", () => {
     }
   });
 
-  it("annotates the margin with the sighting frequency figure", () => {
+  it("carries the frequency figure in the aside", () => {
     render(<SkillsPage />);
 
-    expect(screen.getByText(/Listed by how often it shows up in the wild/)).toBeTruthy();
-    expect(screen.getByText("FREQUENCY OF SIGHTING")).toBeTruthy();
+    expect(screen.getByText(/Listed by how often it shows up in the work/)).toBeTruthy();
+    expect(screen.getByText("HOW OFTEN")).toBeTruthy();
     expect(screen.getByRole("img", { name: /Frequency of use/ })).toBeTruthy();
   });
 });

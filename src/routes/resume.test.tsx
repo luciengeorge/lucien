@@ -18,6 +18,7 @@ describe("ResumeView", () => {
     renderResume();
 
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Lucien George");
+    expect(screen.getByText("the short version")).toBeTruthy();
     expect(screen.getByText("Curriculum vitae")).toBeTruthy();
   });
 

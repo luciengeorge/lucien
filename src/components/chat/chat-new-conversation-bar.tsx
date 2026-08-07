@@ -9,12 +9,12 @@ export function ChatNewConversationBar({ isDisabled, onClick }: { isDisabled: bo
   return (
     <div className="flex items-center justify-end">
       <button
-        className="font-mono text-[11px] tracking-[0.3em] text-label transition-colors hover:text-pen focus-visible:text-pen disabled:opacity-40"
+        className="font-mono text-[11px] tracking-[0.3em] text-label transition-colors hover:text-cedar focus-visible:text-cedar disabled:opacity-40"
         disabled={isDisabled}
         onClick={onClick}
         type="button"
       >
-        {isLoading ? "STARTING…" : "NEW PAGE"}
+        {isLoading ? "STARTING…" : "START OVER"}
       </button>
     </div>
   );

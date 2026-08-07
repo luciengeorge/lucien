@@ -12,6 +12,7 @@ describe("EducationPage", () => {
     render(<EducationPage />);
 
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Education");
+    expect(screen.getByText("learned in")).toBeTruthy();
   });
 
   it("lists every institution with its qualification", () => {

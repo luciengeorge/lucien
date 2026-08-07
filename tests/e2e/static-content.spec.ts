@@ -27,10 +27,10 @@ const PAGE_CASES: PageCase[] = [
   {
     path: "/skills",
     title: /Tech stack/,
-    // The Field Notes direction renames this page's heading to "Field marks".
-    // The word "skills" survives in the <title> and meta description but no
-    // longer appears in the h1: an accepted, reversible SEO tradeoff.
-    h1: /Field marks/,
+    // The Cedar direction renames this page's heading to "Craft". The word
+    // "skills" survives in the <title> and meta description but no longer
+    // appears in the h1: an accepted, reversible SEO tradeoff.
+    h1: /Craft/,
     jsonLdTypes: ["ProfilePage", "Person"],
     canonical: `${SITE_URL}/skills`,
   },
@@ -120,12 +120,14 @@ test.describe("static content pages", () => {
     }
   });
 
+  // Cedar drops the "FIG. 1 ·" prefix the Field Notes direction put on figure
+  // headings, so the figure is now identified by its own title.
   test("/work/fyxer draws its figure, and other sheets do not", async ({ page }) => {
     await page.goto("/work/fyxer");
-    await expect(page.getByRole("heading", { name: /^FIG\./ })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /what he shipped, in order/i })).toBeVisible();
 
     await page.goto("/work/shopify");
-    await expect(page.getByRole("heading", { name: /^FIG\./ })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: /what he shipped, in order/i })).toHaveCount(0);
   });
 
   test("/work/$slug has a Back to work link that returns to the index", async ({ page }) => {

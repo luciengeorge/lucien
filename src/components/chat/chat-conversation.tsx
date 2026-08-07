@@ -1,9 +1,6 @@
 import type { ChatConversationState } from "#/lib/chat-types";
 
-import { MountainSketch } from "#/components/field-notes/illustrations/mountain-sketch";
-import { Sparkline } from "#/components/field-notes/illustrations/sparkline";
-import { JournalPage, MarginNote, MarginVoice } from "#/components/field-notes/journal-page";
-import { Reveal } from "#/components/field-notes/reveal";
+import { AsideNote, AsideVoice, CedarPage, PageHeader } from "#/components/cedar/cedar-page";
 import { AnalyticsEvent, useAnalytics } from "#/lib/analytics";
 import { parseSerializedMessages } from "#/lib/chat-types";
 import { startNewConversation } from "#/lib/functions/start-new-conversation";
@@ -166,30 +163,20 @@ export function ChatConversation({
   };
 
   return (
-    <JournalPage
-      margin={
+    <CedarPage
+      aside={
         <>
-          <MarginVoice>He answers in his own voice, from his own notes. Ask him anything.</MarginVoice>
-          <MarginNote label="OBSERVED SINCE">2018</MarginNote>
-          <div className="flex flex-col gap-4">
-            <Sparkline />
-            <MarginVoice>Eight years of shipping, plotted. The peak is the notetaker.</MarginVoice>
-          </div>
-          <MarginNote label="HABITAT">Beirut, then Montreal, then London since 2018.</MarginNote>
-          <MarginNote label="FIELD MARKS">TypeScript, React, Convex. Ships whole, never partial.</MarginNote>
+          <AsideVoice>He answers in his own voice, from his own notes. Ask him anything.</AsideVoice>
+          <AsideNote label="LIVES IN">Beirut, then Montreal, then London since 2018.</AsideNote>
+          <AsideNote label="BUILDS WITH">TypeScript, React, Convex. Ships whole, never partial.</AsideNote>
         </>
       }
     >
-      <Reveal className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between lg:gap-12">
-        <div className="flex flex-col gap-3">
-          <p className="font-mono text-xs tracking-[0.08em] text-label">field study, n°08 · obs. London</p>
-          <h1 className="text-ink">Lucien George</h1>
-          <p className="font-display text-2xl text-pen italic">→ ships daily, slightly obsessive</p>
-        </div>
-        <MountainSketch className="hidden w-full max-w-[200px] shrink-0 lg:block" />
-      </Reveal>
+      <PageHeader leadIn="made in" title="the Levant">
+        <p className="mt-2 font-sans text-lg text-ink-soft">Lucien George, product engineer in London.</p>
+      </PageHeader>
 
-      <div ref={transcriptRef} className="flex flex-col border-t rule-dashed">
+      <div ref={transcriptRef} className="flex flex-col border-t rule-stone">
         {showIntroPlaceholder ? <ChatIntroPlaceholder /> : null}
         {visibleMessages.map((message, index) => (
           <div key={message.id} className={entryItemClassName(index === 0)} data-message-id={message.id}>
@@ -199,12 +186,12 @@ export function ChatConversation({
         {showPendingReply ? <ChatPendingReply isFirst={visibleMessages.length === 0} /> : null}
       </div>
 
-      <div className="sticky bottom-0 z-10 flex flex-col gap-3 bg-paper pb-4">
+      <div className="sticky bottom-0 z-10 flex flex-col gap-3 bg-limestone pb-4">
         <ChatNewConversationBar isDisabled={isStartingNewConversation} onClick={() => void handleNewConversation()} />
         <ChatComposerBlock isBusy={isBusy} onResumeRequest={handleResumeRequest} onSend={handleSend} />
       </div>
 
       {showStarterPrompts ? <ChatStarterPrompts onStarterPrompt={handleStarterPrompt} /> : null}
-    </JournalPage>
+    </CedarPage>
   );
 }

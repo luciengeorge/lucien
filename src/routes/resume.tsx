@@ -1,7 +1,7 @@
 import type { Resume } from "#/lib/resume/schema";
 import type { ReactNode } from "react";
 
-import { JournalPage, MarginNote, MarginVoice, PageHeader } from "#/components/field-notes/journal-page";
+import { AsideNote, CedarPage, PageHeader } from "#/components/cedar/cedar-page";
 import { Reveal, RevealGroup, RevealItem } from "#/components/field-notes/reveal";
 import { RESUME_META } from "#/lib/content/page-meta";
 import { WORK_META } from "#/lib/content/work-meta";
@@ -79,25 +79,24 @@ function ResumePage() {
 
 export function ResumeView({ resume }: { resume: Resume }) {
   return (
-    <JournalPage
-      margin={
+    <CedarPage
+      aside={
         <>
-          <MarginVoice>The short version, for people who want the short version.</MarginVoice>
-          <MarginNote label="ALSO AVAILABLE AS">
-            <ul className="flex flex-col gap-1 font-mono text-sm not-italic">
+          <AsideNote label="ALSO AVAILABLE AS">
+            <ul className="flex flex-col gap-1 font-mono text-sm">
               <li>
-                <a className="text-pen transition-colors hover:text-ink" href="/resume.md">
+                <a className="text-cedar transition-colors hover:text-ink" href="/resume.md">
                   /resume.md
                 </a>
               </li>
               <li>
-                <a className="text-pen transition-colors hover:text-ink" href="/llms-full.txt">
+                <a className="text-cedar transition-colors hover:text-ink" href="/llms-full.txt">
                   /llms-full.txt
                 </a>
               </li>
             </ul>
-          </MarginNote>
-          <MarginNote>Or just ask the page. It has read all of this.</MarginNote>
+          </AsideNote>
+          <AsideNote>Or just ask the page. It has read all of this.</AsideNote>
         </>
       }
     >
@@ -106,25 +105,27 @@ export function ResumeView({ resume }: { resume: Resume }) {
         the page is about and what Person structured data claims. "Curriculum
         vitae" carries the design as the line beneath it.
       */}
-      <PageHeader meta="the journal, printed · one page" title="Lucien George">
-        <p className="font-display text-2xl text-pen italic">Curriculum vitae</p>
+      <PageHeader leadIn="the short version" title="Lucien George">
+        <p className="mt-1 font-sans text-lg text-ink-soft">Curriculum vitae</p>
         <a
-          className="group mt-2 inline-flex items-center gap-2 self-start print:hidden"
+          className="group mt-4 inline-flex items-center gap-2 self-start print:hidden"
           download="lucien-george-resume.pdf"
           href={PDF_URL}
           rel="noreferrer"
           target="_blank"
         >
-          <span className="border-b border-ink pb-0.5 font-mono text-xs tracking-[0.14em] text-ink">DOWNLOAD PDF</span>
-          <span aria-hidden className="text-rust transition-transform duration-200 group-hover:translate-x-1">
+          <span className="border-b border-cedar pb-1 font-mono text-xs tracking-[0.14em] text-cedar transition-colors group-hover:border-terracotta group-hover:text-terracotta">
+            DOWNLOAD PDF
+          </span>
+          <span aria-hidden className="text-terracotta transition-transform duration-200 group-hover:translate-x-1">
             →
           </span>
         </a>
       </PageHeader>
 
-      <div className="flex max-w-[900px] flex-col">
+      <div className="flex max-w-[860px] flex-col">
         <CvSection label="PROFILE">
-          <p className="font-display text-lg/relaxed text-ink">{PROFILE}</p>
+          <p className="font-sans text-base/relaxed text-ink">{PROFILE}</p>
         </CvSection>
 
         <CvSection label="EXPERIENCE">
@@ -135,9 +136,14 @@ export function ResumeView({ resume }: { resume: Resume }) {
                 className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-6"
                 key={entry.slug}
               >
-                <p className="font-display text-xl text-ink italic sm:w-[210px] sm:shrink-0">{entry.company}</p>
-                <p className="flex-1 font-display text-base text-ink-soft">{entry.role}</p>
-                <p className="shrink-0 font-mono text-[11px] text-label sm:w-[92px] sm:text-right">
+                <p className="font-display text-xl font-semibold text-ink sm:w-[210px] sm:shrink-0">{entry.company}</p>
+                <p className="flex-1 font-sans text-[15px] text-ink-soft">{entry.role}</p>
+                {/*
+                  Fixed width plus nowrap: the compressed range is wide enough
+                  to break onto a second line at some viewports, which pulls the
+                  year rail out of alignment with the rows above it.
+                */}
+                <p className="shrink-0 font-mono text-[11px] whitespace-nowrap text-label sm:w-[104px] sm:text-right">
                   {compressWorkPeriod(entry.period)}
                 </p>
               </RevealItem>
@@ -146,22 +152,22 @@ export function ResumeView({ resume }: { resume: Resume }) {
         </CvSection>
 
         <CvSection label="EDUCATION">
-          <p className="font-display text-lg/relaxed text-ink-soft">{EDUCATION}</p>
+          <p className="font-sans text-base/relaxed text-ink-soft">{EDUCATION}</p>
         </CvSection>
 
         <CvSection label="LANGUAGES">
-          <p className="font-display text-lg/relaxed text-ink-soft">{resume.skills.spokenLanguages.join(", ")}.</p>
+          <p className="font-sans text-base/relaxed text-ink-soft">{resume.skills.spokenLanguages.join(", ")}.</p>
         </CvSection>
       </div>
-    </JournalPage>
+    </CedarPage>
   );
 }
 
-/** A ruled row of the printed CV: rust label lane on the left, content on the right. */
+/** A stone-ruled row of the printed CV: cedar label lane on the left, content on the right. */
 function CvSection({ children, label }: { children: ReactNode; label: string }) {
   return (
-    <Reveal className="flex flex-col gap-3 border-t rule-dashed py-7 last:border-b sm:flex-row sm:gap-10">
-      <p className="pt-1.5 font-mono text-[11px] tracking-[0.14em] text-rust sm:w-[150px] sm:shrink-0">{label}</p>
+    <Reveal className="flex flex-col gap-3 border-t rule-stone py-7 last:border-b sm:flex-row sm:gap-10">
+      <p className="pt-1.5 font-mono text-[11px] tracking-[0.14em] text-cedar sm:w-[150px] sm:shrink-0">{label}</p>
       <div className="min-w-0 flex-1">{children}</div>
     </Reveal>
   );

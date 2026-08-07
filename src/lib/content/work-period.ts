@@ -41,6 +41,25 @@ export function workPeriodStart(period: string): string {
 }
 
 /**
+ * The span, said out loud: "since 2025" or "2022 to 2023". Used as the lead-in
+ * above a company name, where a punctuated range would read as data rather than
+ * as the opening of a sentence.
+ */
+export function workPeriodLeadIn(period: string): string {
+  const { end, isPresent, start } = parsePeriod(period);
+  if (end === null) return start;
+
+  const startYear = YEAR.exec(start)?.[0];
+  if (!startYear) return period;
+  if (isPresent) return `since ${startYear}`;
+
+  const endYear = YEAR.exec(end)?.[0];
+  if (!endYear) return period;
+
+  return `${startYear} to ${endYear}`;
+}
+
+/**
  * Years only: "Sep 2025 - Present" becomes "2025 · now". Keeps the printed CV's
  * right-aligned date rail narrow instead of letting it compete with the roles.
  * Anything that does not parse as a year range is returned untouched.

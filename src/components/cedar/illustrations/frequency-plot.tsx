@@ -1,6 +1,6 @@
 import { cn } from "#/lib/utils";
 
-import { DrawnFigure, DrawnLabel, DrawnPath } from "./drawn";
+import { DrawnFigure, DrawnLabel, DrawnPath } from "../../field-notes/illustrations/drawn";
 
 /**
  * How often each tool actually shows up in the work, rather than a
@@ -9,6 +9,9 @@ import { DrawnFigure, DrawnLabel, DrawnPath } from "./drawn";
  * Each bar is a straight path, so drawing it with pathLength *is* the bar
  * growing from the left - the same primitive as every other figure, no
  * separate scale animation needed.
+ *
+ * Cedar green is the ground here and terracotta marks only the top two, so the
+ * ranking is legible from the colour before you read a single label.
  */
 interface Band {
   colorClass: string;
@@ -18,11 +21,11 @@ interface Band {
 }
 
 const BANDS: readonly Band[] = [
-  { colorClass: "text-rust", label: "TypeScript", to: 196 },
-  { colorClass: "text-rust", label: "React", to: 176 },
-  { colorClass: "text-ink", label: "Convex", to: 124 },
-  { colorClass: "text-ink", label: "Ruby on Rails", to: 88 },
-  { colorClass: "text-label", label: "Swift, Kotlin", to: 54 },
+  { colorClass: "text-terracotta", label: "TypeScript", to: 196 },
+  { colorClass: "text-terracotta", label: "React", to: 176 },
+  { colorClass: "text-cedar", label: "Convex", to: 124 },
+  { colorClass: "text-cedar", label: "Ruby on Rails", to: 88 },
+  { colorClass: "text-cedar", label: "Swift, Kotlin", to: 54 },
 ];
 
 const ROW_HEIGHT = 38;
@@ -50,7 +53,7 @@ export function FrequencyPlot({ className }: { className?: string }) {
               stroke="currentColor"
               strokeWidth={4}
             />
-            <DrawnLabel className="fill-label-strong font-mono text-[10px]" delay={delay + 0.3} x={4} y={y + 18}>
+            <DrawnLabel className="fill-label font-mono text-[10px]" delay={delay + 0.3} x={4} y={y + 18}>
               {band.label}
             </DrawnLabel>
           </g>

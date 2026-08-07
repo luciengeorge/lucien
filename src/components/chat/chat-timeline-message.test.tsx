@@ -41,10 +41,10 @@ function userMessage(parts: ChatMessage["parts"][number][]): ChatMessage {
 }
 
 describe("ChatTimelineMessage attribution", () => {
-  it("sets an assistant reply down as a Poof field note", () => {
+  it("attributes an assistant reply to Poof, speaking for Lucien", () => {
     render(<ChatTimelineMessage isActive={false} message={message([textPart("He ships daily.")])} status="ready" />);
 
-    expect(screen.getByText("POOF · FIELD NOTE")).toBeTruthy();
+    expect(screen.getByText("POOF · IN HIS OWN WORDS")).toBeTruthy();
     expect(screen.getByText("He ships daily.")).toBeTruthy();
   });
 
@@ -53,9 +53,26 @@ describe("ChatTimelineMessage attribution", () => {
       <ChatTimelineMessage isActive={false} message={userMessage([textPart("What does he build?")])} status="ready" />,
     );
 
-    expect(screen.getByText("YOUR QUESTION")).toBeTruthy();
-    expect(screen.queryByText("POOF · FIELD NOTE")).toBeNull();
+    expect(screen.getByText("YOU ASKED")).toBeTruthy();
+    expect(screen.queryByText("POOF · IN HIS OWN WORDS")).toBeNull();
     expect(screen.getByText("What does he build?")).toBeTruthy();
+  });
+
+  it("keeps the two voices apart: the reply in the sans, the question in cedar italic", () => {
+    const { container: reply } = render(
+      <ChatTimelineMessage isActive={false} message={message([textPart("He ships daily.")])} status="ready" />,
+    );
+    const replyProse = reply.querySelector("[data-slot='turn-prose']");
+    expect(replyProse?.className).toContain("font-sans");
+    expect(replyProse?.className).not.toContain("italic");
+
+    const { container: question } = render(
+      <ChatTimelineMessage isActive={false} message={userMessage([textPart("What does he build?")])} status="ready" />,
+    );
+    const questionProse = question.querySelector("[data-slot='turn-prose']");
+    expect(questionProse?.className).toContain("font-display");
+    expect(questionProse?.className).toContain("italic");
+    expect(questionProse?.className).toContain("text-cedar");
   });
 });
 

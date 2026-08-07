@@ -1,6 +1,10 @@
 import { Spinner } from "#/components/ui/spinner";
 import { Textarea } from "#/components/ui/textarea";
 
+/**
+ * One stone-ruled line to write on. The rule goes cedar on focus, which is the
+ * whole focus state: there is no box to outline, so the line has to carry it.
+ */
 export function ChatComposer({
   canSubmit,
   disabled,
@@ -25,15 +29,12 @@ export function ChatComposer({
 
   return (
     <form
-      className="flex items-end gap-3 border-b-[1.5px] border-ink pt-4 pb-2.5 transition-colors focus-within:border-pen"
+      className="flex items-end gap-3 border-b-[1.5px] border-ink pt-4 pb-2.5 transition-colors focus-within:border-cedar"
       onSubmit={onSubmit}
     >
-      <span aria-hidden className="pb-1.5 font-display text-xl leading-none text-pen">
-        →
-      </span>
       <Textarea
         aria-label="Ask Poof about Lucien"
-        className="max-h-40 min-h-0 flex-1 resize-none overflow-y-auto rounded-none border-0 bg-transparent p-0 font-display text-xl text-ink italic shadow-none transition-none placeholder:font-display placeholder:text-xl placeholder:text-label placeholder:italic focus-visible:border-0 focus-visible:ring-0 disabled:bg-transparent md:text-xl"
+        className="max-h-40 min-h-0 flex-1 resize-none overflow-y-auto rounded-none border-0 bg-transparent p-0 font-sans text-[17px] text-ink shadow-none transition-none placeholder:font-sans placeholder:text-[17px] placeholder:text-label focus-visible:border-0 focus-visible:ring-0 disabled:bg-transparent md:text-[17px]"
         disabled={isInputBusy}
         name="message"
         onBlur={onBlur}
@@ -53,7 +54,7 @@ export function ChatComposer({
       />
       <div className="flex shrink-0 items-center gap-5 pb-1.5">
         <button
-          className="font-mono text-[11px] tracking-[0.14em] text-label transition-colors hover:text-pen focus-visible:text-pen disabled:opacity-40"
+          className="font-mono text-[11px] tracking-[0.14em] text-label transition-colors hover:text-cedar focus-visible:text-cedar disabled:opacity-40"
           disabled={isInputBusy}
           onClick={onResumeRequest}
           type="button"
@@ -61,15 +62,15 @@ export function ChatComposer({
           RESUME
         </button>
         <button className="group flex items-center gap-2 disabled:opacity-40" disabled={!canSend} type="submit">
-          <span className="font-mono text-[11px] tracking-[0.14em] text-label transition-colors group-hover:text-pen">
+          <span className="font-mono text-[11px] tracking-[0.14em] text-cedar transition-colors group-hover:text-ink">
             ASK
           </span>
           {isSubmitting ? (
-            <Spinner className="size-3.5 text-rust" />
+            <Spinner className="size-3.5 text-cedar" />
           ) : (
             <span
               aria-hidden
-              className="text-sm leading-none text-rust transition-transform group-hover:translate-x-1 group-focus-visible:translate-x-1"
+              className="text-sm leading-none text-cedar transition-transform group-hover:translate-x-1 group-focus-visible:translate-x-1"
             >
               →
             </span>

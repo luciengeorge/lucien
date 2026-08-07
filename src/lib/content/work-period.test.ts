@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { WORK_META } from "./work-meta";
-import { compressWorkPeriod, formatWorkPeriod, workPeriodStart } from "./work-period";
+import { compressWorkPeriod, formatWorkPeriod, workPeriodLeadIn, workPeriodStart } from "./work-period";
 
 describe("formatWorkPeriod", () => {
   it("separates the two ends with a middot", () => {
@@ -35,6 +35,31 @@ describe("workPeriodStart", () => {
 
   it("returns the whole string when there is no range", () => {
     expect(workPeriodStart("2019")).toBe("2019");
+  });
+});
+
+describe("workPeriodLeadIn", () => {
+  it("says since when the work is still going", () => {
+    expect(workPeriodLeadIn("Sep 2025 - Present")).toBe("since 2025");
+  });
+
+  it("spans two years in words", () => {
+    expect(workPeriodLeadIn("Jan 2022 - Sep 2023")).toBe("2022 to 2023");
+    expect(workPeriodLeadIn("2013 - 2019")).toBe("2013 to 2019");
+  });
+
+  it("falls back to the start when there is no range", () => {
+    expect(workPeriodLeadIn("2019")).toBe("2019");
+  });
+
+  it("returns anything it cannot parse untouched", () => {
+    expect(workPeriodLeadIn("Ongoing")).toBe("Ongoing");
+  });
+
+  it("reads as a sentence for every real entry", () => {
+    for (const entry of WORK_META) {
+      expect(workPeriodLeadIn(entry.period)).toMatch(/^(since \d{4}|\d{4} to \d{4})$/);
+    }
   });
 });
 

@@ -17,7 +17,7 @@ describe("ChatStarterPrompts", () => {
     }
   });
 
-  it("numbers the specimens 01 through 04", () => {
+  it("numbers the prompts 01 through 04", () => {
     render(<ChatStarterPrompts onStarterPrompt={vi.fn()} />);
 
     expect(STARTER_PROMPTS.length).toBe(4);
@@ -26,7 +26,7 @@ describe("ChatStarterPrompts", () => {
     }
   });
 
-  it("makes each specimen a button that sends its prompt text", () => {
+  it("makes each prompt a button that sends its text", () => {
     const onStarterPrompt = vi.fn(async () => {});
     render(<ChatStarterPrompts onStarterPrompt={onStarterPrompt} />);
 
