@@ -8,7 +8,7 @@ import { formatWorkPeriod, workPeriodStart } from "#/lib/content/work-period";
 import { Link } from "@tanstack/react-router";
 
 import { DownloadCvLink } from "./download-cv-link";
-import { RecordingFlow } from "./illustrations/recording-flow";
+import { FyxerSequence } from "./illustrations/fyxer-sequence";
 import { JournalPage, MarginNote, MarginVoice, PageHeader, Section } from "./journal-page";
 import { Reveal } from "./reveal";
 import { specimenNumeral } from "./work-register";
@@ -30,7 +30,7 @@ interface SheetExtras {
  */
 const SHEET_EXTRAS: Record<string, SheetExtras> = {
   fyxer: {
-    figure: { render: () => <RecordingFlow />, title: "FIG. 1 · HOW IT RECORDS" },
+    figure: { render: () => <FyxerSequence />, title: "FIG. 1 · WHAT HE SHIPPED, IN ORDER" },
     stats: [
       { label: "POPULATION", value: "1,000 weekly active users" },
       { label: "RECORDED", value: "~10,000 calls, within months of launch" },

@@ -2,9 +2,9 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { FrequencyPlot } from "./frequency-plot";
+import { FyxerSequence } from "./fyxer-sequence";
 import { MigrationRoute } from "./migration-route";
 import { MountainSketch } from "./mountain-sketch";
-import { RecordingFlow } from "./recording-flow";
 import { Sparkline } from "./sparkline";
 
 afterEach(() => {
@@ -38,22 +38,22 @@ describe("Field Notes illustrations", () => {
     expect(screen.getByText("LDN")).toBeTruthy();
   });
 
-  it("describes the recording flow rather than leaving it as an unlabelled diagram", () => {
-    render(<RecordingFlow />);
+  it("describes what was shipped rather than leaving it as an unlabelled diagram", () => {
+    render(<FyxerSequence />);
 
-    expect(screen.getByRole("img", { name: /meeting feeds the desktop app/i })).toBeTruthy();
+    expect(screen.getByRole("img", { name: /chat, then the notetaker app, then B2B and enterprise/i })).toBeTruthy();
   });
 
-  it("renders each stage of the recording flow", () => {
-    render(<RecordingFlow />);
+  it("renders each thing shipped, in order", () => {
+    render(<FyxerSequence />);
 
-    expect(screen.getByText("the meeting")).toBeTruthy();
-    expect(screen.getByText("desktop app")).toBeTruthy();
-    expect(screen.getByText("meeting chat")).toBeTruthy();
+    expect(screen.getByText("Fyxer chat")).toBeTruthy();
+    expect(screen.getByText("notetaker app")).toBeTruthy();
+    expect(screen.getByText("B2B and enterprise")).toBeTruthy();
   });
 
-  it("keeps the desktop-app outline on its own dash pattern", () => {
-    const { container } = render(<RecordingFlow />);
+  it("marks only the in-progress stage with a dashed outline", () => {
+    const { container } = render(<FyxerSequence />);
 
     const dashed = container.querySelectorAll('rect[stroke-dasharray="6 4"]');
     expect(dashed.length).toBe(1);

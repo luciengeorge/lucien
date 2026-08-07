@@ -61,8 +61,8 @@ describe("WorkSheet", () => {
   it("draws the figure on the entry that has one", async () => {
     await renderInRouter(<WorkSheet entry={entryFor("fyxer")} />);
 
-    expect(screen.getByRole("heading", { name: "FIG. 1 · HOW IT RECORDS" })).toBeTruthy();
-    expect(screen.getByRole("img", { name: /desktop app/i })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "FIG. 1 · WHAT HE SHIPPED, IN ORDER" })).toBeTruthy();
+    expect(screen.getByRole("img", { name: /chat, then the notetaker app/i })).toBeTruthy();
   });
 
   it("leaves entries without a figure unillustrated", async () => {
