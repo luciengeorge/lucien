@@ -74,7 +74,7 @@ export const WORK_META: readonly WorkMeta[] = [
     slug: "impact-lebanon",
     company: "Impact Lebanon",
     role: "Co-Founder",
-    period: "Oct 2019 - Present",
+    period: "Oct 2019 - Apr 2026",
     summary: "Co-founded a Lebanese diaspora non-profit that raised $8.3M for victims of the Beirut explosion.",
     logo: "/companies/impact-lebanon.png",
     color: "#b91c1c",
