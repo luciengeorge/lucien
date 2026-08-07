@@ -2,7 +2,7 @@ import type { Toast } from "#/lib/toast";
 import type { QueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 
-import { JournalNav } from "#/components/field-notes/journal-nav";
+import { JournalFooter, JournalNav } from "#/components/field-notes/journal-nav";
 import { GlobalLoading } from "#/components/global-loading";
 import { NotFound } from "#/components/not-found";
 import { Toaster } from "#/components/ui/sonner";
@@ -210,6 +210,12 @@ function RootDocument({ children }: { children: ReactNode }) {
               <Toaster closeButton richColors />
               <JournalNav />
               <main className="isolate w-full">{children}</main>
+              {/*
+                The colophon lives outside <main> on purpose: a <footer> nested
+                inside main does not expose the contentinfo role, and this is
+                site-level furniture rather than page content.
+              */}
+              <JournalFooter className="mx-auto w-full max-w-[1680px] px-6 pb-16 sm:px-10 lg:px-16" />
               <TanStackDevtools
                 config={{
                   position: "bottom-right",

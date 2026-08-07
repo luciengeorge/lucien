@@ -5,11 +5,26 @@ import { z } from "zod";
 import type { ChatMessage, ChatStatus } from "./chat.types";
 
 import { ChatContactCard } from "./chat-contact-card";
+import { ChatFieldNoteLabel } from "./chat-field-note-label";
 import { ChatMarkdown } from "./chat-markdown";
 import { ChatResumeCard } from "./chat-resume-card";
 import { ChatStatusMarker } from "./chat-status-marker";
 import { ChatWorkLinkCard } from "./chat-work-link-card";
 import { TOOL_PROGRESS_LABELS } from "./chat.constants";
+
+/*
+ * Poof writes in the same hand as the rest of the journal, so the reply is set
+ * in Fraunces rather than in a chat-bubble sans. The descendant selectors are
+ * unavoidable: the markdown renderer owns the elements it emits, so the only
+ * way to reach them is from the wrapper.
+ */
+const FIELD_NOTE_PROSE =
+  "max-w-[900px] [&_a]:text-pen [&_a]:underline [&_a]:underline-offset-4 [&_a]:decoration-pen/40 [&_code]:font-mono [&_code]:text-[0.82em] [&_h1]:font-display [&_h2]:font-display [&_h3]:font-display [&_li]:text-pretty [&_ol]:mt-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:text-pretty [&_p:not(:first-child)]:mt-4 [&_ul]:mt-4 [&_ul]:list-disc [&_ul]:pl-6";
+
+const ASSISTANT_PROSE =
+  "font-display text-xl/relaxed text-ink [&_h1]:text-2xl [&_h2]:text-xl [&_h3]:text-lg [&_strong]:font-semibold [&_strong]:text-ink";
+
+const QUESTION_PROSE = "font-display text-xl/relaxed text-pen italic";
 
 const ResumeToolOutputSchema = z.object({
   filename: z.string(),
@@ -162,20 +177,13 @@ export function ChatTimelineMessage({
 
   return (
     <div className="space-y-4">
-      <p
-        className={cn(
-          "font-mono text-sm tracking-wide uppercase",
-          role === "assistant" ? "text-neutral-500" : "text-neutral-400",
-        )}
-      >
-        {role === "user" ? "You" : "Poof"}
-      </p>
+      <ChatFieldNoteLabel role={role} />
 
       {reasoningParts.length > 0 ? (
-        <div className="space-y-2 border-l border-neutral-950/8 pl-4">
-          <p className="font-mono text-sm tracking-wide text-neutral-400 uppercase">Thinking</p>
+        <div className="space-y-2 border-l rule-dashed pl-4">
+          <p className="font-mono text-[11px] tracking-[0.3em] text-label not-italic">THINKING</p>
           {reasoningParts.map((part) => (
-            <p key={part.key} className="max-w-[62ch] text-sm text-pretty text-neutral-500 italic">
+            <p key={part.key} className="max-w-[62ch] font-display text-base text-pretty text-label-strong italic">
               {part.text}
             </p>
           ))}
@@ -183,14 +191,7 @@ export function ChatTimelineMessage({
       ) : null}
 
       {textParts.length > 0 ? (
-        <div
-          className={cn(
-            "max-w-none [&_p]:max-w-[62ch] [&_p]:text-pretty",
-            role === "assistant"
-              ? "text-[1.02rem] text-neutral-800 sm:text-[1.08rem]"
-              : "text-base font-medium text-neutral-950 sm:text-[1.02rem]",
-          )}
-        >
+        <div className={cn(FIELD_NOTE_PROSE, role === "assistant" ? ASSISTANT_PROSE : QUESTION_PROSE)}>
           {textParts.map((part) => (
             <ChatMarkdown key={part.key} isAnimating={status === "streaming"} text={part.text} />
           ))}
@@ -198,7 +199,7 @@ export function ChatTimelineMessage({
       ) : role === "assistant" && status === "streaming" && !hasToolActivity ? (
         <ChatStatusMarker label="Generating response…" />
       ) : role === "assistant" && isSettled && !messageHasRenderableContent ? (
-        <p className="max-w-[62ch] text-sm text-pretty text-neutral-400 italic">
+        <p className="max-w-[62ch] font-display text-base text-pretty text-label italic">
           Sorry, I didn't catch that. Mind rephrasing?
         </p>
       ) : null}

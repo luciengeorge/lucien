@@ -37,6 +37,7 @@ export function JournalNav() {
         <div className="flex items-baseline gap-3 sm:gap-4">
           <Link
             to="/"
+            aria-label="Lucien George | Home"
             className="font-mono text-[11px] font-medium tracking-[0.3em] text-ink transition-colors hover:text-pen"
           >
             LUCIEN GEORGE

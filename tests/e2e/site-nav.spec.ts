@@ -1,52 +1,50 @@
 import { expect, test } from "@playwright/test";
 
 const NAV_LINKS: Array<{ label: string; href: string }> = [
-  { label: "Chat", href: "/" },
-  { label: "About", href: "/about" },
-  { label: "Work", href: "/work" },
-  { label: "Skills", href: "/skills" },
-  { label: "Education", href: "/education" },
-  { label: "CV", href: "/resume" },
+  { href: "/", label: "Chat" },
+  { href: "/about", label: "About" },
+  { href: "/work", label: "Work" },
+  { href: "/skills", label: "Skills" },
+  { href: "/education", label: "Education" },
+  { href: "/resume", label: "CV" },
 ];
 
 const SOCIAL_LABELS = ["GitHub", "LinkedIn", "X", "Instagram"];
 
-test.describe("SiteNav (desktop)", () => {
-  test.use({ viewport: { width: 1280, height: 820 } });
+/*
+ * The Field Notes redesign replaced the floating glass nav pill with a ruled
+ * journal masthead. Two deliberate consequences are encoded below:
+ *
+ * - There is no mobile dropdown. Six items fit in a scrollable row, so the
+ *   menu button and its Base UI popup are gone rather than restyled. Mobile
+ *   coverage now asserts the links are directly reachable instead.
+ * - Social links moved out of the nav and into the footer colophon, so they
+ *   are asserted against `contentinfo`.
+ */
 
-  test("renders the monogram link to home", async ({ page }) => {
+test.describe("JournalNav (desktop)", () => {
+  test.use({ viewport: { height: 820, width: 1280 } });
+
+  test("the masthead wordmark links home", async ({ page }) => {
     await page.goto("/about");
-    const monogramLink = page.getByRole("link", { name: "Lucien George | Home" }).first();
-    await expect(monogramLink).toBeVisible();
-    await expect(monogramLink).toHaveAttribute("href", "/");
-    // SVG monogram is present
-    await expect(monogramLink.locator("svg")).toBeVisible();
+    const masthead = page.getByRole("link", { name: "Lucien George | Home" }).first();
+    await expect(masthead).toBeVisible();
+    await expect(masthead).toHaveAttribute("href", "/");
   });
 
   test("exposes all nav links pointing at the correct routes", async ({ page }) => {
     await page.goto("/");
     const nav = page.getByRole("navigation", { name: "Primary" });
     await expect(nav).toBeVisible();
-    for (const { label, href } of NAV_LINKS) {
+    for (const { href, label } of NAV_LINKS) {
       const link = nav.getByRole("link", { name: label, exact: true });
       await expect(link).toBeVisible();
       await expect(link).toHaveAttribute("href", href);
     }
   });
 
-  test("exposes all social links opening in a new tab", async ({ page }) => {
-    await page.goto("/");
-    const nav = page.getByRole("navigation", { name: "Primary" });
-    for (const label of SOCIAL_LABELS) {
-      const link = nav.getByRole("link", { name: label });
-      await expect(link).toBeVisible();
-      await expect(link).toHaveAttribute("target", "_blank");
-      await expect(link).toHaveAttribute("rel", /noreferrer/);
-    }
-  });
-
-  test("active link gets the active variant class on each page", async ({ page }) => {
-    for (const { label, href } of NAV_LINKS) {
+  test("active link gets the active variant on each page", async ({ page }) => {
+    for (const { href, label } of NAV_LINKS) {
       await page.goto(href);
       const link = page.getByRole("navigation", { name: "Primary" }).getByRole("link", { name: label, exact: true });
       // TanStack Router's `activeProps` injects `data-status="active"` on the matching link.
@@ -64,38 +62,50 @@ test.describe("SiteNav (desktop)", () => {
   });
 });
 
-test.describe("SiteNav (mobile)", () => {
-  test.use({ viewport: { width: 390, height: 844 } });
+test.describe("Journal colophon", () => {
+  test.use({ viewport: { height: 820, width: 1280 } });
 
-  test("shows the mobile monogram + dropdown trigger; the desktop pill is hidden", async ({ page }) => {
-    await page.goto("/about");
-    const monogramLink = page.getByRole("link", { name: "Lucien George | Home" }).first();
-    await expect(monogramLink).toBeVisible();
-    const trigger = page.getByRole("button", { name: /open menu/i });
-    await expect(trigger).toBeVisible();
-    await expect(trigger).toHaveAttribute("aria-haspopup", /menu|true/);
+  test("exposes all social links opening in a new tab", async ({ page }) => {
+    await page.goto("/");
+    const footer = page.getByRole("contentinfo");
+    for (const label of SOCIAL_LABELS) {
+      const link = footer.getByRole("link", { name: label, exact: true });
+      await expect(link).toBeVisible();
+      await expect(link).toHaveAttribute("target", "_blank");
+      await expect(link).toHaveAttribute("rel", /noreferrer/);
+    }
   });
 
-  test("opening the menu reveals all nav links and socials, closes after a selection navigates", async ({ page }) => {
+  test("carries the specimen line on every page", async ({ page }) => {
+    for (const href of ["/", "/about", "/work"]) {
+      await page.goto(href);
+      await expect(page.getByRole("contentinfo").getByText(/SPECIMEN: builder/)).toBeVisible();
+    }
+  });
+});
+
+test.describe("JournalNav (mobile)", () => {
+  test.use({ viewport: { height: 844, width: 390 } });
+
+  test("keeps every nav link directly reachable without a menu", async ({ page }) => {
     await page.goto("/about");
-    const trigger = page.getByRole("button", { name: /open menu/i });
-    await expect(trigger).toBeVisible();
-    // Wait for Base UI to hydrate the trigger (aria-expanded toggled on mount)
-    await expect(trigger).toHaveAttribute("aria-expanded", /false|true/);
-    await trigger.click();
+    const nav = page.getByRole("navigation", { name: "Primary" });
+    await expect(nav).toBeVisible();
 
-    const menu = page.locator('[data-slot="dropdown-menu-content"]');
-    await expect(menu).toBeVisible();
-
-    for (const { label } of NAV_LINKS) {
-      await expect(menu.getByRole("menuitem", { name: label, exact: true })).toBeVisible();
+    for (const { href, label } of NAV_LINKS) {
+      const link = nav.getByRole("link", { name: label, exact: true });
+      await expect(link).toHaveAttribute("href", href);
+      // The row scrolls horizontally, so a link may start out of view.
+      await link.scrollIntoViewIfNeeded();
+      await expect(link).toBeVisible();
     }
-    for (const social of SOCIAL_LABELS) {
-      await expect(menu.getByRole("menuitem", { name: social, exact: true })).toBeVisible();
-    }
+  });
 
-    await menu.getByRole("menuitem", { name: "Work", exact: true }).click();
+  test("navigating from the mobile nav works", async ({ page }) => {
+    await page.goto("/about");
+    const link = page.getByRole("navigation", { name: "Primary" }).getByRole("link", { name: "Work", exact: true });
+    await link.scrollIntoViewIfNeeded();
+    await link.click();
     await expect(page).toHaveURL("/work");
-    await expect(page.locator('[data-slot="dropdown-menu-content"]')).toHaveCount(0);
   });
 });

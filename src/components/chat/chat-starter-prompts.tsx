@@ -1,29 +1,27 @@
-import { Button } from "#/components/ui/button";
+import { RevealGroup, RevealItem } from "#/components/field-notes/reveal";
 
 import { STARTER_PROMPTS } from "./chat.constants";
 
 export function ChatStarterPrompts({ onStarterPrompt }: { onStarterPrompt: (prompt: string) => Promise<void> }) {
   return (
-    <div className="space-y-2 border-t border-neutral-950/8 pt-1 sm:space-y-3">
-      <p className="font-mono text-xs tracking-[0.18em] text-neutral-500 uppercase sm:text-sm sm:tracking-wide">
-        Start here
-      </p>
-      <div className="-mx-4 overflow-x-auto px-4 pt-1 pb-1 sm:mx-0 sm:px-0 sm:pt-0">
-        <div className="flex gap-2 sm:flex-wrap sm:gap-2.5">
-          {STARTER_PROMPTS.map((prompt) => (
-            <Button
-              key={prompt}
-              className="h-auto shrink-0 rounded-full border border-neutral-950/10 px-3 py-1.5 text-[13px] whitespace-nowrap hover:bg-neutral-950/4 sm:px-3 sm:py-2 sm:text-sm"
-              size="sm"
-              type="button"
-              variant="ghost"
+    <section className="flex flex-col gap-5 border-t rule-dashed pt-4">
+      <h2 className="font-mono text-[11px] font-medium tracking-[0.3em] text-label not-italic">START HERE</h2>
+      <RevealGroup className="grid grid-cols-1 gap-x-10 gap-y-5 sm:grid-cols-2">
+        {STARTER_PROMPTS.map((prompt, index) => (
+          <RevealItem key={prompt}>
+            <button
+              className="group flex w-full items-baseline gap-3 text-left"
               onClick={() => void onStarterPrompt(prompt)}
+              type="button"
             >
-              {prompt}
-            </Button>
-          ))}
-        </div>
-      </div>
-    </div>
+              <span className="w-6 shrink-0 font-mono text-[11px] text-rust">{String(index + 1).padStart(2, "0")}</span>
+              <span className="font-display text-lg text-ink italic transition-colors group-hover:text-pen">
+                {prompt}
+              </span>
+            </button>
+          </RevealItem>
+        ))}
+      </RevealGroup>
+    </section>
   );
 }

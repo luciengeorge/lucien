@@ -1,17 +1,18 @@
-import type { ResumeRole } from "#/lib/resume/schema";
+import type { Resume } from "#/lib/resume/schema";
+import type { ReactNode } from "react";
 
-import { CompanyLogo } from "#/components/resume/company-logo";
-import { buttonVariants } from "#/components/ui/button";
+import { JournalPage, MarginNote, MarginVoice, PageHeader } from "#/components/field-notes/journal-page";
+import { Reveal, RevealGroup, RevealItem } from "#/components/field-notes/reveal";
 import { RESUME_META } from "#/lib/content/page-meta";
-import { formatExperienceDuration, formatPeriod, loadResume } from "#/lib/resume/load";
+import { WORK_META } from "#/lib/content/work-meta";
+import { loadResume } from "#/lib/resume/load";
+import { compressPeriod } from "#/lib/resume/period";
 import { buildSeoHead } from "#/lib/seo";
 import { OG_IMAGE_URL, SITE_URL } from "#/lib/site-config";
-import { cn } from "#/lib/utils";
-import { Download01Icon } from "@hugeicons-pro/core-stroke-rounded";
-import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute } from "@tanstack/react-router";
 
 const RESUME_URL = `${SITE_URL}/resume`;
+const PDF_URL = "/api/resume/pdf";
 const { title: TITLE, description: DESCRIPTION } = RESUME_META;
 
 export const Route = createFileRoute("/resume")({
@@ -66,187 +67,102 @@ export const Route = createFileRoute("/resume")({
   },
 });
 
+const PROFILE =
+  "Fullstack developer and product engineer in London, originally from Beirut. Senior Product Engineer at Fyxer, leading the notetaker desktop app for macOS and Windows. Before that, two companies as co-founder, native checkout SDKs at Shopify, and the London engineering team at Le Wagon.";
+
+const EDUCATION =
+  "BEng Software Engineering, McGill University. Le Wagon London, Batch 190. Families in Business, Harvard Business School.";
+
 function ResumePage() {
-  const resume = Route.useLoaderData();
-  const { education, experiences, personal, skills } = resume;
+  return <ResumeView resume={Route.useLoaderData()} />;
+}
 
+export function ResumeView({ resume }: { resume: Resume }) {
   return (
-    <div className="min-h-0 grow overflow-y-auto">
-      <article className="mx-auto w-full max-w-4xl px-4 pt-6 pb-10 sm:px-6 sm:pt-10 sm:pb-16">
-        <header className="flex flex-col gap-6 border-b border-neutral-950/10 pb-8 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight text-neutral-950 sm:text-4xl">{personal.name}</h1>
-            <p className="mt-1 font-mono text-xs tracking-[0.18em] text-neutral-500 uppercase sm:text-sm">
-              {personal.title}
-            </p>
-            <p className="mt-3 text-sm text-neutral-600">
-              <a className="hover:text-neutral-950 hover:underline" href={`mailto:${personal.email}`}>
-                {personal.email}
-              </a>
-              {personal.location ? <span> · {personal.location}</span> : null}
-            </p>
-            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-neutral-600">
-              {personal.links.github ? (
-                <a
-                  className="hover:text-neutral-950 hover:underline"
-                  href={personal.links.github}
-                  rel="noreferrer"
-                  target="_blank"
-                >
-                  GitHub
+    <JournalPage
+      margin={
+        <>
+          <MarginVoice>The short version, for people who want the short version.</MarginVoice>
+          <MarginNote label="ALSO AVAILABLE AS">
+            <ul className="flex flex-col gap-1 font-mono text-sm not-italic">
+              <li>
+                <a className="text-pen transition-colors hover:text-ink" href="/resume.md">
+                  /resume.md
                 </a>
-              ) : null}
-              {personal.links.linkedin ? (
-                <a
-                  className="hover:text-neutral-950 hover:underline"
-                  href={personal.links.linkedin}
-                  rel="noreferrer"
-                  target="_blank"
-                >
-                  LinkedIn
+              </li>
+              <li>
+                <a className="text-pen transition-colors hover:text-ink" href="/llms-full.txt">
+                  /llms-full.txt
                 </a>
-              ) : null}
-              {personal.website ? (
-                <a
-                  className="hover:text-neutral-950 hover:underline"
-                  href={personal.website}
-                  rel="noreferrer"
-                  target="_blank"
-                >
-                  {personal.website.replace(/^https?:\/\//, "")}
-                </a>
-              ) : null}
-            </div>
-          </div>
+              </li>
+            </ul>
+          </MarginNote>
+          <MarginNote>Or just ask the page. It has read all of this.</MarginNote>
+        </>
+      }
+    >
+      {/*
+        A CV page's h1 should be the person, not the document type: it is what
+        the page is about and what Person structured data claims. "Curriculum
+        vitae" carries the design as the line beneath it.
+      */}
+      <PageHeader meta="the journal, printed · one page" title="Lucien George">
+        <p className="font-display text-2xl text-pen italic">Curriculum vitae</p>
+        <a
+          className="group mt-2 inline-flex items-center gap-2 self-start print:hidden"
+          download="lucien-george-resume.pdf"
+          href={PDF_URL}
+          rel="noreferrer"
+          target="_blank"
+        >
+          <span className="border-b border-ink pb-0.5 font-mono text-xs tracking-[0.14em] text-ink">DOWNLOAD PDF</span>
+          <span aria-hidden className="text-rust transition-transform duration-200 group-hover:translate-x-1">
+            →
+          </span>
+        </a>
+      </PageHeader>
 
-          <a
-            className={cn(
-              buttonVariants({ size: "default", variant: "default" }),
-              "shrink-0 rounded-full print:hidden",
-            )}
-            download="lucien-george-resume.pdf"
-            href="/api/resume/pdf"
-            rel="noreferrer"
-            target="_blank"
-          >
-            <HugeiconsIcon icon={Download01Icon} size={16} />
-            Download PDF
-          </a>
-        </header>
+      <div className="flex max-w-[900px] flex-col">
+        <CvSection label="PROFILE">
+          <p className="font-display text-lg/relaxed text-ink">{PROFILE}</p>
+        </CvSection>
 
-        <div className="mt-10 grid gap-10 sm:grid-cols-[210px_1fr]">
-          <aside className="space-y-8 text-sm">
-            <section>
-              <h2 className="mb-3 font-mono text-xs tracking-[0.18em] text-neutral-500 uppercase">Education</h2>
-              <ul className="space-y-4">
-                {education.map((item, index) => (
-                  <li key={`${item.school}-${index}`}>
-                    <p className="font-medium text-neutral-950">{item.degree}</p>
-                    <p className="text-xs text-neutral-600">
-                      {item.school} · {item.location}
-                    </p>
-                    <p className="text-xs text-neutral-500">
-                      {item.start === item.end ? item.start : `${item.start} – ${item.end}`}
-                    </p>
-                    {item.note ? <p className="mt-1 text-xs text-neutral-500">{item.note}</p> : null}
-                  </li>
-                ))}
-              </ul>
-            </section>
+        <CvSection label="EXPERIENCE">
+          <RevealGroup as="ul" className="flex flex-col gap-5">
+            {WORK_META.map((entry) => (
+              <RevealItem
+                as="li"
+                className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-6"
+                key={entry.slug}
+              >
+                <p className="font-display text-xl text-ink italic sm:w-[210px] sm:shrink-0">{entry.company}</p>
+                <p className="flex-1 font-display text-base text-ink-soft">{entry.role}</p>
+                <p className="shrink-0 font-mono text-[11px] text-label sm:w-[92px] sm:text-right">
+                  {compressPeriod(entry.period)}
+                </p>
+              </RevealItem>
+            ))}
+          </RevealGroup>
+        </CvSection>
 
-            <section>
-              <h2 className="mb-3 font-mono text-xs tracking-[0.18em] text-neutral-500 uppercase">Programming</h2>
-              <ul className="flex flex-wrap gap-1.5">
-                {skills.programming.map((skill) => (
-                  <li key={skill} className="rounded-md bg-neutral-950/5 px-2 py-0.5 text-xs text-neutral-700">
-                    {skill}
-                  </li>
-                ))}
-              </ul>
-            </section>
+        <CvSection label="EDUCATION">
+          <p className="font-display text-lg/relaxed text-ink-soft">{EDUCATION}</p>
+        </CvSection>
 
-            <section>
-              <h2 className="mb-3 font-mono text-xs tracking-[0.18em] text-neutral-500 uppercase">Languages</h2>
-              <ul className="flex flex-wrap gap-1.5">
-                {skills.spokenLanguages.map((language) => (
-                  <li key={language} className="rounded-md bg-neutral-950/5 px-2 py-0.5 text-xs text-neutral-700">
-                    {language}
-                  </li>
-                ))}
-              </ul>
-            </section>
-          </aside>
-
-          <section>
-            <h2 className="mb-5 font-mono text-xs tracking-[0.18em] text-neutral-500 uppercase">Experience</h2>
-            <ol className="relative">
-              {experiences.map((experience, index) => {
-                const isLast = index === experiences.length - 1;
-                return (
-                  <li key={`${experience.company}-${index}`} className={cn("relative pl-14", isLast ? "pb-0" : "pb-8")}>
-                    {!isLast ? (
-                      <span aria-hidden="true" className="absolute top-10 bottom-0 left-[19px] w-px bg-neutral-300" />
-                    ) : null}
-                    <CompanyLogo
-                      className="absolute top-0 left-0 size-10 text-sm"
-                      color={experience.color}
-                      company={experience.company}
-                      logo={experience.logo}
-                    />
-                    <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-                      {experience.website ? (
-                        <a
-                          className="text-base font-semibold text-neutral-950 hover:underline"
-                          href={experience.website}
-                          rel="noreferrer"
-                          target="_blank"
-                        >
-                          {experience.company}
-                        </a>
-                      ) : (
-                        <p className="text-base font-semibold text-neutral-950">{experience.company}</p>
-                      )}
-                      <p className="text-xs text-neutral-500">{formatExperienceDuration(experience)}</p>
-                    </div>
-
-                    <ul className="mt-3 space-y-4">
-                      {experience.roles.map((role, roleIndex) => (
-                        <li key={roleIndex}>
-                          <RoleBlock role={role} />
-                        </li>
-                      ))}
-                    </ul>
-                  </li>
-                );
-              })}
-            </ol>
-          </section>
-        </div>
-      </article>
-    </div>
+        <CvSection label="LANGUAGES">
+          <p className="font-display text-lg/relaxed text-ink-soft">{resume.skills.spokenLanguages.join(", ")}.</p>
+        </CvSection>
+      </div>
+    </JournalPage>
   );
 }
 
-function RoleBlock({ role }: { role: ResumeRole }) {
+/** A ruled row of the printed CV: rust label lane on the left, content on the right. */
+function CvSection({ children, label }: { children: ReactNode; label: string }) {
   return (
-    <div>
-      <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-        <p className="text-sm text-neutral-800">
-          {role.role}
-          {role.employmentType ? <span className="text-neutral-500"> · {role.employmentType}</span> : null}
-        </p>
-        <p className="text-xs text-neutral-500">{formatPeriod(role.start, role.end)}</p>
-      </div>
-      <ul className="mt-1.5 space-y-1 text-sm text-neutral-600">
-        {role.bullets.map((bullet, bulletIndex) => (
-          <li key={bulletIndex} className="flex gap-2">
-            <span aria-hidden="true" className="text-neutral-400">
-              •
-            </span>
-            <span className="grow">{bullet}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
+    <Reveal className="flex flex-col gap-3 border-t rule-dashed py-7 last:border-b sm:flex-row sm:gap-10">
+      <p className="pt-1.5 font-mono text-[11px] tracking-[0.14em] text-rust sm:w-[150px] sm:shrink-0">{label}</p>
+      <div className="min-w-0 flex-1">{children}</div>
+    </Reveal>
   );
 }

@@ -1,7 +1,5 @@
-import { ContentPage } from "#/components/content/content-page";
-import { DownloadCvButton } from "#/components/download-cv-button";
+import { WorkSheet } from "#/components/field-notes/work-sheet";
 import { NotFound } from "#/components/not-found";
-import { CompanyLogo } from "#/components/resume/company-logo";
 import { buildWorkEntryMeta } from "#/lib/content/page-meta";
 import { findWorkEntry } from "#/lib/content/registry";
 import { buildSeoHead } from "#/lib/seo";
@@ -53,24 +51,5 @@ export const Route = createFileRoute("/work/$slug")({
 function WorkSlugPage() {
   const entry = Route.useLoaderData();
 
-  return (
-    <ContentPage
-      back={{ to: "/work", label: "Back to work" }}
-      media={
-        <CompanyLogo
-          className="size-14 text-base"
-          color={entry.color}
-          company={entry.company}
-          logo={entry.logo}
-          style={{ viewTransitionName: `work-logo-${entry.slug}` }}
-        />
-      }
-      actions={<DownloadCvButton />}
-      eyebrow={`${entry.role} · ${entry.period}`}
-      title={entry.company}
-      titleViewTransitionName={`work-title-${entry.slug}`}
-      intro={entry.summary}
-      sources={[entry.source]}
-    />
-  );
+  return <WorkSheet entry={entry} />;
 }

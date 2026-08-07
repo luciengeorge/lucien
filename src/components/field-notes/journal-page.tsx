@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 
 import { cn } from "#/lib/utils";
 
-import { JournalFooter } from "./journal-nav";
 import { Reveal } from "./reveal";
 
 /**
@@ -30,7 +29,6 @@ export function JournalPage({ children, margin }: JournalPageProps) {
           </aside>
         ) : null}
       </div>
-      <JournalFooter />
     </div>
   );
 }

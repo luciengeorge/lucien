@@ -1,9 +1,5 @@
-import { Button } from "#/components/ui/button";
-import { InputGroup, InputGroupAddon, InputGroupTextarea } from "#/components/ui/input-group";
 import { Spinner } from "#/components/ui/spinner";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "#/components/ui/tooltip";
-import { File01Icon, Navigation03Icon } from "@hugeicons-pro/core-stroke-rounded";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { Textarea } from "#/components/ui/textarea";
 
 export function ChatComposer({
   canSubmit,
@@ -28,55 +24,58 @@ export function ChatComposer({
   const canSend = !isInputBusy && canSubmit && message.length > 0;
 
   return (
-    <form className="border-t border-neutral-950/8 pt-2.5 pb-2 sm:pt-4 sm:pb-3" onSubmit={onSubmit}>
-      <InputGroup className="rounded-3xl border-transparent bg-neutral-950/3 ring-1 ring-neutral-950/10 has-[[data-slot=input-group-control]:focus-visible]:border-transparent has-[[data-slot=input-group-control]:focus-visible]:ring-2 has-[[data-slot=input-group-control]:focus-visible]:ring-neutral-950/15">
-        <InputGroupTextarea
-          aria-label="Ask Poof about Lucien"
-          className="max-h-40 min-h-0 resize-none overflow-y-auto py-3 pl-4 text-base placeholder:text-neutral-500 sm:py-3.5 sm:pl-5 sm:text-base"
+    <form
+      className="flex items-end gap-3 border-b-[1.5px] border-ink pt-4 pb-2.5 transition-colors focus-within:border-pen"
+      onSubmit={onSubmit}
+    >
+      <span aria-hidden className="pb-1.5 font-display text-xl leading-none text-pen">
+        →
+      </span>
+      <Textarea
+        aria-label="Ask Poof about Lucien"
+        className="max-h-40 min-h-0 flex-1 resize-none overflow-y-auto rounded-none border-0 bg-transparent p-0 font-display text-xl text-ink italic shadow-none transition-none placeholder:font-display placeholder:text-xl placeholder:text-label placeholder:italic focus-visible:border-0 focus-visible:ring-0 disabled:bg-transparent md:text-xl"
+        disabled={isInputBusy}
+        name="message"
+        onBlur={onBlur}
+        onChange={(event) => onChange(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing) {
+            return;
+          }
+          event.preventDefault();
+          if (canSend) {
+            event.currentTarget.form?.requestSubmit();
+          }
+        }}
+        placeholder="Ask about his work, background, projects, or interests"
+        rows={1}
+        value={message}
+      />
+      <div className="flex shrink-0 items-center gap-5 pb-1.5">
+        <button
+          className="font-mono text-[11px] tracking-[0.14em] text-label transition-colors hover:text-pen focus-visible:text-pen disabled:opacity-40"
           disabled={isInputBusy}
-          name="message"
-          onBlur={onBlur}
-          onChange={(event) => onChange(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing) {
-              return;
-            }
-            event.preventDefault();
-            if (canSend) {
-              event.currentTarget.form?.requestSubmit();
-            }
-          }}
-          placeholder="Ask about Lucien's work, background, projects, or interests"
-          rows={1}
-          value={message}
-        />
-        <InputGroupAddon align="block-end" className="justify-end gap-1 px-2 pb-2 sm:px-2.5">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Button
-                    className="size-9 shrink-0 rounded-full text-neutral-700 hover:bg-neutral-950/6 hover:text-neutral-950 sm:size-10"
-                    disabled={isInputBusy}
-                    onClick={onResumeRequest}
-                    size="icon"
-                    type="button"
-                    variant="ghost"
-                  >
-                    <HugeiconsIcon icon={File01Icon} size={18} />
-                    <span className="sr-only">Resume</span>
-                  </Button>
-                }
-              />
-              <TooltipContent>Get Lucien's resume</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <Button className="size-9 shrink-0 rounded-full sm:size-10" disabled={!canSend} size="icon" type="submit">
-            {isSubmitting ? <Spinner /> : <HugeiconsIcon icon={Navigation03Icon} />}
-            <span className="sr-only">Send</span>
-          </Button>
-        </InputGroupAddon>
-      </InputGroup>
+          onClick={onResumeRequest}
+          type="button"
+        >
+          RESUME
+        </button>
+        <button className="group flex items-center gap-2 disabled:opacity-40" disabled={!canSend} type="submit">
+          <span className="font-mono text-[11px] tracking-[0.14em] text-label transition-colors group-hover:text-pen">
+            ASK
+          </span>
+          {isSubmitting ? (
+            <Spinner className="size-3.5 text-rust" />
+          ) : (
+            <span
+              aria-hidden
+              className="text-sm leading-none text-rust transition-transform group-hover:translate-x-1 group-focus-visible:translate-x-1"
+            >
+              →
+            </span>
+          )}
+        </button>
+      </div>
     </form>
   );
 }

@@ -1,19 +1,16 @@
 import type { ChatConversationState } from "#/lib/chat-types";
 
-import {
-  MessageScroller,
-  MessageScrollerButton,
-  MessageScrollerContent,
-  MessageScrollerItem,
-  MessageScrollerProvider,
-  MessageScrollerViewport,
-} from "#/components/ui/message-scroller";
+import { MountainSketch } from "#/components/field-notes/illustrations/mountain-sketch";
+import { Sparkline } from "#/components/field-notes/illustrations/sparkline";
+import { JournalPage, MarginNote, MarginVoice } from "#/components/field-notes/journal-page";
+import { Reveal } from "#/components/field-notes/reveal";
 import { AnalyticsEvent, useAnalytics } from "#/lib/analytics";
 import { parseSerializedMessages } from "#/lib/chat-types";
 import { startNewConversation } from "#/lib/functions/start-new-conversation";
 import { useChat } from "@ai-sdk/react";
 import { useMutation } from "@tanstack/react-query";
 import { DefaultChatTransport } from "ai";
+import { useReducedMotion } from "motion/react";
 import { startTransition, useEffect, useMemo, useRef } from "react";
 
 import { ChatComposerBlock } from "./chat-composer-block";
@@ -110,6 +107,23 @@ export function ChatConversation({
     }
   }, [capture, status, visibleMessages]);
 
+  // The transcript flows in the document rather than in a scroll pane, so the
+  // page owns the scroll: each new question is walked up to the top of the
+  // viewport, leaving the reply room to arrive underneath it.
+  const shouldReduceMotion = useReducedMotion();
+  const transcriptRef = useRef<HTMLDivElement | null>(null);
+  const lastScrolledUserMessageIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    const lastMessage = visibleMessages.at(-1);
+    if (!lastMessage || lastMessage.role !== "user") return;
+    if (lastScrolledUserMessageIdRef.current === lastMessage.id) return;
+    lastScrolledUserMessageIdRef.current = lastMessage.id;
+
+    transcriptRef.current
+      ?.querySelector(`[data-message-id="${lastMessage.id}"]`)
+      ?.scrollIntoView({ behavior: shouldReduceMotion ? "auto" : "smooth", block: "start" });
+  }, [shouldReduceMotion, visibleMessages]);
+
   const isBusy = status === "submitted" || status === "streaming" || !chatState.conversation;
 
   const handleSend = async (message: string) => {
@@ -152,54 +166,45 @@ export function ChatConversation({
   };
 
   return (
-    <section className="flex min-h-0 grow overflow-hidden bg-background">
-      <div className="flex min-h-0 w-full grow flex-col gap-2 sm:gap-5">
-        <ChatNewConversationBar isDisabled={isStartingNewConversation} onClick={() => void handleNewConversation()} />
-
-        <MessageScrollerProvider
-          key={chatState.conversation?.id ?? "new-conversation"}
-          autoScroll
-          defaultScrollPosition="end"
-        >
-          <MessageScroller className="min-h-0 grow">
-            <MessageScrollerViewport>
-              <MessageScrollerContent className="mx-auto w-full max-w-3xl gap-0 px-4 pb-20 sm:px-6 sm:pb-24">
-                {showIntroPlaceholder ? <ChatIntroPlaceholder /> : null}
-                {visibleMessages.map((message, index) => (
-                  <MessageScrollerItem
-                    key={message.id}
-                    messageId={message.id}
-                    scrollAnchor={message.role === "user"}
-                    className={entryItemClassName(index === 0)}
-                  >
-                    <ChatTimelineMessage
-                      isActive={index === visibleMessages.length - 1}
-                      message={message}
-                      status={status}
-                    />
-                  </MessageScrollerItem>
-                ))}
-                {showPendingReply ? <ChatPendingReply isFirst={visibleMessages.length === 0} /> : null}
-              </MessageScrollerContent>
-            </MessageScrollerViewport>
-            <MessageScrollerButton />
-          </MessageScroller>
-        </MessageScrollerProvider>
-
-        {showStarterPrompts ? (
-          <div className="mx-auto w-full max-w-3xl px-4 sm:px-6">
-            <ChatStarterPrompts onStarterPrompt={handleStarterPrompt} />
+    <JournalPage
+      margin={
+        <>
+          <MarginVoice>He answers in his own voice, from his own notes. Ask him anything.</MarginVoice>
+          <MarginNote label="OBSERVED SINCE">2018</MarginNote>
+          <div className="flex flex-col gap-4">
+            <Sparkline />
+            <MarginVoice>Eight years of shipping, plotted. The peak is the notetaker.</MarginVoice>
           </div>
-        ) : null}
-
-        <div className="sticky bottom-0 z-10">
-          <div className="relative mx-auto w-full max-w-3xl px-4 sm:px-6">
-            <div className="bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/75">
-              <ChatComposerBlock isBusy={isBusy} onResumeRequest={handleResumeRequest} onSend={handleSend} />
-            </div>
-          </div>
+          <MarginNote label="HABITAT">Beirut, then Montreal, then London since 2018.</MarginNote>
+          <MarginNote label="FIELD MARKS">TypeScript, React, Convex. Ships whole, never partial.</MarginNote>
+        </>
+      }
+    >
+      <Reveal className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between lg:gap-12">
+        <div className="flex flex-col gap-3">
+          <p className="font-mono text-xs tracking-[0.08em] text-label">field study, n°08 · obs. London</p>
+          <h1 className="text-ink">Lucien George</h1>
+          <p className="font-display text-2xl text-pen italic">→ ships daily, slightly obsessive</p>
         </div>
+        <MountainSketch className="hidden w-full max-w-[200px] shrink-0 lg:block" />
+      </Reveal>
+
+      <div ref={transcriptRef} className="flex flex-col border-t rule-dashed">
+        {showIntroPlaceholder ? <ChatIntroPlaceholder /> : null}
+        {visibleMessages.map((message, index) => (
+          <div key={message.id} className={entryItemClassName(index === 0)} data-message-id={message.id}>
+            <ChatTimelineMessage isActive={index === visibleMessages.length - 1} message={message} status={status} />
+          </div>
+        ))}
+        {showPendingReply ? <ChatPendingReply isFirst={visibleMessages.length === 0} /> : null}
       </div>
-    </section>
+
+      <div className="sticky bottom-0 z-10 flex flex-col gap-3 bg-paper pb-4">
+        <ChatNewConversationBar isDisabled={isStartingNewConversation} onClick={() => void handleNewConversation()} />
+        <ChatComposerBlock isBusy={isBusy} onResumeRequest={handleResumeRequest} onSend={handleSend} />
+      </div>
+
+      {showStarterPrompts ? <ChatStarterPrompts onStarterPrompt={handleStarterPrompt} /> : null}
+    </JournalPage>
   );
 }

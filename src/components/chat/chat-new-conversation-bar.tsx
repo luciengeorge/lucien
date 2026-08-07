@@ -1,9 +1,4 @@
-import { PlusSignIcon } from "@hugeicons-pro/core-solid-rounded";
-import { HugeiconsIcon } from "@hugeicons/react";
 import { useSpinDelay } from "spin-delay";
-
-import { Button } from "../ui/button";
-import { Spinner } from "../ui/spinner";
 
 export function ChatNewConversationBar({ isDisabled, onClick }: { isDisabled: boolean; onClick: () => void }) {
   const isLoading = useSpinDelay(isDisabled, {
@@ -12,11 +7,15 @@ export function ChatNewConversationBar({ isDisabled, onClick }: { isDisabled: bo
   });
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl items-center justify-end px-4 sm:px-6">
-      <Button variant="link" type="button" onClick={onClick} disabled={isDisabled}>
-        {isLoading ? <Spinner /> : <HugeiconsIcon icon={PlusSignIcon} />}
-        New
-      </Button>
+    <div className="flex items-center justify-end">
+      <button
+        className="font-mono text-[11px] tracking-[0.3em] text-label transition-colors hover:text-pen focus-visible:text-pen disabled:opacity-40"
+        disabled={isDisabled}
+        onClick={onClick}
+        type="button"
+      >
+        {isLoading ? "STARTING…" : "NEW PAGE"}
+      </button>
     </div>
   );
 }

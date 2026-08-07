@@ -27,7 +27,10 @@ const PAGE_CASES: PageCase[] = [
   {
     path: "/skills",
     title: /Tech stack/,
-    h1: /Skills/,
+    // The Field Notes direction renames this page's heading to "Field marks".
+    // The word "skills" survives in the <title> and meta description but no
+    // longer appears in the h1: an accepted, reversible SEO tradeoff.
+    h1: /Field marks/,
     jsonLdTypes: ["ProfilePage", "Person"],
     canonical: `${SITE_URL}/skills`,
   },
@@ -41,7 +44,7 @@ const PAGE_CASES: PageCase[] = [
   {
     path: "/work",
     title: /Work history/,
-    h1: /Work history/,
+    h1: /^Work$/,
     jsonLdTypes: ["CollectionPage", "ItemList"],
     canonical: `${SITE_URL}/work`,
   },
@@ -106,6 +109,23 @@ test.describe("static content pages", () => {
     const cv = page.getByRole("link", { name: /download cv/i });
     await expect(cv).toBeVisible();
     await expect(cv).toHaveAttribute("href", "/api/resume/pdf");
+  });
+
+  test("/work index numbers every record in the register", async ({ page }) => {
+    await page.goto("/work");
+    for (const [index, { company }] of WORK_META.entries()) {
+      const numeral = String(index + 1).padStart(2, "0");
+      await expect(page.getByRole("link", { name: new RegExp(escapeRegex(company)) }).first()).toBeVisible();
+      await expect(page.getByText(numeral, { exact: true }).first()).toBeVisible();
+    }
+  });
+
+  test("/work/fyxer draws its figure, and other sheets do not", async ({ page }) => {
+    await page.goto("/work/fyxer");
+    await expect(page.getByRole("heading", { name: /^FIG\./ })).toBeVisible();
+
+    await page.goto("/work/shopify");
+    await expect(page.getByRole("heading", { name: /^FIG\./ })).toHaveCount(0);
   });
 
   test("/work/$slug has a Back to work link that returns to the index", async ({ page }) => {

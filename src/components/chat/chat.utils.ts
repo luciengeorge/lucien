@@ -6,7 +6,7 @@ import type { ChatMessage } from "./chat.types";
 type AnalyticsEventName = (typeof AnalyticsEvent)[keyof typeof AnalyticsEvent];
 
 export function entryItemClassName(isFirst: boolean) {
-  return cn("py-6 sm:py-8", !isFirst && "border-t border-neutral-950/8");
+  return cn("py-7 sm:py-9", !isFirst && "border-t rule-dashed");
 }
 
 /** Tool names (e.g. "download_resume") for every tool part present in a message. */

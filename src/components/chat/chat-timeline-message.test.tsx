@@ -36,6 +36,29 @@ function message(parts: ChatMessage["parts"][number][]): ChatMessage {
   return { id: "msg-1", parts, role: "assistant" };
 }
 
+function userMessage(parts: ChatMessage["parts"][number][]): ChatMessage {
+  return { id: "msg-user-1", parts, role: "user" };
+}
+
+describe("ChatTimelineMessage attribution", () => {
+  it("sets an assistant reply down as a Poof field note", () => {
+    render(<ChatTimelineMessage isActive={false} message={message([textPart("He ships daily.")])} status="ready" />);
+
+    expect(screen.getByText("POOF · FIELD NOTE")).toBeTruthy();
+    expect(screen.getByText("He ships daily.")).toBeTruthy();
+  });
+
+  it("labels a user turn as the question that was asked", () => {
+    render(
+      <ChatTimelineMessage isActive={false} message={userMessage([textPart("What does he build?")])} status="ready" />,
+    );
+
+    expect(screen.getByText("YOUR QUESTION")).toBeTruthy();
+    expect(screen.queryByText("POOF · FIELD NOTE")).toBeNull();
+    expect(screen.getByText("What does he build?")).toBeTruthy();
+  });
+});
+
 describe("ChatTimelineMessage render order", () => {
   it("renders text before an output-available tool card", () => {
     render(
