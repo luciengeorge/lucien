@@ -28,7 +28,8 @@ export const WORK_META: readonly WorkMeta[] = [
     company: "Fyxer",
     role: "Senior Product Engineer",
     period: "Sep 2025 - Present",
-    summary: "Leads the notetaker desktop app at Fyxer - a background meeting recorder for macOS and Windows.",
+    summary:
+      "Builds the B2B and enterprise product, and still maintains the native notetaker app he launched for macOS and Windows.",
     logo: "/companies/fyxer.png",
     color: "#0f172a",
   },
