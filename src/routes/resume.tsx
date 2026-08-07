@@ -5,8 +5,8 @@ import { JournalPage, MarginNote, MarginVoice, PageHeader } from "#/components/f
 import { Reveal, RevealGroup, RevealItem } from "#/components/field-notes/reveal";
 import { RESUME_META } from "#/lib/content/page-meta";
 import { WORK_META } from "#/lib/content/work-meta";
+import { compressWorkPeriod } from "#/lib/content/work-period";
 import { loadResume } from "#/lib/resume/load";
-import { compressPeriod } from "#/lib/resume/period";
 import { buildSeoHead } from "#/lib/seo";
 import { OG_IMAGE_URL, SITE_URL } from "#/lib/site-config";
 import { createFileRoute } from "@tanstack/react-router";
@@ -138,7 +138,7 @@ export function ResumeView({ resume }: { resume: Resume }) {
                 <p className="font-display text-xl text-ink italic sm:w-[210px] sm:shrink-0">{entry.company}</p>
                 <p className="flex-1 font-display text-base text-ink-soft">{entry.role}</p>
                 <p className="shrink-0 font-mono text-[11px] text-label sm:w-[92px] sm:text-right">
-                  {compressPeriod(entry.period)}
+                  {compressWorkPeriod(entry.period)}
                 </p>
               </RevealItem>
             ))}
