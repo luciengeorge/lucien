@@ -9,7 +9,6 @@ import {
   getInvokedToolNames,
   getSettledAssistantAnalyticsEvents,
   isEmptyAssistantTurn,
-  transcriptCountLabel,
 } from "./chat.utils";
 
 function textPart(text: string): ChatMessage["parts"][number] {
@@ -155,17 +154,5 @@ describe("createRateLimitAwareFetch", () => {
     await rateLimitAwareFetch("/api/chat");
 
     expect(onRateLimited).not.toHaveBeenCalled();
-  });
-});
-
-describe("transcriptCountLabel", () => {
-  it("counts a single entry in the singular", () => {
-    expect(transcriptCountLabel(1)).toBe("01 ENTRY");
-  });
-
-  it("zero-pads and pluralises everything else", () => {
-    expect(transcriptCountLabel(0)).toBe("00 ENTRIES");
-    expect(transcriptCountLabel(5)).toBe("05 ENTRIES");
-    expect(transcriptCountLabel(12)).toBe("12 ENTRIES");
   });
 });

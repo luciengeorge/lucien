@@ -17,12 +17,7 @@ import { ChatNewConversationBar } from "./chat-new-conversation-bar";
 import { ChatPendingReply } from "./chat-pending-reply";
 import { ChatStarterPrompts } from "./chat-starter-prompts";
 import { ChatTimelineMessage } from "./chat-timeline-message";
-import {
-  createRateLimitAwareFetch,
-  entryItemClassName,
-  getSettledAssistantAnalyticsEvents,
-  transcriptCountLabel,
-} from "./chat.utils";
+import { createRateLimitAwareFetch, entryItemClassName, getSettledAssistantAnalyticsEvents } from "./chat.utils";
 
 export function ChatConversation({
   chatState,
@@ -128,7 +123,6 @@ export function ChatConversation({
   }, [shouldReduceMotion, visibleMessages]);
 
   const isBusy = status === "submitted" || status === "streaming" || !chatState.conversation;
-  const entryCountLabel = transcriptCountLabel(visibleMessages.length + (showPendingReply ? 1 : 0));
 
   const handleSend = async (message: string) => {
     capture(AnalyticsEvent.chatMessageSubmitted, {
@@ -196,39 +190,26 @@ export function ChatConversation({
       </PageHeader>
 
       <div className="flex flex-col">
-        <div className="flex items-center justify-between pb-3">
-          <h2 className="font-mono text-[11px] tracking-[0.3em] text-label">TRANSCRIPT</h2>
-          <p className="flex items-center gap-2.5 font-mono text-[11px] tracking-[0.3em] text-label">
-            {isBusy ? <span aria-hidden className="size-1.5 animate-pulse rounded-full bg-stamp" /> : null}
-            {entryCountLabel}
-          </p>
-        </div>
+        {/*
+          No running count beside the heading. It counted turns you can see,
+          and the live state it carried is already stated next to the turn
+          that is actually streaming.
+        */}
+        <h2 className="pb-3 font-mono text-[11px] tracking-[0.3em] text-label">TRANSCRIPT</h2>
 
         <div ref={transcriptRef} className="flex flex-col border-t rule-ink">
           {showIntroPlaceholder ? <ChatIntroPlaceholder /> : null}
           {visibleMessages.map((message, index) => (
             <div key={message.id} className={entryItemClassName(index === 0)} data-message-id={message.id}>
-              <ChatTimelineMessage
-                entryIndex={index}
-                isActive={index === visibleMessages.length - 1}
-                message={message}
-                status={status}
-              />
+              <ChatTimelineMessage isActive={index === visibleMessages.length - 1} message={message} status={status} />
             </div>
           ))}
-          {showPendingReply ? (
-            <ChatPendingReply entryIndex={visibleMessages.length} isFirst={visibleMessages.length === 0} />
-          ) : null}
+          {showPendingReply ? <ChatPendingReply isFirst={visibleMessages.length === 0} /> : null}
         </div>
       </div>
 
       <div className="sticky bottom-0 z-10 flex flex-col gap-4 border-t rule-ink bg-paper pt-5 pb-4">
-        <ChatComposerBlock
-          entryIndex={visibleMessages.length}
-          isBusy={isBusy}
-          onResumeRequest={handleResumeRequest}
-          onSend={handleSend}
-        />
+        <ChatComposerBlock isBusy={isBusy} onResumeRequest={handleResumeRequest} onSend={handleSend} />
         <ChatNewConversationBar isDisabled={isStartingNewConversation} onClick={() => void handleNewConversation()} />
       </div>
 

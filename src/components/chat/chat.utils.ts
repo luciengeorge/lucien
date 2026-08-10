@@ -9,11 +9,6 @@ export function entryItemClassName(isFirst: boolean) {
   return cn("py-7 sm:py-9", !isFirst && "border-t rule-hair");
 }
 
-/** The transcript's running count, zero-padded to keep the header's right edge steady. */
-export function transcriptCountLabel(count: number): string {
-  return `${String(count).padStart(2, "0")} ${count === 1 ? "ENTRY" : "ENTRIES"}`;
-}
-
 /** Tool names (e.g. "download_resume") for every tool part present in a message. */
 export function getInvokedToolNames(parts: ChatMessage["parts"]): string[] {
   return parts.flatMap((part) => (part.type.startsWith("tool-") ? [part.type.slice("tool-".length)] : []));

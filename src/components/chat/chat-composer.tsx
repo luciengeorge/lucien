@@ -11,7 +11,6 @@ import { Textarea } from "#/components/ui/textarea";
 export function ChatComposer({
   canSubmit,
   disabled,
-  entryIndex,
   isSubmitting,
   message,
   onBlur,
@@ -21,7 +20,6 @@ export function ChatComposer({
 }: {
   canSubmit: boolean;
   disabled: boolean;
-  entryIndex: number;
   isSubmitting: boolean;
   message: string;
   onBlur: React.FocusEventHandler<HTMLTextAreaElement>;
@@ -34,11 +32,8 @@ export function ChatComposer({
 
   return (
     <form className="flex flex-col gap-3 sm:flex-row sm:gap-11" onSubmit={onSubmit}>
-      <div className="hidden shrink-0 flex-col gap-1.5 pt-4 sm:flex sm:w-[120px]">
+      <div className="hidden shrink-0 pt-4 sm:block sm:w-[120px]">
         <p className="font-mono text-[11px] font-semibold tracking-[0.22em] text-label">YOU</p>
-        <p className="font-mono text-[11px] tracking-[0.22em] text-label/80">
-          {`ENTRY ${String(entryIndex + 1).padStart(2, "0")}`}
-        </p>
       </div>
 
       <div className="flex flex-1 items-end gap-4 border-b-2 border-ink pt-3 pb-2.5 transition-colors focus-within:border-stamp">

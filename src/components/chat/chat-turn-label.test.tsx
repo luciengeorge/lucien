@@ -1,54 +1,52 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { ChatTurnLabel, entryNumeral } from "./chat-turn-label";
+import { ChatTurnLabel } from "./chat-turn-label";
 
 afterEach(() => {
   cleanup();
 });
 
-describe("entryNumeral", () => {
-  it("zero-pads the position, so the label lane never changes width", () => {
-    expect(entryNumeral(0)).toBe("ENTRY 01");
-    expect(entryNumeral(9)).toBe("ENTRY 10");
-  });
-});
-
 describe("ChatTurnLabel", () => {
   it("attributes his turns to him and yours to you", () => {
-    render(<ChatTurnLabel entryIndex={0} role="assistant" />);
+    render(<ChatTurnLabel role="assistant" />);
     expect(screen.getByText("LUCIEN")).toBeTruthy();
 
     cleanup();
 
-    render(<ChatTurnLabel entryIndex={1} role="user" />);
+    render(<ChatTurnLabel role="user" />);
     expect(screen.getByText("YOU")).toBeTruthy();
   });
 
-  it("numbers each turn as an entry in the transcript", () => {
-    render(<ChatTurnLabel entryIndex={2} role="assistant" />);
+  /*
+   * A ledger numbers its lines because you need to cite them. Nobody cites a
+   * turn in a conversation, so a number here bought nothing and cost a second
+   * line read aloud beside every single turn.
+   */
+  it("does not number the turns", () => {
+    render(<ChatTurnLabel role="assistant" />);
 
-    expect(screen.getByText("ENTRY 03")).toBeTruthy();
+    expect(screen.queryByText(/ENTRY/)).toBeNull();
   });
 
-  it("replaces the number with a live marker while he is still writing", () => {
-    render(<ChatTurnLabel entryIndex={0} isWriting role="assistant" />);
+  it("says so while he is still writing", () => {
+    render(<ChatTurnLabel isWriting role="assistant" />);
 
     expect(screen.getByText("WRITING")).toBeTruthy();
-    expect(screen.queryByText("ENTRY 01")).toBeNull();
   });
 
   it("keeps the live dot out of the accessibility tree, because the word beside it says it", () => {
-    const { container } = render(<ChatTurnLabel entryIndex={0} isWriting role="assistant" />);
+    const { container } = render(<ChatTurnLabel isWriting role="assistant" />);
 
     const dot = container.querySelector("[data-slot='writing-dot']");
     expect(dot).toBeTruthy();
     expect(dot?.getAttribute("aria-hidden")).toBe("true");
   });
 
-  it("does not mark a settled turn as live", () => {
-    const { container } = render(<ChatTurnLabel entryIndex={0} role="assistant" />);
+  it("says nothing but the speaker on a settled turn", () => {
+    const { container } = render(<ChatTurnLabel role="assistant" />);
 
     expect(container.querySelector("[data-slot='writing-dot']")).toBeNull();
+    expect(container.textContent).toBe("LUCIEN");
   });
 });

@@ -78,13 +78,10 @@ export function hasRenderableContent({
 }
 
 export function ChatTimelineMessage({
-  entryIndex,
   isActive,
   message,
   status,
 }: {
-  /** Position of this turn in the transcript, for the entry number in the label lane. */
-  entryIndex: number;
   /** True only for the last/streaming assistant message. Past turns always reveal cards immediately. */
   isActive: boolean;
   message: ChatMessage;
@@ -185,7 +182,7 @@ export function ChatTimelineMessage({
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:gap-11">
       <div className="shrink-0 pt-1 sm:w-[120px]">
-        <ChatTurnLabel entryIndex={entryIndex} isWriting={isWriting} role={role} />
+        <ChatTurnLabel isWriting={isWriting} role={role} />
       </div>
 
       <div className="min-w-0 flex-1 space-y-4">

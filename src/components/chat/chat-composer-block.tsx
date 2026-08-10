@@ -8,13 +8,10 @@ const FormSchema = z.object({
 });
 
 export function ChatComposerBlock({
-  entryIndex = 0,
   isBusy,
   onResumeRequest,
   onSend,
 }: {
-  /** Position of the entry this composer would write, for the label lane. */
-  entryIndex?: number;
   isBusy: boolean;
   onResumeRequest: () => void;
   onSend: (message: string) => Promise<void>;
@@ -52,7 +49,6 @@ export function ChatComposerBlock({
             <ChatComposer
               canSubmit={canSubmit}
               disabled={isBusy}
-              entryIndex={entryIndex}
               isSubmitting={isSubmitting}
               message={String(message)}
               onBlur={() => field.handleBlur()}
