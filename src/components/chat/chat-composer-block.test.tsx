@@ -11,7 +11,7 @@ describe("ChatComposerBlock", () => {
   it("invites a question on the ruled line", () => {
     render(<ChatComposerBlock isBusy={false} onResumeRequest={vi.fn()} onSend={vi.fn()} />);
 
-    expect(screen.getByPlaceholderText("Ask about his work, background, projects, or interests")).toBeTruthy();
+    expect(screen.getByPlaceholderText("Ask about the work, the resume, or how to reach him")).toBeTruthy();
   });
 
   it("sends what was written", async () => {
@@ -19,7 +19,7 @@ describe("ChatComposerBlock", () => {
     render(<ChatComposerBlock isBusy={false} onResumeRequest={vi.fn()} onSend={onSend} />);
 
     fireEvent.change(screen.getByRole("textbox"), { target: { value: "What did he ship this week?" } });
-    fireEvent.click(screen.getByRole("button", { name: /^ask$/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^send$/i }));
 
     await waitFor(() => {
       expect(onSend).toHaveBeenCalledWith("What did he ship this week?");

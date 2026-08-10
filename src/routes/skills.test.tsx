@@ -8,11 +8,11 @@ afterEach(() => {
 });
 
 describe("SkillsPage", () => {
-  it("titles the page after the craft", () => {
+  it("names the subject in the h1 rather than just the section", () => {
     render(<SkillsPage />);
 
-    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Craft");
-    expect(screen.getByText("works in")).toBeTruthy();
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("What Lucien works in");
+    expect(screen.getByText("SKILLS")).toBeTruthy();
   });
 
   it("lists every group, most frequent first", () => {
@@ -36,20 +36,22 @@ describe("SkillsPage", () => {
     expect(screen.getByText(/Built both native SDKs at Shopify/)).toBeTruthy();
   });
 
-  it("links every published package to its npm page", () => {
+  it("links every published package to its npm page, reaching across a leader to the registry", () => {
     render(<SkillsPage />);
 
     for (const name of ["remix-auth-salesforce", "stimulus-lazy-loader", "stimulus-checkbox"]) {
-      const link = screen.getByRole("link", { name });
+      const link = screen.getByRole("link", { name: new RegExp(name) });
       expect(link.getAttribute("href")).toBe(`https://www.npmjs.com/package/${name}`);
     }
+    expect(screen.getAllByText("NPM").length).toBe(3);
   });
 
-  it("carries the frequency figure in the aside", () => {
+  it("carries the frequency figure in the rail", () => {
     render(<SkillsPage />);
 
     expect(screen.getByText(/Listed by how often it shows up in the work/)).toBeTruthy();
     expect(screen.getByText("HOW OFTEN")).toBeTruthy();
-    expect(screen.getByRole("img", { name: /Frequency of use/ })).toBeTruthy();
+    expect(screen.getByText("TypeScript")).toBeTruthy();
+    expect(screen.getByText("weekly")).toBeTruthy();
   });
 });

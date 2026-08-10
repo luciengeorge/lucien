@@ -1,15 +1,6 @@
-import {
-  Attachment,
-  AttachmentAction,
-  AttachmentActions,
-  AttachmentContent,
-  AttachmentDescription,
-  AttachmentMedia,
-  AttachmentTitle,
-} from "#/components/ui/attachment";
 import { AnalyticsEvent, useAnalytics } from "#/lib/analytics";
-import { ArrowRight01Icon, Link04Icon } from "@hugeicons-pro/core-stroke-rounded";
-import { HugeiconsIcon } from "@hugeicons/react";
+
+import { ChatLedgerCard, ChatLedgerRow } from "./chat-ledger-card";
 
 export function ChatWorkLinkCard({
   company,
@@ -25,36 +16,25 @@ export function ChatWorkLinkCard({
   const { capture } = useAnalytics();
 
   return (
-    <Attachment className="w-full sm:max-w-md">
-      <AttachmentMedia>
-        <HugeiconsIcon icon={Link04Icon} />
-      </AttachmentMedia>
-
-      <AttachmentContent>
-        <AttachmentTitle>{company}</AttachmentTitle>
-        <AttachmentDescription>{role}</AttachmentDescription>
-      </AttachmentContent>
-
-      <AttachmentActions>
-        <AttachmentAction
-          size="sm"
-          variant="default"
-          className="rounded-full"
-          nativeButton={false}
-          render={
-            <a
-              aria-label={`View ${company} case study`}
-              href={url}
-              onClick={() => {
-                capture(AnalyticsEvent.workLinkClicked, { slug });
-              }}
-            />
-          }
-        >
-          <HugeiconsIcon icon={ArrowRight01Icon} />
-          View
-        </AttachmentAction>
-      </AttachmentActions>
-    </Attachment>
+    <ChatLedgerCard label="REFERENCED">
+      <ChatLedgerRow
+        action={
+          <a
+            className="group ml-auto flex shrink-0 items-baseline gap-1.5 font-mono text-[11px] font-semibold tracking-[0.16em] text-stamp"
+            href={url}
+            onClick={() => {
+              capture(AnalyticsEvent.workLinkClicked, { slug });
+            }}
+          >
+            OPEN
+            <span aria-hidden className="transition-transform group-hover:translate-x-1">
+              →
+            </span>
+          </a>
+        }
+        description={role}
+        title={company.toUpperCase()}
+      />
+    </ChatLedgerCard>
   );
 }

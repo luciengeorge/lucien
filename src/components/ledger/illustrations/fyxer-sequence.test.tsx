@@ -40,7 +40,7 @@ describe("FyxerSequence", () => {
   it("keeps the accent on the arrows and the annotation only", () => {
     const { container } = render(<FyxerSequence />);
 
-    expect(container.querySelectorAll(".text-terracotta").length).toBe(6);
-    expect(container.querySelectorAll("rect.text-terracotta").length).toBe(0);
+    expect(container.querySelectorAll(".text-stamp").length).toBe(6);
+    expect(container.querySelectorAll("rect.text-stamp").length).toBe(0);
   });
 });

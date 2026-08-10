@@ -1,5 +1,11 @@
 import { expect, test } from "@playwright/test";
 
+import { buildWorkEntryMeta } from "../../src/lib/content/page-meta";
+import { WORK_META } from "../../src/lib/content/work-meta";
+
+const fyxerEntry = WORK_META.find((entry) => entry.slug === "fyxer");
+if (!fyxerEntry) throw new Error('No work entry for "fyxer"');
+
 test.describe("SEO / GEO / AEO routes", () => {
   test("/robots.txt is served as plain text with AI crawler allows and sitemap", async ({ request }) => {
     const res = await request.get("/robots.txt");
@@ -170,8 +176,10 @@ test.describe("route <head> metadata", () => {
     },
     {
       path: "/work/fyxer",
-      title: "Senior Product Engineer at Fyxer | Lucien George",
-      description: "Leads the notetaker desktop app at Fyxer - a background meeting recorder for macOS and Windows.",
+      title: buildWorkEntryMeta(fyxerEntry).title,
+      // Derived, not transcribed: this description comes from the work record,
+      // so editing content/ cannot silently leave this expectation behind.
+      description: buildWorkEntryMeta(fyxerEntry).description,
       ogType: "article",
       canonical: "https://www.luciengeorge.com/work/fyxer",
       jsonLdType: "Article",

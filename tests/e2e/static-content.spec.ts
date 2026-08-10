@@ -27,24 +27,21 @@ const PAGE_CASES: PageCase[] = [
   {
     path: "/skills",
     title: /Tech stack/,
-    // The Cedar direction renames this page's heading to "Craft". The word
-    // "skills" survives in the <title> and meta description but no longer
-    // appears in the h1: an accepted, reversible SEO tradeoff.
-    h1: /Craft/,
+    h1: /What Lucien works in/,
     jsonLdTypes: ["ProfilePage", "Person"],
     canonical: `${SITE_URL}/skills`,
   },
   {
     path: "/education",
     title: /Education/,
-    h1: /Education/,
+    h1: /Where Lucien studied/,
     jsonLdTypes: ["ProfilePage", "Person"],
     canonical: `${SITE_URL}/education`,
   },
   {
     path: "/work",
     title: /Work history/,
-    h1: /^Work$/,
+    h1: /Where Lucien has worked/,
     jsonLdTypes: ["CollectionPage", "ItemList"],
     canonical: `${SITE_URL}/work`,
   },
@@ -91,24 +88,26 @@ test.describe("static content pages", () => {
     }
   });
 
-  test("/work index shows a Download CV CTA and a logo per entry", async ({ page }) => {
+  test("/work index shows a logo per entry", async ({ page }) => {
     await page.goto("/work");
-    // CV download CTA points at the PDF endpoint
-    const cv = page.getByRole("link", { name: /download cv/i });
-    await expect(cv).toBeVisible();
-    await expect(cv).toHaveAttribute("href", "/api/resume/pdf");
-    // Every work card renders a logo (img) or an initials fallback (aria-labelled span)
+    // Every work row renders a logo (img) or an initials fallback (aria-labelled span)
     for (const { company } of WORK_META) {
       await expect(page.getByRole("img", { name: new RegExp(`${company}( logo)?`, "i") }).first()).toBeVisible();
     }
   });
 
-  test("/work/$slug shows the company logo and a Download CV CTA", async ({ page }) => {
+  test("/work/$slug shows the company logo", async ({ page }) => {
     await page.goto("/work/fyxer");
     await expect(page.getByRole("img", { name: /fyxer( logo)?/i }).first()).toBeVisible();
-    const cv = page.getByRole("link", { name: /download cv/i });
-    await expect(cv).toBeVisible();
-    await expect(cv).toHaveAttribute("href", "/api/resume/pdf");
+  });
+
+  // Ledger moves the one download control onto the resume page, where it is the
+  // single filled block on the site rather than a link repeated on every sheet.
+  test("/resume offers the PDF download", async ({ page }) => {
+    await page.goto("/resume");
+    const pdf = page.getByRole("link", { name: /download pdf/i });
+    await expect(pdf).toBeVisible();
+    await expect(pdf).toHaveAttribute("href", "/api/resume/pdf");
   });
 
   test("/work index numbers every record in the register", async ({ page }) => {
@@ -120,8 +119,7 @@ test.describe("static content pages", () => {
     }
   });
 
-  // Cedar drops the "FIG. 1 ·" prefix the Field Notes direction put on figure
-  // headings, so the figure is now identified by its own title.
+  // The figure is identified by its own title rather than a "FIG. 1 ·" prefix.
   test("/work/fyxer draws its figure, and other sheets do not", async ({ page }) => {
     await page.goto("/work/fyxer");
     await expect(page.getByRole("heading", { name: /what he shipped, in order/i })).toBeVisible();
@@ -130,9 +128,9 @@ test.describe("static content pages", () => {
     await expect(page.getByRole("heading", { name: /what he shipped, in order/i })).toHaveCount(0);
   });
 
-  test("/work/$slug has a Back to work link that returns to the index", async ({ page }) => {
+  test("/work/$slug has a back link that returns to the index", async ({ page }) => {
     await page.goto("/work/fyxer");
-    const back = page.getByRole("link", { name: /back to work/i });
+    const back = page.getByRole("link", { name: /^work$/i }).first();
     await expect(back).toBeVisible();
     await expect(back).toHaveAttribute("href", "/work");
     await back.click();

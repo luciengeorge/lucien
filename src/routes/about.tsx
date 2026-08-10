@@ -1,6 +1,6 @@
-import { AsideNote, AsideVoice, CedarPage, PageHeader, Section } from "#/components/cedar/cedar-page";
-import { MigrationRoute } from "#/components/cedar/illustrations/migration-route";
-import { Reveal, RevealGroup, RevealItem } from "#/components/field-notes/reveal";
+import { RouteStops } from "#/components/ledger/illustrations/route-stops";
+import { LedgerPage, PageHeader, RailNote, Section } from "#/components/ledger/ledger-page";
+import { Reveal, RevealGroup, RevealItem } from "#/components/motion-primitives/reveal";
 import { ABOUT_META } from "#/lib/content/page-meta";
 import { buildSeoHead } from "#/lib/seo";
 import { SITE_URL } from "#/lib/site-config";
@@ -52,32 +52,35 @@ const PURSUITS = [
 
 export function AboutPage() {
   return (
-    <CedarPage
-      aside={
+    <LedgerPage
+      rail={
+        /*
+         * No figures column on this page. The route already states every place
+         * and year, so a stats block above it could only repeat them; the rail
+         * carries the facts the prose does not, and nothing twice.
+         */
         <>
-          <AsideNote label="LANGUAGES">French, English, Arabic.</AsideNote>
-          <AsideNote label="FAMILY">Second eldest of four. Very family-oriented.</AsideNote>
-          <AsideNote label="ROUTE">Beirut. Migrated to Montreal, then London in 2018.</AsideNote>
-          <div className="flex flex-col gap-4">
-            <MigrationRoute />
-            <AsideVoice>Migration route, three stops, still moving.</AsideVoice>
-          </div>
+          <RailNote label="LANGUAGES">French, English, Arabic.</RailNote>
+          <RailNote label="ROUTE">
+            <RouteStops />
+          </RailNote>
+          <RailNote label="FAMILY">Second eldest of four. Very family-oriented.</RailNote>
         </>
       }
     >
       {/*
         The h1 keeps his name rather than a bare "About": it is the page's
-        strongest on-page signal and this domain is young, so the design word
-        goes in the lead-in above instead.
+        strongest on-page signal and this domain is young, so the section word
+        goes in the label above instead.
       */}
-      <PageHeader leadIn="made in" title="About Lucien George" />
+      <PageHeader label="ABOUT" title="About Lucien George" />
 
-      <Reveal className="flex max-w-[760px] flex-col gap-5" delay={0.08}>
-        <p className="font-sans text-lg/relaxed text-ink">
+      <Reveal className="flex max-w-[46rem] flex-col gap-5" delay={0.08}>
+        <p className="font-sans text-[17px]/relaxed text-ink">
           Fullstack developer and product engineer in London, originally from Beirut. Senior Product Engineer at Fyxer,
           where he leads the notetaker with one other developer, a team of two running the feature like they own it.
         </p>
-        <p className="font-sans text-lg/relaxed text-ink-soft">
+        <p className="font-sans text-[17px]/relaxed text-ink-soft">
           His background spans teaching, engineering leadership and product development, across web, mobile, desktop and
           real-time systems. He works across user research, data analysis, roadmaps and building the thing end to end,
           which is a longer way of saying he would rather own the whole problem than a slice of it.
@@ -85,17 +88,21 @@ export function AboutPage() {
       </Reveal>
 
       <Section title="HOW HE SPENDS HIS TIME">
-        <RevealGroup as="ul" className="flex flex-col gap-6">
+        <RevealGroup as="ul" className="flex flex-col">
           {PURSUITS.map((pursuit) => (
-            <RevealItem as="li" className="flex flex-col gap-1.5 sm:flex-row sm:gap-8" key={pursuit.label}>
-              <p className="w-[104px] shrink-0 pt-1 font-mono text-[11px] tracking-[0.14em] text-cedar">
+            <RevealItem
+              as="li"
+              className="flex flex-col gap-2 border-b rule-hair py-6 sm:flex-row sm:gap-11"
+              key={pursuit.label}
+            >
+              <p className="w-[150px] shrink-0 pt-1 font-mono text-[11px] tracking-[0.22em] text-ink">
                 {pursuit.label}
               </p>
-              <p className="max-w-[680px] font-sans text-base/relaxed text-ink-soft">{pursuit.note}</p>
+              <p className="max-w-[46rem] font-sans text-base/relaxed text-ink-soft">{pursuit.note}</p>
             </RevealItem>
           ))}
         </RevealGroup>
       </Section>
-    </CedarPage>
+    </LedgerPage>
   );
 }

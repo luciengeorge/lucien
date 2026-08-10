@@ -14,18 +14,24 @@ function renderResume() {
 }
 
 describe("ResumeView", () => {
-  it("makes the person the h1, with the document type beneath it", () => {
+  it("makes the person the h1, with the section label above it", () => {
     renderResume();
 
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Lucien George");
-    expect(screen.getByText("the short version")).toBeTruthy();
-    expect(screen.getByText("Curriculum vitae")).toBeTruthy();
+    expect(screen.getByText("RESUME")).toBeTruthy();
+  });
+
+  it("calls it a resume rather than a curriculum vitae", () => {
+    renderResume();
+
+    expect(screen.queryByText(/curriculum vitae/i)).toBeNull();
+    expect(screen.getByText(/The short version/)).toBeTruthy();
   });
 
   it("keeps the PDF download pointing at the generated resume", () => {
     renderResume();
 
-    const link = screen.getByRole("link", { name: /DOWNLOAD PDF/ });
+    const link = screen.getByRole("link", { name: /download pdf/i });
     expect(link.getAttribute("href")).toBe("/api/resume/pdf");
   });
 
@@ -45,6 +51,12 @@ describe("ResumeView", () => {
     expect(screen.getByText("2013 · 2019")).toBeTruthy();
   });
 
+  it("reaches from each company across to its years", () => {
+    const { container } = render(<ResumeView resume={loadResume()} />);
+
+    expect(container.querySelectorAll(".leader").length).toBe(WORK_META.length);
+  });
+
   it("prints the short sections a reader skims for", () => {
     renderResume();
 
@@ -55,7 +67,7 @@ describe("ResumeView", () => {
     expect(screen.getByText(/McGill University/)).toBeTruthy();
   });
 
-  it("offers the machine-readable copies in the margin", () => {
+  it("offers the machine-readable copies in the rail", () => {
     renderResume();
 
     expect(screen.getByRole("link", { name: "/resume.md" }).getAttribute("href")).toBe("/resume.md");

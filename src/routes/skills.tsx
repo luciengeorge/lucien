@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 
-import { AsideNote, AsideVoice, CedarPage, PageHeader } from "#/components/cedar/cedar-page";
-import { FrequencyPlot } from "#/components/cedar/illustrations/frequency-plot";
-import { RevealGroup, RevealItem } from "#/components/field-notes/reveal";
+import { FrequencyPlot } from "#/components/ledger/illustrations/frequency-plot";
+import { LedgerPage, PageHeader, RailAside, RailNote } from "#/components/ledger/ledger-page";
+import { RevealGroup, RevealItem } from "#/components/motion-primitives/reveal";
 import { SKILLS_META } from "#/lib/content/page-meta";
 import { loadResume } from "#/lib/resume/load";
 import { buildSeoHead } from "#/lib/seo";
@@ -49,24 +49,54 @@ interface Group {
   label: string;
 }
 
+/**
+ * A published package is a name reaching across to where it lives, which is
+ * the one shape on this page that earns a leader. The rest of the rows are
+ * prose and get none.
+ */
+function PackageRow({ name }: { name: string }) {
+  return (
+    <a
+      className="group flex items-baseline gap-3.5"
+      href={`https://www.npmjs.com/package/${name}`}
+      rel="noreferrer"
+      target="_blank"
+    >
+      <span className="shrink-0 font-mono text-[15px] text-ink transition-colors group-hover:text-stamp">{name}</span>
+      <span aria-hidden className="leader" />
+      <span className="shrink-0 font-mono text-[11px] tracking-[0.14em] text-label">NPM</span>
+      <span
+        aria-hidden
+        className="w-4 shrink-0 text-right font-mono text-[15px] text-stamp transition-transform group-hover:translate-x-1"
+      >
+        →
+      </span>
+    </a>
+  );
+}
+
 /*
- * PRIMARY and ALSO FLUENT are statements rather than prose, so they carry
- * Fraunces at display scale. Everything below them is body copy and stays in
- * Geist, which is what keeps the page from reading as a set of headlines.
+ * PRIMARY and ALSO FLUENT are statements rather than prose, so they carry the
+ * display scale. Everything below them is body copy and stays in Geist, which
+ * is what keeps the page from reading as a stack of headlines.
  */
 const GROUPS: Group[] = [
   {
     label: "PRIMARY",
-    content: <span className="font-display text-3xl font-semibold text-ink">TypeScript, JavaScript, React</span>,
+    content: (
+      <span className="font-mono text-xl font-semibold tracking-[-0.01em] text-ink sm:text-2xl">
+        TypeScript, JavaScript, React
+      </span>
+    ),
   },
   {
     label: "ALSO FLUENT",
-    content: <span className="font-display text-xl font-semibold text-ink">Ruby on Rails, Python</span>,
+    content: <span className="font-mono text-lg font-semibold text-ink">Ruby on Rails, Python</span>,
   },
   {
     label: "CURRENT STACK",
     content: (
-      <span className="font-sans text-base/relaxed text-ink-soft">
+      <span className="font-sans text-base/relaxed text-ink">
         TanStack Start, Router, Query and Form. Tailwind with shadcn/ui. Convex for the backend, plus long experience
         with SQL.
       </span>
@@ -91,19 +121,9 @@ const GROUPS: Group[] = [
   {
     label: "PUBLISHED",
     content: (
-      <span className="font-sans text-base/relaxed text-ink-soft">
-        {PACKAGES.map((name, index) => (
-          <span key={name}>
-            <a
-              className="text-cedar underline decoration-cedar/30 underline-offset-4 transition-colors hover:text-ink hover:decoration-ink/40"
-              href={`https://www.npmjs.com/package/${name}`}
-              rel="noreferrer"
-              target="_blank"
-            >
-              {name}
-            </a>
-            {index < PACKAGES.length - 1 ? ", " : "."}
-          </span>
+      <span className="flex flex-col gap-2.5">
+        {PACKAGES.map((name) => (
+          <PackageRow key={name} name={name} />
         ))}
       </span>
     ),
@@ -111,7 +131,7 @@ const GROUPS: Group[] = [
   {
     label: "CURRENTLY TRACKING",
     content: (
-      <span className="font-sans text-base/relaxed text-ink-soft">
+      <span className="font-sans text-base/relaxed text-ink">
         AI application development. OpenAI APIs, TanStack AI, and RAG over Convex vector search. This page is the
         experiment.
       </span>
@@ -121,32 +141,36 @@ const GROUPS: Group[] = [
 
 export function SkillsPage() {
   return (
-    <CedarPage
-      aside={
+    <LedgerPage
+      rail={
         <>
-          <AsideVoice>Listed by how often it shows up in the work, not by how well he scores it.</AsideVoice>
-          <AsideNote label="HOW OFTEN">
-            <FrequencyPlot />
-          </AsideNote>
+          <RailNote label="HOW OFTEN">
+            <FrequencyPlot className="pt-1" />
+          </RailNote>
+          <RailAside>Measured by what he opened this year, not by what looks best on a list.</RailAside>
         </>
       }
     >
-      <PageHeader leadIn="works in" title="Craft" />
+      <PageHeader label="SKILLS" title="What Lucien works in">
+        <p className="max-w-[41rem] font-sans text-[17px]/relaxed text-ink-soft">
+          Listed by how often it shows up in the work, not by how well he scores it.
+        </p>
+      </PageHeader>
 
-      <RevealGroup as="ul" className="flex max-w-[860px] flex-col">
+      <RevealGroup as="ul" className="flex flex-col border-t rule-ink">
         {GROUPS.map((group) => (
           <RevealItem
             as="li"
-            className="flex flex-col gap-2 border-t rule-stone py-6 last:border-b lg:flex-row lg:gap-10"
+            className="flex flex-col gap-2 border-b rule-hair py-6 lg:flex-row lg:gap-11"
             key={group.label}
           >
-            <p className="pt-2 font-mono text-[11px] tracking-[0.14em] text-cedar lg:w-[170px] lg:shrink-0">
+            <p className="pt-1.5 font-mono text-[11px] tracking-[0.22em] text-label lg:w-[150px] lg:shrink-0">
               {group.label}
             </p>
-            <div className="min-w-0 flex-1">{group.content}</div>
+            <div className="min-w-0 flex-1 lg:max-w-[46rem]">{group.content}</div>
           </RevealItem>
         ))}
       </RevealGroup>
-    </CedarPage>
+    </LedgerPage>
   );
 }

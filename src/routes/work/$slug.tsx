@@ -1,4 +1,4 @@
-import { WorkSheet } from "#/components/cedar/work-sheet";
+import { WorkSheet } from "#/components/ledger/work-sheet";
 import { NotFound } from "#/components/not-found";
 import { buildWorkEntryMeta } from "#/lib/content/page-meta";
 import { findWorkEntry } from "#/lib/content/registry";

@@ -9,12 +9,15 @@ export function ChatNewConversationBar({ isDisabled, onClick }: { isDisabled: bo
   return (
     <div className="flex items-center justify-end">
       <button
-        className="font-mono text-[11px] tracking-[0.3em] text-label transition-colors hover:text-cedar focus-visible:text-cedar disabled:opacity-40"
+        className="group flex items-center gap-2 font-mono text-[11px] tracking-[0.22em] text-label transition-colors hover:text-ink focus-visible:text-ink disabled:opacity-40"
         disabled={isDisabled}
         onClick={onClick}
         type="button"
       >
-        {isLoading ? "STARTING…" : "START OVER"}
+        {isLoading ? "STARTING…" : "NEW CONVERSATION"}
+        <span aria-hidden className="transition-transform duration-300 group-hover:rotate-180">
+          ↺
+        </span>
       </button>
     </div>
   );

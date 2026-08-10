@@ -17,13 +17,17 @@ describe("ChatStarterPrompts", () => {
     }
   });
 
-  it("numbers the prompts 01 through 04", () => {
-    render(<ChatStarterPrompts onStarterPrompt={vi.fn()} />);
+  it("files them under one label as a ruled list", () => {
+    const { container } = render(<ChatStarterPrompts onStarterPrompt={vi.fn()} />);
 
-    expect(STARTER_PROMPTS.length).toBe(4);
-    for (const numeral of ["01", "02", "03", "04"]) {
-      expect(screen.getByText(numeral)).toBeTruthy();
-    }
+    expect(screen.getByRole("heading", { level: 2, name: "OR ASK" })).toBeTruthy();
+    expect(container.querySelectorAll("ul > li").length).toBe(STARTER_PROMPTS.length);
+  });
+
+  it("gives a question no leader, because there is no value on the right to reach", () => {
+    const { container } = render(<ChatStarterPrompts onStarterPrompt={vi.fn()} />);
+
+    expect(container.querySelector(".leader")).toBeNull();
   });
 
   it("makes each prompt a button that sends its text", () => {

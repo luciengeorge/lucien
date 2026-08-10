@@ -5,9 +5,13 @@ import { entryItemClassName } from "./chat.utils";
 export function ChatIntroPlaceholder() {
   return (
     <div className={entryItemClassName(true)}>
-      <div className="space-y-4">
-        <ChatTurnLabel role="assistant" />
-        <ChatStatusMarker label="Preparing Lucien's introduction…" />
+      <div className="flex flex-col gap-3 sm:flex-row sm:gap-11">
+        <div className="shrink-0 pt-1 sm:w-[120px]">
+          <ChatTurnLabel entryIndex={0} isWriting role="assistant" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <ChatStatusMarker label="Opening the ledger…" />
+        </div>
       </div>
     </div>
   );

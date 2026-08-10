@@ -18,19 +18,24 @@ function entryFor(slug: string): WorkEntry {
 }
 
 describe("WorkSheet", () => {
-  it("heads the page with the span of the work and the company", async () => {
+  it("heads the page with the company and reaches across to the dates", async () => {
     await renderInRouter(<WorkSheet entry={entryFor("fyxer")} />);
 
     expect(screen.getByRole("heading", { level: 1, name: "Fyxer" })).toBeTruthy();
-    expect(screen.getByText("since 2025")).toBeTruthy();
-    // Once under the title, once in the aside: the header states it, the aside files it.
-    expect(screen.getAllByText("Senior Product Engineer").length).toBe(2);
+    expect(screen.getByText("Senior Product Engineer")).toBeTruthy();
+    expect(screen.getByText("Sep 2025 · present")).toBeTruthy();
   });
 
   it("dates a finished run by its two ends", async () => {
     await renderInRouter(<WorkSheet entry={entryFor("shopify")} />);
 
-    expect(screen.getByText("2022 to 2023")).toBeTruthy();
+    expect(screen.getByText("Jan 2022 · Sep 2023")).toBeTruthy();
+  });
+
+  it("states the role once, not once per column", async () => {
+    await renderInRouter(<WorkSheet entry={entryFor("fyxer")} />);
+
+    expect(screen.getAllByText("Senior Product Engineer").length).toBe(1);
   });
 
   it("leaves the journal conceit behind", async () => {
@@ -40,26 +45,16 @@ describe("WorkSheet", () => {
     expect(screen.queryByText(/collected/i)).toBeNull();
   });
 
-  it("annotates the aside with the role and the period", async () => {
-    await renderInRouter(<WorkSheet entry={entryFor("shopify")} />);
-
-    expect(screen.getByText("ROLE")).toBeTruthy();
-    expect(screen.getByText("PERIOD")).toBeTruthy();
-    expect(screen.getByText("Jan 2022 · Sep 2023")).toBeTruthy();
-  });
-
-  it("shows the company logo and the CV download", async () => {
+  it("shows the company logo", async () => {
     await renderInRouter(<WorkSheet entry={entryFor("fyxer")} />);
 
     expect(screen.getByRole("img", { name: /^Fyxer( logo)?$/i })).toBeTruthy();
-    const cv = screen.getByRole("link", { name: /download cv/i });
-    expect(cv.getAttribute("href")).toBe("/api/resume/pdf");
   });
 
   it("links back to the index", async () => {
     await renderInRouter(<WorkSheet entry={entryFor("shopify")} />);
 
-    const back = screen.getByRole("link", { name: /back to work/i });
+    const back = screen.getByRole("link", { name: /work/i });
     expect(back.getAttribute("href")).toBe("/work");
   });
 
@@ -69,12 +64,11 @@ describe("WorkSheet", () => {
     expect(screen.getByText(/first as a Developer and then promoted to Senior Developer/)).toBeTruthy();
   });
 
-  it("sets the body in the sans, not in Fraunces", async () => {
+  it("sets the body in the sans, so a long entry stays readable", async () => {
     const { container } = await renderInRouter(<WorkSheet entry={entryFor("shopify")} />);
 
     const prose = container.querySelector("[data-slot='work-prose']");
     expect(prose?.className).toContain("font-sans");
-    expect(prose?.className).not.toContain("font-display");
   });
 
   it("draws the figure on the entry that has one", async () => {
@@ -91,15 +85,16 @@ describe("WorkSheet", () => {
     expect(screen.queryByRole("img", { name: /chat, then the notetaker app/i })).toBeNull();
   });
 
-  it("shows the stats only for the entry that has them", async () => {
+  it("files the entry's figures in the rail, only where there are figures to file", async () => {
     await renderInRouter(<WorkSheet entry={entryFor("fyxer")} />);
-    expect(screen.getByText("REACH")).toBeTruthy();
-    expect(screen.getByText("1,000 weekly active users")).toBeTruthy();
-    expect(screen.getByText("THE TEAM")).toBeTruthy();
+    expect(screen.getByText("ACCOUNT")).toBeTruthy();
+    expect(screen.getByText("WEEKLY ACTIVES")).toBeTruthy();
+    expect(screen.getByText("1,000")).toBeTruthy();
+    expect(screen.getByText("TEAM")).toBeTruthy();
 
     cleanup();
 
     await renderInRouter(<WorkSheet entry={entryFor("shopify")} />);
-    expect(screen.queryByText("REACH")).toBeNull();
+    expect(screen.queryByText("WEEKLY ACTIVES")).toBeNull();
   });
 });

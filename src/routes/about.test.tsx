@@ -12,7 +12,7 @@ describe("AboutPage", () => {
     render(<AboutPage />);
 
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("About Lucien George");
-    expect(screen.getByText("made in")).toBeTruthy();
+    expect(screen.getByText("ABOUT")).toBeTruthy();
   });
 
   it("opens with the subject's standing and background", () => {
@@ -25,7 +25,7 @@ describe("AboutPage", () => {
   it("lists how he spends his time", () => {
     render(<AboutPage />);
 
-    expect(screen.getByText("HOW HE SPENDS HIS TIME")).toBeTruthy();
+    expect(screen.getByRole("heading", { level: 2, name: "HOW HE SPENDS HIS TIME" })).toBeTruthy();
     for (const label of ["ENDURANCE", "SNOW", "MOTORSPORT", "AT REST"]) {
       expect(screen.getByText(label)).toBeTruthy();
     }
@@ -35,12 +35,13 @@ describe("AboutPage", () => {
     expect(screen.getByText(/Dogs, hiking, travelling/)).toBeTruthy();
   });
 
-  it("carries the languages, family and route in the aside", () => {
+  it("carries the languages, family and route in the rail", () => {
     render(<AboutPage />);
 
     expect(screen.getByText("French, English, Arabic.")).toBeTruthy();
     expect(screen.getByText("Second eldest of four. Very family-oriented.")).toBeTruthy();
-    expect(screen.getByText("Beirut. Migrated to Montreal, then London in 2018.")).toBeTruthy();
-    expect(screen.getByRole("img", { name: /Migration route/ })).toBeTruthy();
+    expect(screen.getByText("Beirut")).toBeTruthy();
+    expect(screen.getByText("Montreal")).toBeTruthy();
+    expect(screen.getByText("London")).toBeTruthy();
   });
 });

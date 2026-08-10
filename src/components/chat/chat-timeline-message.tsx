@@ -13,19 +13,20 @@ import { ChatWorkLinkCard } from "./chat-work-link-card";
 import { TOOL_PROGRESS_LABELS } from "./chat.constants";
 
 /*
- * Poof's reply is body copy, so it is set in Geist at a comfortable reading
- * size; Fraunces stays for headings and for the visitor's own question, which
- * is what keeps the two voices apart. The descendant selectors are unavoidable:
- * the markdown renderer owns the elements it emits, so the only way to reach
- * them is from the wrapper.
+ * Two voices, two faces. His reply is body copy and set in Geist, because a
+ * long answer in mono is the thing that makes a page read as a terminal; your
+ * own question is short and set in mono, which is what keeps the two apart
+ * without needing a bubble or an avatar. The descendant selectors are
+ * unavoidable: the markdown renderer owns the elements it emits, so the only
+ * way to reach them is from the wrapper.
  */
 const TURN_PROSE =
-  "max-w-[70ch] [&_a]:text-cedar [&_a]:underline [&_a]:underline-offset-4 [&_a]:decoration-cedar/40 [&_code]:font-mono [&_code]:text-[0.82em] [&_h1]:font-display [&_h2]:font-display [&_h3]:font-display [&_li]:text-pretty [&_ol]:mt-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:text-pretty [&_p:not(:first-child)]:mt-4 [&_ul]:mt-4 [&_ul]:list-disc [&_ul]:pl-6";
+  "max-w-[46rem] [&_a]:text-stamp [&_a]:underline [&_a]:underline-offset-4 [&_a]:decoration-stamp/40 [&_code]:font-mono [&_code]:text-[0.82em] [&_h1]:font-mono [&_h2]:font-mono [&_h3]:font-mono [&_li]:text-pretty [&_ol]:mt-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:text-pretty [&_p:not(:first-child)]:mt-4 [&_ul]:mt-4 [&_ul]:list-disc [&_ul]:pl-6";
 
 const ASSISTANT_PROSE =
-  "font-sans text-[17px]/relaxed text-ink [&_h1]:text-2xl [&_h2]:text-xl [&_h3]:text-lg [&_strong]:font-semibold [&_strong]:text-ink";
+  "font-sans text-[17px]/relaxed text-ink [&_h1]:text-xl [&_h2]:text-lg [&_h3]:text-base [&_strong]:font-semibold [&_strong]:text-ink";
 
-const QUESTION_PROSE = "font-display text-xl/relaxed text-cedar italic";
+const QUESTION_PROSE = "font-mono text-[17px]/relaxed font-medium text-ink";
 
 const ResumeToolOutputSchema = z.object({
   filename: z.string(),
@@ -77,10 +78,13 @@ export function hasRenderableContent({
 }
 
 export function ChatTimelineMessage({
+  entryIndex,
   isActive,
   message,
   status,
 }: {
+  /** Position of this turn in the transcript, for the entry number in the label lane. */
+  entryIndex: number;
   /** True only for the last/streaming assistant message. Past turns always reveal cards immediately. */
   isActive: boolean;
   message: ChatMessage;
@@ -176,66 +180,81 @@ export function ChatTimelineMessage({
     : [];
   const hasToolActivity = hasToolCard || toolProgressChips.length > 0;
 
+  const isWriting = role === "assistant" && isActive && !isSettled;
+
   return (
-    <div className="space-y-4">
-      <ChatTurnLabel role={role} />
+    <div className="flex flex-col gap-3 sm:flex-row sm:gap-11">
+      <div className="shrink-0 pt-1 sm:w-[120px]">
+        <ChatTurnLabel entryIndex={entryIndex} isWriting={isWriting} role={role} />
+      </div>
 
-      {reasoningParts.length > 0 ? (
-        <div className="space-y-2 border-l rule-stone pl-4">
-          <p className="font-mono text-[11px] tracking-[0.3em] text-label">THINKING</p>
-          {reasoningParts.map((part) => (
-            <p key={part.key} className="max-w-[62ch] font-sans text-[15px] text-pretty text-ink-soft">
-              {part.text}
-            </p>
-          ))}
-        </div>
-      ) : null}
+      <div className="min-w-0 flex-1 space-y-4">
+        {reasoningParts.length > 0 ? (
+          <div className="space-y-2 border-l rule-hair pl-4">
+            <p className="font-mono text-[11px] tracking-[0.3em] text-label">THINKING</p>
+            {reasoningParts.map((part) => (
+              <p key={part.key} className="max-w-[46rem] font-sans text-[15px] text-pretty text-ink-soft">
+                {part.text}
+              </p>
+            ))}
+          </div>
+        ) : null}
 
-      {textParts.length > 0 ? (
-        <div className={cn(TURN_PROSE, role === "assistant" ? ASSISTANT_PROSE : QUESTION_PROSE)} data-slot="turn-prose">
-          {textParts.map((part) => (
-            <ChatMarkdown key={part.key} isAnimating={status === "streaming"} text={part.text} />
-          ))}
-        </div>
-      ) : role === "assistant" && status === "streaming" && !hasToolActivity ? (
-        <ChatStatusMarker label="Generating response…" />
-      ) : role === "assistant" && isSettled && !messageHasRenderableContent ? (
-        <p className="max-w-[62ch] font-sans text-[15px] text-pretty text-label">
-          Sorry, I didn't catch that. Mind rephrasing?
-        </p>
-      ) : null}
+        {textParts.length > 0 ? (
+          <div
+            className={cn(TURN_PROSE, role === "assistant" ? ASSISTANT_PROSE : QUESTION_PROSE)}
+            data-slot="turn-prose"
+          >
+            {textParts.map((part) => (
+              <ChatMarkdown key={part.key} isAnimating={status === "streaming"} text={part.text} />
+            ))}
+          </div>
+        ) : role === "assistant" && status === "streaming" && !hasToolActivity ? (
+          <ChatStatusMarker label="Generating response…" />
+        ) : role === "assistant" && isSettled && !messageHasRenderableContent ? (
+          <p className="max-w-[46rem] font-sans text-[15px] text-pretty text-label">
+            Sorry, I didn't catch that. Mind rephrasing?
+          </p>
+        ) : null}
 
-      {revealToolCards && resumeToolParts.length > 0 ? (
-        <div className="space-y-2">
-          {resumeToolParts.map((part) => (
-            <ChatResumeCard key={part.key} filename={part.filename} url={part.url} />
-          ))}
-        </div>
-      ) : null}
+        {revealToolCards && resumeToolParts.length > 0 ? (
+          <div className="space-y-2">
+            {resumeToolParts.map((part) => (
+              <ChatResumeCard key={part.key} filename={part.filename} url={part.url} />
+            ))}
+          </div>
+        ) : null}
 
-      {revealToolCards && workLinkToolParts.length > 0 ? (
-        <div className="space-y-2">
-          {workLinkToolParts.map((part) => (
-            <ChatWorkLinkCard key={part.key} company={part.company} role={part.role} slug={part.slug} url={part.url} />
-          ))}
-        </div>
-      ) : null}
+        {revealToolCards && workLinkToolParts.length > 0 ? (
+          <div className="space-y-2">
+            {workLinkToolParts.map((part) => (
+              <ChatWorkLinkCard
+                key={part.key}
+                company={part.company}
+                role={part.role}
+                slug={part.slug}
+                url={part.url}
+              />
+            ))}
+          </div>
+        ) : null}
 
-      {revealToolCards && contactToolParts.length > 0 ? (
-        <div className="space-y-2">
-          {contactToolParts.map((part) => (
-            <ChatContactCard key={part.key} status={part.status} />
-          ))}
-        </div>
-      ) : null}
+        {revealToolCards && contactToolParts.length > 0 ? (
+          <div className="space-y-2">
+            {contactToolParts.map((part) => (
+              <ChatContactCard key={part.key} status={part.status} />
+            ))}
+          </div>
+        ) : null}
 
-      {toolProgressChips.length > 0 ? (
-        <div className="space-y-2">
-          {toolProgressChips.map((chip) => (
-            <ChatStatusMarker key={chip.key} label={chip.label} />
-          ))}
-        </div>
-      ) : null}
+        {toolProgressChips.length > 0 ? (
+          <div className="space-y-2">
+            {toolProgressChips.map((chip) => (
+              <ChatStatusMarker key={chip.key} label={chip.label} />
+            ))}
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }

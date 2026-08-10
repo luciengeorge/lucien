@@ -19,7 +19,7 @@ describe("ChatWorkLinkCard", () => {
   it("captures work_link_clicked with the slug (and no raw message text) on click", () => {
     render(<ChatWorkLinkCard company="Fyxer" role="Senior Product Engineer" slug="fyxer" url="/work/fyxer" />);
 
-    fireEvent.click(screen.getByRole("button", { name: /view fyxer case study/i }));
+    fireEvent.click(screen.getByRole("link", { name: /open/i }));
 
     expect(capture).toHaveBeenCalledTimes(1);
     expect(capture).toHaveBeenCalledWith("work_link_clicked", { slug: "fyxer" });

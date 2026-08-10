@@ -2,8 +2,8 @@ import type { Toast } from "#/lib/toast";
 import type { QueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 
-import { CedarFooter, CedarNav } from "#/components/cedar/cedar-nav";
 import { GlobalLoading } from "#/components/global-loading";
+import { LedgerColophon, LedgerNav } from "#/components/ledger/ledger-nav";
 import { NotFound } from "#/components/not-found";
 import { Toaster } from "#/components/ui/sonner";
 import { useToast } from "#/hooks/use-toast";
@@ -63,7 +63,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       },
       {
         name: "theme-color",
-        content: "#131a2b",
+        content: "#f4f1e9",
       },
       {
         property: "og:title",
@@ -208,14 +208,14 @@ function RootDocument({ children }: { children: ReactNode }) {
             <MotionConfig reducedMotion="user">
               <PostHogInit />
               <Toaster closeButton richColors />
-              <CedarNav />
+              <LedgerNav />
               <main className="isolate w-full">{children}</main>
               {/*
                 The colophon lives outside <main> on purpose: a <footer> nested
                 inside main does not expose the contentinfo role, and this is
                 site-level furniture rather than page content.
               */}
-              <CedarFooter className="mx-auto w-full max-w-[1500px] px-6 pb-16 sm:px-10 lg:px-14" />
+              <LedgerColophon className="mx-auto w-full max-w-[1520px] px-6 pb-14 sm:px-10 lg:px-14" />
               <TanStackDevtools
                 config={{
                   position: "bottom-right",

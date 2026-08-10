@@ -12,82 +12,95 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Cedar.
+ * Ledger.
  *
- * Heritage as the brand: limestone ground, cedar green, one terracotta. The
- * palette is the Levantine coast rather than a stationery set, so the rules
- * are solid and the paper is plain. Warmth here comes from the stone, not
- * from texture.
+ * The site as an itemised account: warm ledger paper, hairline rules, dotted
+ * leaders, a running total. Geist Mono carries every piece of structure and
+ * Geist carries the reading, which is the one place this direction departs
+ * from the brand tile - mono prose at length reads as a terminal, and this is
+ * a portfolio.
+ *
+ * `--lg-stamp` is the only chromatic colour on the site. It means live or
+ * actionable and nothing else: the active nav marker, the streaming
+ * indicator, link arrows, and the colophon stamp.
  */
 :root {
-  --cd-limestone: #ece5d8;
-  --cd-limestone-shade: #dcd3c2;
-  --cd-ink: #1c1b17;
-  --cd-ink-soft: #56524d;
-  --cd-cedar: #2c5545;
-  --cd-terracotta: #b06a3a;
-  --cd-label: #8a8275;
+  --lg-paper: #f4f1e9;
+  --lg-paper-shade: #e2dbcb;
+  --lg-rule: #d8d1c0;
+  --lg-leader: #c9c1ae;
+  --lg-ink: #16140f;
+  --lg-ink-soft: #4a443a;
+  --lg-label: #8a8275;
+  --lg-stamp: #b4452f;
 
-  --background: var(--cd-limestone);
-  --foreground: var(--cd-ink);
-  --card: var(--cd-limestone);
-  --card-foreground: var(--cd-ink);
-  --popover: var(--cd-limestone);
-  --popover-foreground: var(--cd-ink);
-  --primary: var(--cd-cedar);
-  --primary-foreground: var(--cd-limestone);
-  --secondary: var(--cd-limestone-shade);
-  --secondary-foreground: var(--cd-ink);
-  --muted: var(--cd-limestone-shade);
-  --muted-foreground: var(--cd-ink-soft);
-  --accent: var(--cd-terracotta);
-  --accent-foreground: var(--cd-limestone);
+  --background: var(--lg-paper);
+  --foreground: var(--lg-ink);
+  --card: var(--lg-paper);
+  --card-foreground: var(--lg-ink);
+  --popover: var(--lg-paper);
+  --popover-foreground: var(--lg-ink);
+  --primary: var(--lg-ink);
+  --primary-foreground: var(--lg-paper);
+  --secondary: var(--lg-paper-shade);
+  --secondary-foreground: var(--lg-ink);
+  --muted: var(--lg-paper-shade);
+  --muted-foreground: var(--lg-ink-soft);
+  --accent: var(--lg-stamp);
+  --accent-foreground: var(--lg-paper);
   --destructive: #9e3b28;
-  --destructive-foreground: var(--cd-limestone);
-  --border: var(--cd-limestone-shade);
-  --input: var(--cd-limestone-shade);
-  --ring: var(--cd-cedar);
-  --chart-1: var(--cd-cedar);
-  --chart-2: #4a7a66;
-  --chart-3: var(--cd-terracotta);
-  --chart-4: var(--cd-ink);
-  --chart-5: var(--cd-label);
-  --radius: 0.25rem;
-  --sidebar: var(--cd-limestone);
-  --sidebar-foreground: var(--cd-ink);
-  --sidebar-primary: var(--cd-cedar);
-  --sidebar-primary-foreground: var(--cd-limestone);
-  --sidebar-accent: var(--cd-limestone-shade);
-  --sidebar-accent-foreground: var(--cd-ink);
-  --sidebar-border: var(--cd-limestone-shade);
-  --sidebar-ring: var(--cd-cedar);
+  --destructive-foreground: var(--lg-paper);
+  --border: var(--lg-rule);
+  --input: var(--lg-rule);
+  --ring: var(--lg-ink);
+  --chart-1: var(--lg-ink);
+  --chart-2: var(--lg-stamp);
+  --chart-3: var(--lg-label);
+  --chart-4: var(--lg-leader);
+  --chart-5: var(--lg-paper-shade);
+  --radius: 0rem;
+  --sidebar: var(--lg-paper);
+  --sidebar-foreground: var(--lg-ink);
+  --sidebar-primary: var(--lg-ink);
+  --sidebar-primary-foreground: var(--lg-paper);
+  --sidebar-accent: var(--lg-paper-shade);
+  --sidebar-accent-foreground: var(--lg-ink);
+  --sidebar-border: var(--lg-rule);
+  --sidebar-ring: var(--lg-ink);
 }
 
-/* Evening on the same coast: the stone goes dark, the cedar stays. */
+/* The same book under a desk lamp: the paper darkens, the stamp holds. */
 .dark {
-  --cd-limestone: #161a17;
-  --cd-limestone-shade: #232a25;
-  --cd-ink: #ece5d8;
-  --cd-ink-soft: #b8b2a6;
-  --cd-cedar: #6aa88d;
-  --cd-terracotta: #cf8558;
-  --cd-label: #8a8275;
+  --lg-paper: #14130f;
+  --lg-paper-shade: #201e18;
+  --lg-rule: #2e2b23;
+  --lg-leader: #3b372d;
+  --lg-ink: #f0ece1;
+  --lg-ink-soft: #b3ac9c;
+  --lg-label: #8a8275;
+  --lg-stamp: #d4664b;
 
   --destructive: #cf6d58;
-  --destructive-foreground: var(--cd-limestone);
+  --destructive-foreground: var(--lg-paper);
 }
 
 @theme inline {
   --font-sans: "Geist Variable", sans-serif;
-  --font-display: "Fraunces Variable", ui-serif, Georgia, serif;
+  /*
+   * Display is Geist Mono, not a serif. Every heading on the site is a ledger
+   * heading, so the display face is the same face as the labels and the
+   * figures - the scale does the work instead of a second family.
+   */
+  --font-display: "Geist Mono Variable", ui-monospace, SFMono-Regular, monospace;
   --font-mono: "Geist Mono Variable", ui-monospace, SFMono-Regular, monospace;
-  --color-limestone: var(--cd-limestone);
-  --color-limestone-shade: var(--cd-limestone-shade);
-  --color-ink: var(--cd-ink);
-  --color-ink-soft: var(--cd-ink-soft);
-  --color-cedar: var(--cd-cedar);
-  --color-terracotta: var(--cd-terracotta);
-  --color-label: var(--cd-label);
+  --color-paper: var(--lg-paper);
+  --color-paper-shade: var(--lg-paper-shade);
+  --color-rule: var(--lg-rule);
+  --color-leader: var(--lg-leader);
+  --color-ink: var(--lg-ink);
+  --color-ink-soft: var(--lg-ink-soft);
+  --color-label: var(--lg-label);
+  --color-stamp: var(--lg-stamp);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -165,9 +178,9 @@ body {
   }
 
   /*
-   * Headings are the journal's hand: Fraunces italic, medium rather than bold.
-   * Bold italic at display size gets muddy; 500 keeps the stroke contrast that
-   * makes the face worth using.
+   * Headings are ledger headings: Geist Mono, semibold, tightened at display
+   * size. Mono tracks wide by nature, so large headings need negative tracking
+   * to stop reading as a spaced-out label.
    */
   h1,
   h2,
@@ -175,36 +188,55 @@ body {
   h4,
   h5,
   h6 {
-    @apply font-display font-semibold tracking-tight;
+    @apply font-display font-semibold;
   }
 
   h1 {
-    @apply text-5xl sm:text-7xl;
+    @apply text-[2rem] tracking-[-0.02em] sm:text-5xl;
   }
 
   h2 {
-    @apply text-3xl sm:text-5xl;
+    @apply text-2xl tracking-[-0.015em] sm:text-3xl;
   }
 
   h3 {
-    @apply text-2xl sm:text-3xl;
+    @apply text-xl tracking-[-0.01em] sm:text-2xl;
   }
 
   h4 {
-    @apply text-xl sm:text-2xl;
-  }
-
-  h5 {
     @apply text-lg sm:text-xl;
   }
 
-  h6 {
+  h5 {
     @apply text-base sm:text-lg;
+  }
+
+  h6 {
+    @apply text-sm sm:text-base;
   }
 }
 
-/* Cedar rules with a solid hairline in stone. Nothing is dashed here. */
-@utility rule-stone {
-  border-color: var(--cd-limestone-shade);
+/*
+ * The two weights of rule this direction uses. `rule-hair` separates entries
+ * within a block; `rule-ink` opens and closes a block. Nothing else rules.
+ */
+@utility rule-hair {
+  border-color: var(--lg-rule);
   border-style: solid;
+}
+
+@utility rule-ink {
+  border-color: var(--lg-ink);
+  border-style: solid;
+}
+
+/*
+ * The dotted leader. Applied to a flex-grow spacer between a label and its
+ * value, never as decoration: if the two sides are not a label and a value,
+ * there is no gap to lead the eye across and the leader does not belong.
+ */
+@utility leader {
+  height: 1px;
+  flex-grow: 1;
+  border-bottom: 2px dotted var(--lg-leader);
 }

@@ -1,6 +1,7 @@
 import type { ChatConversationState } from "#/lib/chat-types";
 
-import { AsideNote, AsideVoice, CedarPage, PageHeader } from "#/components/cedar/cedar-page";
+import { RailStat, RailStats } from "#/components/ledger/leader-row";
+import { LedgerPage, PageHeader, RailAside, RailNote } from "#/components/ledger/ledger-page";
 import { AnalyticsEvent, useAnalytics } from "#/lib/analytics";
 import { parseSerializedMessages } from "#/lib/chat-types";
 import { startNewConversation } from "#/lib/functions/start-new-conversation";
@@ -16,7 +17,12 @@ import { ChatNewConversationBar } from "./chat-new-conversation-bar";
 import { ChatPendingReply } from "./chat-pending-reply";
 import { ChatStarterPrompts } from "./chat-starter-prompts";
 import { ChatTimelineMessage } from "./chat-timeline-message";
-import { createRateLimitAwareFetch, entryItemClassName, getSettledAssistantAnalyticsEvents } from "./chat.utils";
+import {
+  createRateLimitAwareFetch,
+  entryItemClassName,
+  getSettledAssistantAnalyticsEvents,
+  transcriptCountLabel,
+} from "./chat.utils";
 
 export function ChatConversation({
   chatState,
@@ -122,6 +128,7 @@ export function ChatConversation({
   }, [shouldReduceMotion, visibleMessages]);
 
   const isBusy = status === "submitted" || status === "streaming" || !chatState.conversation;
+  const entryCountLabel = transcriptCountLabel(visibleMessages.length + (showPendingReply ? 1 : 0));
 
   const handleSend = async (message: string) => {
     capture(AnalyticsEvent.chatMessageSubmitted, {
@@ -163,35 +170,63 @@ export function ChatConversation({
   };
 
   return (
-    <CedarPage
-      aside={
+    <LedgerPage
+      rail={
         <>
-          <AsideVoice>He answers in his own voice, from his own notes. Ask him anything.</AsideVoice>
-          <AsideNote label="LIVES IN">Beirut, then Montreal, then London since 2018.</AsideNote>
-          <AsideNote label="BUILDS WITH">TypeScript, React, Convex. Ships whole, never partial.</AsideNote>
+          <RailStats label="ACCOUNT">
+            <RailStat label="CURRENT" value="Fyxer" />
+            <RailStat label="SHIPPING SINCE" value="2013" />
+            <RailStat label="BASED" value="London" />
+          </RailStats>
+          <RailNote>He answers in his own voice, from his own notes. He will say so when he does not know.</RailNote>
+          <RailAside>Everything on this page is also readable as plain text, at /llms-full.txt.</RailAside>
         </>
       }
     >
-      <PageHeader leadIn="made in" title="the Levant">
-        <p className="mt-2 font-sans text-lg text-ink-soft">Lucien George, product engineer in London.</p>
+      <PageHeader label="ASK" title="Lucien George builds products end to end, and ships them whole.">
+        <p className="max-w-[41rem] font-sans text-[17px]/relaxed text-ink-soft">
+          Since 2013. Ask the page anything; it has read all of it.
+        </p>
       </PageHeader>
 
-      <div ref={transcriptRef} className="flex flex-col border-t rule-stone">
-        {showIntroPlaceholder ? <ChatIntroPlaceholder /> : null}
-        {visibleMessages.map((message, index) => (
-          <div key={message.id} className={entryItemClassName(index === 0)} data-message-id={message.id}>
-            <ChatTimelineMessage isActive={index === visibleMessages.length - 1} message={message} status={status} />
-          </div>
-        ))}
-        {showPendingReply ? <ChatPendingReply isFirst={visibleMessages.length === 0} /> : null}
+      <div className="flex flex-col">
+        <div className="flex items-center justify-between pb-3">
+          <h2 className="font-mono text-[11px] tracking-[0.3em] text-label">TRANSCRIPT</h2>
+          <p className="flex items-center gap-2.5 font-mono text-[11px] tracking-[0.3em] text-label">
+            {isBusy ? <span aria-hidden className="size-1.5 animate-pulse rounded-full bg-stamp" /> : null}
+            {entryCountLabel}
+          </p>
+        </div>
+
+        <div ref={transcriptRef} className="flex flex-col border-t rule-ink">
+          {showIntroPlaceholder ? <ChatIntroPlaceholder /> : null}
+          {visibleMessages.map((message, index) => (
+            <div key={message.id} className={entryItemClassName(index === 0)} data-message-id={message.id}>
+              <ChatTimelineMessage
+                entryIndex={index}
+                isActive={index === visibleMessages.length - 1}
+                message={message}
+                status={status}
+              />
+            </div>
+          ))}
+          {showPendingReply ? (
+            <ChatPendingReply entryIndex={visibleMessages.length} isFirst={visibleMessages.length === 0} />
+          ) : null}
+        </div>
       </div>
 
-      <div className="sticky bottom-0 z-10 flex flex-col gap-3 bg-limestone pb-4">
+      <div className="sticky bottom-0 z-10 flex flex-col gap-4 border-t rule-ink bg-paper pt-5 pb-4">
+        <ChatComposerBlock
+          entryIndex={visibleMessages.length}
+          isBusy={isBusy}
+          onResumeRequest={handleResumeRequest}
+          onSend={handleSend}
+        />
         <ChatNewConversationBar isDisabled={isStartingNewConversation} onClick={() => void handleNewConversation()} />
-        <ChatComposerBlock isBusy={isBusy} onResumeRequest={handleResumeRequest} onSend={handleSend} />
       </div>
 
       {showStarterPrompts ? <ChatStarterPrompts onStarterPrompt={handleStarterPrompt} /> : null}
-    </CedarPage>
+    </LedgerPage>
   );
 }

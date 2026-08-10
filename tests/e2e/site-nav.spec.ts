@@ -1,19 +1,19 @@
 import { expect, test } from "@playwright/test";
 
 const NAV_LINKS: Array<{ label: string; href: string }> = [
-  { href: "/", label: "Chat" },
-  { href: "/about", label: "About" },
+  { href: "/", label: "Ask" },
   { href: "/work", label: "Work" },
+  { href: "/about", label: "About" },
   { href: "/skills", label: "Skills" },
   { href: "/education", label: "Education" },
-  { href: "/resume", label: "CV" },
+  { href: "/resume", label: "Resume" },
 ];
 
 const SOCIAL_LABELS = ["GitHub", "LinkedIn", "X", "Instagram"];
 
 /*
- * The Field Notes redesign replaced the floating glass nav pill with a ruled
- * journal masthead. Two deliberate consequences are encoded below:
+ * The Ledger redesign replaced the floating glass nav pill with a ruled
+ * masthead. Two deliberate consequences are encoded below:
  *
  * - There is no mobile dropdown. Six items fit in a scrollable row, so the
  *   menu button and its Base UI popup are gone rather than restyled. Mobile
@@ -22,7 +22,7 @@ const SOCIAL_LABELS = ["GitHub", "LinkedIn", "X", "Instagram"];
  *   are asserted against `contentinfo`.
  */
 
-test.describe("JournalNav (desktop)", () => {
+test.describe("LedgerNav (desktop)", () => {
   test.use({ viewport: { height: 820, width: 1280 } });
 
   test("the masthead wordmark links home", async ({ page }) => {
@@ -62,7 +62,7 @@ test.describe("JournalNav (desktop)", () => {
   });
 });
 
-test.describe("Journal colophon", () => {
+test.describe("Ledger colophon", () => {
   test.use({ viewport: { height: 820, width: 1280 } });
 
   test("exposes all social links opening in a new tab", async ({ page }) => {
@@ -76,15 +76,15 @@ test.describe("Journal colophon", () => {
     }
   });
 
-  test("carries the specimen line on every page", async ({ page }) => {
+  test("stamps the account as still open on every page", async ({ page }) => {
     for (const href of ["/", "/about", "/work"]) {
       await page.goto(href);
-      await expect(page.getByRole("contentinfo").getByText(/SPECIMEN: builder/)).toBeVisible();
+      await expect(page.getByRole("contentinfo").getByText("STILL SHIPPING")).toBeVisible();
     }
   });
 });
 
-test.describe("JournalNav (mobile)", () => {
+test.describe("LedgerNav (mobile)", () => {
   test.use({ viewport: { height: 844, width: 390 } });
 
   test("keeps every nav link directly reachable without a menu", async ({ page }) => {

@@ -41,38 +41,59 @@ function userMessage(parts: ChatMessage["parts"][number][]): ChatMessage {
 }
 
 describe("ChatTimelineMessage attribution", () => {
-  it("attributes an assistant reply to Poof, speaking for Lucien", () => {
-    render(<ChatTimelineMessage isActive={false} message={message([textPart("He ships daily.")])} status="ready" />);
+  it("attributes an assistant reply to Lucien, because Poof answers as him", () => {
+    render(
+      <ChatTimelineMessage
+        entryIndex={0}
+        isActive={false}
+        message={message([textPart("He ships daily.")])}
+        status="ready"
+      />,
+    );
 
-    expect(screen.getByText("POOF · IN HIS OWN WORDS")).toBeTruthy();
+    expect(screen.getByText("LUCIEN")).toBeTruthy();
     expect(screen.getByText("He ships daily.")).toBeTruthy();
   });
 
-  it("labels a user turn as the question that was asked", () => {
+  it("labels a user turn as yours, and numbers it in the transcript", () => {
     render(
-      <ChatTimelineMessage isActive={false} message={userMessage([textPart("What does he build?")])} status="ready" />,
+      <ChatTimelineMessage
+        entryIndex={1}
+        isActive={false}
+        message={userMessage([textPart("What does he build?")])}
+        status="ready"
+      />,
     );
 
-    expect(screen.getByText("YOU ASKED")).toBeTruthy();
-    expect(screen.queryByText("POOF · IN HIS OWN WORDS")).toBeNull();
+    expect(screen.getByText("YOU")).toBeTruthy();
+    expect(screen.getByText("ENTRY 02")).toBeTruthy();
+    expect(screen.queryByText("LUCIEN")).toBeNull();
     expect(screen.getByText("What does he build?")).toBeTruthy();
   });
 
-  it("keeps the two voices apart: the reply in the sans, the question in cedar italic", () => {
+  it("keeps the two voices apart: his reply in the sans, your question in mono", () => {
     const { container: reply } = render(
-      <ChatTimelineMessage isActive={false} message={message([textPart("He ships daily.")])} status="ready" />,
+      <ChatTimelineMessage
+        entryIndex={0}
+        isActive={false}
+        message={message([textPart("He ships daily.")])}
+        status="ready"
+      />,
     );
     const replyProse = reply.querySelector("[data-slot='turn-prose']");
     expect(replyProse?.className).toContain("font-sans");
-    expect(replyProse?.className).not.toContain("italic");
 
     const { container: question } = render(
-      <ChatTimelineMessage isActive={false} message={userMessage([textPart("What does he build?")])} status="ready" />,
+      <ChatTimelineMessage
+        entryIndex={1}
+        isActive={false}
+        message={userMessage([textPart("What does he build?")])}
+        status="ready"
+      />,
     );
     const questionProse = question.querySelector("[data-slot='turn-prose']");
-    expect(questionProse?.className).toContain("font-display");
-    expect(questionProse?.className).toContain("italic");
-    expect(questionProse?.className).toContain("text-cedar");
+    expect(questionProse?.className).toContain("font-mono");
+    expect(questionProse?.className).not.toContain("italic");
   });
 });
 
@@ -86,34 +107,44 @@ describe("ChatTimelineMessage render order", () => {
     );
 
     const textEl = screen.getByText("Here is the file you asked for.");
-    const cardEl = screen.getByText("resume.pdf");
+    const cardEl = screen.getByText("RESUME");
 
     expect(textEl.compareDocumentPosition(cardEl) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it("holds the finished tool card until text has started on the active streaming turn", () => {
-    render(<ChatTimelineMessage isActive message={message([resumeOutputPart()])} status="streaming" />);
+    render(<ChatTimelineMessage entryIndex={0} isActive message={message([resumeOutputPart()])} status="streaming" />);
 
-    expect(screen.queryByText("resume.pdf")).toBeNull();
-    expect(screen.queryByText("Download")).toBeNull();
+    expect(screen.queryByText("RESUME")).toBeNull();
+    expect(screen.queryByText("DOWNLOAD")).toBeNull();
     expect(screen.getByText("Getting Lucien's resume…")).not.toBeNull();
   });
 
   it("renders the in-progress tool indicator as a status marker (no box) while a tool call is input-streaming on the active turn", () => {
     const { container } = render(
-      <ChatTimelineMessage isActive message={message([workLinkInputPart("input-streaming")])} status="streaming" />,
+      <ChatTimelineMessage
+        entryIndex={0}
+        isActive
+        message={message([workLinkInputPart("input-streaming")])}
+        status="streaming"
+      />,
     );
 
     const label = screen.getByText("Finding the right work…");
     expect(label.getAttribute("data-slot")).toBe("shimmering-text");
     expect(container.querySelector("svg.animate-spin")).not.toBeNull();
     expect(container.querySelector('[data-slot="attachment"]')).toBeNull();
-    expect(screen.queryByText("View")).toBeNull();
+    expect(screen.queryByText("OPEN")).toBeNull();
   });
 
   it("renders the in-progress tool indicator as a status marker (no box) while a tool call is input-available on the active turn", () => {
     const { container } = render(
-      <ChatTimelineMessage isActive message={message([workLinkInputPart("input-available")])} status="streaming" />,
+      <ChatTimelineMessage
+        entryIndex={0}
+        isActive
+        message={message([workLinkInputPart("input-available")])}
+        status="streaming"
+      />,
     );
 
     expect(screen.getByText("Finding the right work…")).not.toBeNull();
@@ -121,7 +152,9 @@ describe("ChatTimelineMessage render order", () => {
   });
 
   it("renders the animated thinking indicator when streaming with no content yet on the active turn", () => {
-    const { container } = render(<ChatTimelineMessage isActive message={message([])} status="streaming" />);
+    const { container } = render(
+      <ChatTimelineMessage entryIndex={0} isActive message={message([])} status="streaming" />,
+    );
 
     const label = screen.getByText("Generating response…");
     expect(label.getAttribute("data-slot")).toBe("shimmering-text");
@@ -133,10 +166,17 @@ describe("ChatTimelineMessage render order", () => {
     // already-settled turn (a tool card with no text) must not re-hide its card or show an
     // in-progress chip just because the user started a new message and the global status flipped
     // back to "streaming" for the newest turn.
-    render(<ChatTimelineMessage isActive={false} message={message([resumeOutputPart()])} status="streaming" />);
+    render(
+      <ChatTimelineMessage
+        entryIndex={0}
+        isActive={false}
+        message={message([resumeOutputPart()])}
+        status="streaming"
+      />,
+    );
 
-    expect(screen.getByText("resume.pdf")).not.toBeNull();
-    expect(screen.getByText("Download")).not.toBeNull();
+    expect(screen.getByText("RESUME")).not.toBeNull();
+    expect(screen.getByText("DOWNLOAD")).not.toBeNull();
     expect(screen.queryByText("Getting Lucien's resume…")).toBeNull();
   });
 });

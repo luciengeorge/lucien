@@ -1,6 +1,6 @@
-import { AsideNote, AsideVoice, CedarPage, PageHeader } from "#/components/cedar/cedar-page";
-import { DownloadCvLink } from "#/components/cedar/download-cv-link";
-import { WorkRegister } from "#/components/cedar/work-register";
+import { RailStat, RailStats } from "#/components/ledger/leader-row";
+import { LedgerPage, PageHeader, RailAside } from "#/components/ledger/ledger-page";
+import { WorkRegister } from "#/components/ledger/work-register";
 import { WORK_INDEX_META } from "#/lib/content/page-meta";
 import { WORK_ENTRIES } from "#/lib/content/registry";
 import { workPeriodStart } from "#/lib/content/work-period";
@@ -41,24 +41,35 @@ export const Route = createFileRoute("/work/")({
     }),
 });
 
-const PLACE_COUNT = WORK_ENTRIES.length;
+const ENTRY_COUNT = WORK_ENTRIES.length;
 const FIRST_YEAR = workPeriodStart(WORK_ENTRIES[WORK_ENTRIES.length - 1].period);
+/* Derived rather than typed out, so founding another one is a data change. */
+const FOUNDED_COUNT = WORK_ENTRIES.filter((entry) => entry.role.toLowerCase().includes("co-founder")).length;
+
+function pad(value: number): string {
+  return String(value).padStart(2, "0");
+}
 
 function WorkIndexPage() {
   return (
-    <CedarPage
-      aside={
+    <LedgerPage
+      rail={
         <>
-          <AsideVoice>Most recent first. The one at the top is still going.</AsideVoice>
-          <AsideNote label="SPAN">{`${PLACE_COUNT} places, ${FIRST_YEAR} to now.`}</AsideNote>
-          <AsideNote label="RANGE">Teaching, engineering leadership, founding, and building.</AsideNote>
+          <RailStats label="ACCOUNT">
+            <RailStat label="ENTRIES" value={pad(ENTRY_COUNT)} />
+            <RailStat label="SPAN" value={`${FIRST_YEAR} · now`} />
+            <RailStat label="FOUNDED" value={pad(FOUNDED_COUNT)} />
+          </RailStats>
+          <RailAside>Three of these he started himself. The other four he joined and treated the same way.</RailAside>
         </>
       }
     >
-      <PageHeader leadIn="built at" title="Work">
-        <DownloadCvLink className="mt-4" />
+      <PageHeader label="WORK" title="Where Lucien has worked">
+        <p className="max-w-[41rem] font-sans text-[17px]/relaxed text-ink-soft">
+          Most recent first. Open one for the long version.
+        </p>
       </PageHeader>
       <WorkRegister />
-    </CedarPage>
+    </LedgerPage>
   );
 }
