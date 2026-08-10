@@ -11,13 +11,13 @@ describe("ChatLedgerCard", () => {
   it("files its rows under a label", () => {
     render(
       <ChatLedgerCard label="REFERENCED">
-        <ChatLedgerRow meta="2025 —" title="FYXER" />
+        <ChatLedgerRow meta="2025 · now" title="FYXER" />
       </ChatLedgerCard>,
     );
 
     expect(screen.getByText("REFERENCED")).toBeTruthy();
     expect(screen.getByText("FYXER")).toBeTruthy();
-    expect(screen.getByText("2025 —")).toBeTruthy();
+    expect(screen.getByText("2025 · now")).toBeTruthy();
   });
 
   it("sits directly on the page rather than in a box", () => {
