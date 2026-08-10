@@ -183,9 +183,15 @@ export function ChatConversation({
         </>
       }
     >
-      <PageHeader label="ASK" title="Lucien George builds products end to end, and ships them whole.">
+      {/*
+        The h1 is his name and nothing else. It carries the page's strongest
+        on-page signal and matches what the Person JSON-LD claims, and a
+        portfolio does not need to open by telling you how good the work is -
+        the transcript underneath is the argument.
+      */}
+      <PageHeader label="ASK" title="Lucien George">
         <p className="max-w-[41rem] font-sans text-[17px]/relaxed text-ink-soft">
-          Since 2013. Ask the page anything; it has read all of it.
+          Product engineer in London, originally from Beirut.
         </p>
       </PageHeader>
 

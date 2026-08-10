@@ -142,6 +142,18 @@ test.describe("static content pages", () => {
     expect(response?.status()).toBe(404);
   });
 
+  /*
+   * The homepage keeps exactly one h1 and it is the name, not a claim about
+   * the work. It is the page's strongest on-page signal and the thing the
+   * Person JSON-LD below asserts, so it stays a plain identity line.
+   */
+  test("/ (chat homepage) names the subject in a single h1", async ({ page }) => {
+    await page.goto("/");
+    const h1 = page.locator("h1");
+    await expect(h1).toHaveCount(1);
+    await expect(h1).toHaveText("Lucien George");
+  });
+
   test("/ (chat homepage) has FAQPage + Person + WebSite JSON-LD", async ({ page }) => {
     await page.goto("/");
     const ldNodes = await page.locator('script[type="application/ld+json"]').allTextContents();
