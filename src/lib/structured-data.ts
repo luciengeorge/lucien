@@ -1,3 +1,4 @@
+import { CANONICAL_NAME } from "#/lib/name-misspellings";
 import { SOCIAL_LINKS } from "#/lib/social-links";
 
 const SITE_URL = "https://www.luciengeorge.com";
@@ -11,7 +12,7 @@ export const structuredData = {
     {
       "@type": "Person",
       "@id": `${SITE_URL}/#person`,
-      name: "Lucien George",
+      name: CANONICAL_NAME,
       givenName: "Lucien",
       familyName: "George",
       jobTitle: "Senior Product Engineer",
@@ -69,6 +70,14 @@ export const structuredData = {
           acceptedAnswer: {
             "@type": "Answer",
             text: "Lucien George is a Senior Product Engineer at Fyxer, based in London and originally from Beirut, Lebanon. He builds products end-to-end and previously worked at Shopify, Le Wagon, and co-founded Localista, Skyla, and Impact Lebanon.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "Is it Lucien George or Lucien Georges?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "The name is Lucien George, no s. It gets written Lucien Georges or Lucian George often enough that both turn up in search, and George Lucien reverses it, but all three are wrong: it is Lucien George.",
           },
         },
         {

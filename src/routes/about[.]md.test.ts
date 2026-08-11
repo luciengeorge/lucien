@@ -1,5 +1,6 @@
 import { ABOUT_META } from "#/lib/content/page-meta";
 import { ABOUT_SOURCES } from "#/lib/content/registry";
+import { NAME_MISSPELLINGS } from "#/lib/name-misspellings";
 import { MARKDOWN_CONTENT_TYPE, SITE_URL } from "#/lib/site-config";
 import { describe, expect, it } from "vitest";
 
@@ -45,5 +46,14 @@ describe("GET /about.md", () => {
       const firstLine = source.trim().split("\n")[0];
       if (firstLine) expect(body).toContain(firstLine);
     }
+  });
+
+  it("carries the misspellings and the correct spelling, so the markdown mirror and the RAG index answer them too", async () => {
+    const res = await getHandler()({ request: new Request("http://localhost/about.md") });
+    const body = await res.text();
+    for (const misspelling of NAME_MISSPELLINGS) {
+      expect(body).toContain(misspelling);
+    }
+    expect(body).toContain("no s");
   });
 });
