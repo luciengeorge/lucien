@@ -34,5 +34,10 @@ export const Route = createFileRoute("/")({
 function HomePage() {
   const { initialChatState } = Route.useLoaderData();
 
-  return <ChatPage initialChatState={initialChatState} />;
+  return (
+    <>
+      <h1 className="sr-only">Lucien George, Senior Product Engineer at Fyxer</h1>
+      <ChatPage initialChatState={initialChatState} />
+    </>
+  );
 }

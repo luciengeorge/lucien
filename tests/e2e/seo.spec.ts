@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+import { WORK_META } from "../../src/lib/content/work-meta";
+
 test.describe("SEO / GEO / AEO routes", () => {
   test("/robots.txt is served as plain text with AI crawler allows and sitemap", async ({ request }) => {
     const res = await request.get("/robots.txt");
@@ -211,6 +213,23 @@ test.describe("route <head> metadata", () => {
       await page.goto(path);
       const jsonLd = await page.locator('script[type="application/ld+json"]').allTextContents();
       expect(jsonLd.some((s) => s.includes('"@type":"BreadcrumbList"'))).toBe(true);
+    }
+  });
+
+  test("every page has exactly one h1 in the served HTML, including the chat homepage", async ({ request }) => {
+    for (const path of ["/", "/about", "/work", "/work/fyxer", "/skills", "/education", "/resume"]) {
+      const res = await request.get(path);
+      expect(res.status(), `${path} did not return 200`).toBe(200);
+      const html = await res.text();
+      expect(html.match(/<h1[\s>]/g) ?? [], `${path} should have exactly one h1`).toHaveLength(1);
+    }
+  });
+
+  test("/resume links to every work entry, so they are reachable from an indexed page", async ({ request }) => {
+    const res = await request.get("/resume");
+    const html = await res.text();
+    for (const entry of WORK_META) {
+      expect(html, `/resume should link to /work/${entry.slug}`).toContain(`href="/work/${entry.slug}"`);
     }
   });
 });

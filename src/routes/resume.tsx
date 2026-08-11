@@ -7,9 +7,10 @@ import { formatExperienceDuration, formatPeriod, loadResume } from "#/lib/resume
 import { buildSeoHead } from "#/lib/seo";
 import { OG_IMAGE_URL, SITE_URL } from "#/lib/site-config";
 import { cn } from "#/lib/utils";
+import { workSlugForCompany } from "#/lib/work-slug-for-company";
 import { Download01Icon } from "@hugeicons-pro/core-stroke-rounded";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 
 const RESUME_URL = `${SITE_URL}/resume`;
 const { title: TITLE, description: DESCRIPTION } = RESUME_META;
@@ -182,6 +183,7 @@ function ResumePage() {
             <ol className="relative">
               {experiences.map((experience, index) => {
                 const isLast = index === experiences.length - 1;
+                const workSlug = workSlugForCompany(experience.company);
                 return (
                   <li key={`${experience.company}-${index}`} className={cn("relative pl-14", isLast ? "pb-0" : "pb-8")}>
                     {!isLast ? (
@@ -216,6 +218,16 @@ function ResumePage() {
                         </li>
                       ))}
                     </ul>
+
+                    {workSlug ? (
+                      <Link
+                        className="mt-3 inline-block text-xs font-medium text-neutral-600 hover:text-neutral-950 hover:underline print:hidden"
+                        params={{ slug: workSlug }}
+                        to="/work/$slug"
+                      >
+                        More on {experience.company}
+                      </Link>
+                    ) : null}
                   </li>
                 );
               })}
