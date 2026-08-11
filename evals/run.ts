@@ -11,13 +11,14 @@ import type { ActorResult, CategorySummary, EvalCase, EvalCategory, EvalReport, 
 
 import { api } from "../convex/_generated/api";
 import { judge } from "./judge";
+import { DEFAULT_ACTOR_MODEL, DEFAULT_EXPANSION_MODEL, DEFAULT_JUDGE_MODEL } from "./models";
 import { EvalCaseSchema } from "./types";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const ACTOR_MODEL = process.env.EVAL_ACTOR_MODEL ?? "gpt-5.6-luna";
-const JUDGE_MODEL = process.env.EVAL_JUDGE_MODEL ?? "gpt-5.4-mini";
-const EXPANSION_MODEL = process.env.EVAL_EXPANSION_MODEL ?? "gpt-5.6-luna";
+const ACTOR_MODEL = process.env.EVAL_ACTOR_MODEL ?? DEFAULT_ACTOR_MODEL;
+const JUDGE_MODEL = process.env.EVAL_JUDGE_MODEL ?? DEFAULT_JUDGE_MODEL;
+const EXPANSION_MODEL = process.env.EVAL_EXPANSION_MODEL ?? DEFAULT_EXPANSION_MODEL;
 // Fixed seed + temperature 0 for reproducible actor/expansion output. These are
 // best-effort on reasoning models (which ignore temperature) but make the run
 // fully deterministic on non-reasoning models. Override via EVAL_SEED.
