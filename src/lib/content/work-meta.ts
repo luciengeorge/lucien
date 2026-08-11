@@ -20,6 +20,8 @@ export interface WorkMeta {
   logo: string | null;
   /** Brand color used as the logo fallback background. */
   color: string;
+  /** Company names `content/resume.json` uses for this entry, when they differ from `company`. */
+  resumeCompanies?: readonly string[];
 }
 
 export const WORK_META: readonly WorkMeta[] = [
@@ -86,5 +88,6 @@ export const WORK_META: readonly WorkMeta[] = [
     summary: "Hoxton Digital (Rails freelance), Dataflow (Beirut), McGill projects, and early Android apps.",
     logo: "/companies/hoxton-digital.png",
     color: "#1d4ed8",
+    resumeCompanies: ["Hoxton Digital"],
   },
 ] as const;
