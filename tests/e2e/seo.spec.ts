@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { WORK_META } from "../../src/lib/content/work-meta";
+import { WRITING_META } from "../../src/lib/content/writing-meta";
 
 test.describe("SEO / GEO / AEO routes", () => {
   test("/robots.txt is served as plain text with AI crawler allows and sitemap", async ({ request }) => {
@@ -20,8 +21,11 @@ test.describe("SEO / GEO / AEO routes", () => {
     expect(res.status()).toBe(200);
     expect(res.headers()["content-type"]).toMatch(/application\/xml/);
     const body = await res.text();
-    for (const path of ["/", "/about", "/work", "/work/fyxer", "/skills", "/education", "/resume"]) {
+    for (const path of ["/", "/about", "/work", "/work/fyxer", "/writing", "/skills", "/education", "/resume"]) {
       expect(body).toContain(`https://www.luciengeorge.com${path}`);
+    }
+    for (const entry of WRITING_META) {
+      expect(body).toContain(`https://www.luciengeorge.com/writing/${entry.slug}`);
     }
   });
 
@@ -217,7 +221,18 @@ test.describe("route <head> metadata", () => {
   });
 
   test("every page has exactly one h1 in the served HTML, including the chat homepage", async ({ request }) => {
-    for (const path of ["/", "/about", "/work", "/work/fyxer", "/skills", "/education", "/resume"]) {
+    const writingPaths = WRITING_META.map((entry) => `/writing/${entry.slug}`);
+    for (const path of [
+      "/",
+      "/about",
+      "/work",
+      "/work/fyxer",
+      "/writing",
+      "/skills",
+      "/education",
+      "/resume",
+      ...writingPaths,
+    ]) {
       const res = await request.get(path);
       expect(res.status(), `${path} did not return 200`).toBe(200);
       const html = await res.text();

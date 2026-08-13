@@ -4,6 +4,7 @@ const NAV_LINKS: Array<{ label: string; href: string }> = [
   { label: "Chat", href: "/" },
   { label: "About", href: "/about" },
   { label: "Work", href: "/work" },
+  { label: "Writing", href: "/writing" },
   { label: "Skills", href: "/skills" },
   { label: "Education", href: "/education" },
   { label: "CV", href: "/resume" },

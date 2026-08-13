@@ -7,11 +7,20 @@ const IS_CI = Boolean(process.env.CI);
 // Storage state produced by the auth setup project and consumed by logged-in specs.
 const AUTH_FILE = "tests/e2e/.auth/user.json";
 
-// Locally we load secrets from .env.local; in CI the job's env block already
-// has them, so we run vite directly (there is no .env.local on the runner).
-const DEV_COMMAND = IS_CI
-  ? `vite dev --port ${PORT}`
-  : `pnpm dlx dotenv-cli -e .env.local -- vite dev --port ${PORT}`;
+/*
+ * These run against a production build, not `vite dev`.
+ *
+ * The dev server does not hydrate the app: client React never attaches, so a
+ * ref callback never fires and a scroll listener is never registered. Every
+ * assertion that survives a page with no client JS still passes there, which is
+ * why a suite of 57 stayed green while the one test that needs hydration could
+ * not. Serving the real bundle tests what actually ships.
+ *
+ * Locally we load secrets from .env.local; in CI the job's env block already
+ * has them (there is no .env.local on the runner).
+ */
+const SERVE_COMMAND = `pnpm build && PORT=${PORT} pnpm start`;
+const DEV_COMMAND = IS_CI ? SERVE_COMMAND : `pnpm dlx dotenv-cli -e .env.local -- sh -c "${SERVE_COMMAND}"`;
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -48,7 +57,8 @@ export default defineConfig({
         command: DEV_COMMAND,
         url: BASE_URL,
         reuseExistingServer: !IS_CI,
-        timeout: 120_000,
+        // Generous because the command builds first: the build alone is ~2 min on a runner.
+        timeout: 420_000,
         stdout: "ignore",
         stderr: "pipe",
         // E2E_TEST_MODE relaxes email verification so the seeded user can sign in.

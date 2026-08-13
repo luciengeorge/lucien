@@ -13,8 +13,8 @@ function runConvexFunction(name: string, args: Record<string, unknown>): string 
 }
 
 async function main() {
-  const files = await readdir(CONTENT_DIR);
-  const mdFiles = files.filter((f) => f.endsWith(".md") && !SKIP_FILES.includes(f));
+  const entries = await readdir(CONTENT_DIR, { recursive: true });
+  const mdFiles = entries.filter((f) => f.endsWith(".md") && !SKIP_FILES.includes(basename(f)));
 
   console.log(`Found ${mdFiles.length} content files to seed\n`);
 

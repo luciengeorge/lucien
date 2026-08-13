@@ -4,6 +4,7 @@ import { CompanyLogo } from "#/components/resume/company-logo";
 import { buttonVariants } from "#/components/ui/button";
 import { RESUME_META } from "#/lib/content/page-meta";
 import { formatExperienceDuration, formatPeriod, loadResume } from "#/lib/resume/load";
+import { usePageScrollRestoration } from "#/lib/scroll-restoration";
 import { buildSeoHead } from "#/lib/seo";
 import { OG_IMAGE_URL, SITE_URL } from "#/lib/site-config";
 import { cn } from "#/lib/utils";
@@ -70,9 +71,10 @@ export const Route = createFileRoute("/resume")({
 function ResumePage() {
   const resume = Route.useLoaderData();
   const { education, experiences, personal, skills } = resume;
+  const scrollRestoration = usePageScrollRestoration();
 
   return (
-    <div className="min-h-0 grow overflow-y-auto">
+    <div className="min-h-0 grow overflow-y-auto" {...scrollRestoration}>
       <article className="mx-auto w-full max-w-4xl px-4 pt-6 pb-10 sm:px-6 sm:pt-10 sm:pb-16">
         <header className="flex flex-col gap-6 border-b border-neutral-950/10 pb-8 sm:flex-row sm:items-end sm:justify-between">
           <div>

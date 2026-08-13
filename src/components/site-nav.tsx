@@ -32,6 +32,7 @@ const PRIMARY_ITEMS: NavItem[] = [
   { to: "/", label: "Chat" },
   { to: "/about", label: "About" },
   { to: "/work", label: "Work" },
+  { to: "/writing", label: "Writing" },
   { to: "/skills", label: "Skills" },
   { to: "/education", label: "Education" },
 ];
@@ -162,7 +163,7 @@ function MobileMenu() {
 
 export function SiteNav() {
   return (
-    <div className="fixed inset-x-0 top-0 z-30">
+    <div className="fixed inset-x-0 top-0 z-30" style={{ viewTransitionName: "site-chrome" }}>
       <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 pt-3 sm:px-6">
         {/* Desktop pill - sits centered above content */}
         <div className="hidden flex-1 justify-center lg:flex">

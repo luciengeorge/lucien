@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WritingDotmdRouteImport } from './routes/writing[.]md'
 import { Route as WorkDotmdRouteImport } from './routes/work[.]md'
 import { Route as SkillsDotmdRouteImport } from './routes/skills[.]md'
 import { Route as SkillsRouteImport } from './routes/skills'
@@ -23,7 +24,10 @@ import { Route as AboutDotmdRouteImport } from './routes/about[.]md'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as WritingIndexRouteImport } from './routes/writing/index'
 import { Route as WorkIndexRouteImport } from './routes/work/index'
+import { Route as WritingChar123slugChar125DotmdRouteImport } from './routes/writing/{$slug}[.]md'
+import { Route as WritingSlugRouteImport } from './routes/writing/$slug'
 import { Route as WorkChar123slugChar125DotmdRouteImport } from './routes/work/{$slug}[.]md'
 import { Route as WorkSlugRouteImport } from './routes/work/$slug'
 import { Route as AuthSignupRouteImport } from './routes/_auth/signup'
@@ -32,6 +36,11 @@ import { Route as ApiChatIndexRouteImport } from './routes/api/chat/index'
 import { Route as ApiResumePdfRouteImport } from './routes/api/resume/pdf'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
+const WritingDotmdRoute = WritingDotmdRouteImport.update({
+  id: '/writing.md',
+  path: '/writing.md',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WorkDotmdRoute = WorkDotmdRouteImport.update({
   id: '/work.md',
   path: '/work.md',
@@ -101,9 +110,25 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WritingIndexRoute = WritingIndexRouteImport.update({
+  id: '/writing/',
+  path: '/writing/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WorkIndexRoute = WorkIndexRouteImport.update({
   id: '/work/',
   path: '/work/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WritingChar123slugChar125DotmdRoute =
+  WritingChar123slugChar125DotmdRouteImport.update({
+    id: '/writing/{$slug}.md',
+    path: '/writing/{$slug}.md',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const WritingSlugRoute = WritingSlugRouteImport.update({
+  id: '/writing/$slug',
+  path: '/writing/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WorkChar123slugChar125DotmdRoute =
@@ -157,11 +182,15 @@ export interface FileRoutesByFullPath {
   '/skills': typeof SkillsRoute
   '/skills.md': typeof SkillsDotmdRoute
   '/work.md': typeof WorkDotmdRoute
+  '/writing.md': typeof WritingDotmdRoute
   '/login': typeof AuthLoginRoute
   '/signup': typeof AuthSignupRoute
   '/work/$slug': typeof WorkSlugRoute
   '/work/{$slug}.md': typeof WorkChar123slugChar125DotmdRoute
+  '/writing/$slug': typeof WritingSlugRoute
+  '/writing/{$slug}.md': typeof WritingChar123slugChar125DotmdRoute
   '/work/': typeof WorkIndexRoute
+  '/writing/': typeof WritingIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/resume/pdf': typeof ApiResumePdfRoute
   '/api/chat/': typeof ApiChatIndexRoute
@@ -180,11 +209,15 @@ export interface FileRoutesByTo {
   '/skills': typeof SkillsRoute
   '/skills.md': typeof SkillsDotmdRoute
   '/work.md': typeof WorkDotmdRoute
+  '/writing.md': typeof WritingDotmdRoute
   '/login': typeof AuthLoginRoute
   '/signup': typeof AuthSignupRoute
   '/work/$slug': typeof WorkSlugRoute
   '/work/{$slug}.md': typeof WorkChar123slugChar125DotmdRoute
+  '/writing/$slug': typeof WritingSlugRoute
+  '/writing/{$slug}.md': typeof WritingChar123slugChar125DotmdRoute
   '/work': typeof WorkIndexRoute
+  '/writing': typeof WritingIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/resume/pdf': typeof ApiResumePdfRoute
   '/api/chat': typeof ApiChatIndexRoute
@@ -205,11 +238,15 @@ export interface FileRoutesById {
   '/skills': typeof SkillsRoute
   '/skills.md': typeof SkillsDotmdRoute
   '/work.md': typeof WorkDotmdRoute
+  '/writing.md': typeof WritingDotmdRoute
   '/_auth/login': typeof AuthLoginRoute
   '/_auth/signup': typeof AuthSignupRoute
   '/work/$slug': typeof WorkSlugRoute
   '/work/{$slug}.md': typeof WorkChar123slugChar125DotmdRoute
+  '/writing/$slug': typeof WritingSlugRoute
+  '/writing/{$slug}.md': typeof WritingChar123slugChar125DotmdRoute
   '/work/': typeof WorkIndexRoute
+  '/writing/': typeof WritingIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/resume/pdf': typeof ApiResumePdfRoute
   '/api/chat/': typeof ApiChatIndexRoute
@@ -230,11 +267,15 @@ export interface FileRouteTypes {
     | '/skills'
     | '/skills.md'
     | '/work.md'
+    | '/writing.md'
     | '/login'
     | '/signup'
     | '/work/$slug'
     | '/work/{$slug}.md'
+    | '/writing/$slug'
+    | '/writing/{$slug}.md'
     | '/work/'
+    | '/writing/'
     | '/api/auth/$'
     | '/api/resume/pdf'
     | '/api/chat/'
@@ -253,11 +294,15 @@ export interface FileRouteTypes {
     | '/skills'
     | '/skills.md'
     | '/work.md'
+    | '/writing.md'
     | '/login'
     | '/signup'
     | '/work/$slug'
     | '/work/{$slug}.md'
+    | '/writing/$slug'
+    | '/writing/{$slug}.md'
     | '/work'
+    | '/writing'
     | '/api/auth/$'
     | '/api/resume/pdf'
     | '/api/chat'
@@ -277,11 +322,15 @@ export interface FileRouteTypes {
     | '/skills'
     | '/skills.md'
     | '/work.md'
+    | '/writing.md'
     | '/_auth/login'
     | '/_auth/signup'
     | '/work/$slug'
     | '/work/{$slug}.md'
+    | '/writing/$slug'
+    | '/writing/{$slug}.md'
     | '/work/'
+    | '/writing/'
     | '/api/auth/$'
     | '/api/resume/pdf'
     | '/api/chat/'
@@ -302,9 +351,13 @@ export interface RootRouteChildren {
   SkillsRoute: typeof SkillsRoute
   SkillsDotmdRoute: typeof SkillsDotmdRoute
   WorkDotmdRoute: typeof WorkDotmdRoute
+  WritingDotmdRoute: typeof WritingDotmdRoute
   WorkSlugRoute: typeof WorkSlugRoute
   WorkChar123slugChar125DotmdRoute: typeof WorkChar123slugChar125DotmdRoute
+  WritingSlugRoute: typeof WritingSlugRoute
+  WritingChar123slugChar125DotmdRoute: typeof WritingChar123slugChar125DotmdRoute
   WorkIndexRoute: typeof WorkIndexRoute
+  WritingIndexRoute: typeof WritingIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiResumePdfRoute: typeof ApiResumePdfRoute
   ApiChatIndexRoute: typeof ApiChatIndexRoute
@@ -312,6 +365,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/writing.md': {
+      id: '/writing.md'
+      path: '/writing.md'
+      fullPath: '/writing.md'
+      preLoaderRoute: typeof WritingDotmdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/work.md': {
       id: '/work.md'
       path: '/work.md'
@@ -410,11 +470,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/writing/': {
+      id: '/writing/'
+      path: '/writing'
+      fullPath: '/writing/'
+      preLoaderRoute: typeof WritingIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/work/': {
       id: '/work/'
       path: '/work'
       fullPath: '/work/'
       preLoaderRoute: typeof WorkIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/writing/{$slug}.md': {
+      id: '/writing/{$slug}.md'
+      path: '/writing/{$slug}.md'
+      fullPath: '/writing/{$slug}.md'
+      preLoaderRoute: typeof WritingChar123slugChar125DotmdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/writing/$slug': {
+      id: '/writing/$slug'
+      path: '/writing/$slug'
+      fullPath: '/writing/$slug'
+      preLoaderRoute: typeof WritingSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/work/{$slug}.md': {
@@ -496,9 +577,13 @@ const rootRouteChildren: RootRouteChildren = {
   SkillsRoute: SkillsRoute,
   SkillsDotmdRoute: SkillsDotmdRoute,
   WorkDotmdRoute: WorkDotmdRoute,
+  WritingDotmdRoute: WritingDotmdRoute,
   WorkSlugRoute: WorkSlugRoute,
   WorkChar123slugChar125DotmdRoute: WorkChar123slugChar125DotmdRoute,
+  WritingSlugRoute: WritingSlugRoute,
+  WritingChar123slugChar125DotmdRoute: WritingChar123slugChar125DotmdRoute,
   WorkIndexRoute: WorkIndexRoute,
+  WritingIndexRoute: WritingIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiResumePdfRoute: ApiResumePdfRoute,
   ApiChatIndexRoute: ApiChatIndexRoute,

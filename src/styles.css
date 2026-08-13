@@ -130,6 +130,48 @@ body,
   min-height: 100%;
 }
 
+/*
+ * Page transitions. Everything unnamed is captured in one `root` snapshot, so
+ * without the exclusion below the fixed nav cross-fades against itself on every
+ * navigation and the persistent chrome visibly flickers.
+ *
+ * Content fades up rather than straight cross-fading, which reads as one page
+ * replacing another instead of two pages briefly overlapping. No overshoot:
+ * the site's register is plain.
+ */
+@keyframes vt-content-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@keyframes vt-content-out {
+  to {
+    opacity: 0;
+  }
+}
+
+::view-transition-group(*) {
+  animation-duration: 260ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+::view-transition-old(root) {
+  animation: 160ms cubic-bezier(0.4, 0, 1, 1) both vt-content-out;
+}
+
+::view-transition-new(root) {
+  animation: 240ms cubic-bezier(0.22, 1, 0.36, 1) both vt-content-in;
+}
+
+/* The nav is the same element on both pages: hold it completely still. */
+::view-transition-group(site-chrome),
+::view-transition-old(site-chrome),
+::view-transition-new(site-chrome) {
+  animation: none;
+}
+
 /* Respect reduced-motion: skip cross-document/view transitions entirely. */
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-group(*),
