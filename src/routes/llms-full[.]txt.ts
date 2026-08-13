@@ -1,4 +1,10 @@
-import { ABOUT_SOURCES, EDUCATION_SOURCES, SKILLS_SOURCES, WORK_ENTRIES } from "#/lib/content/registry";
+import {
+  ABOUT_SOURCES,
+  EDUCATION_SOURCES,
+  SKILLS_SOURCES,
+  WORK_ENTRIES,
+  WRITING_ENTRIES,
+} from "#/lib/content/registry";
 import { loadResume } from "#/lib/resume/load";
 import { renderResumeMarkdown } from "#/lib/resume/markdown";
 import { CACHE_HEADER, SITE_URL } from "#/lib/site-config";
@@ -35,6 +41,17 @@ function buildLlmsFull(): string {
     parts.push(``);
     parts.push(entry.source.trim());
     parts.push(``);
+  }
+
+  if (WRITING_ENTRIES.length > 0) {
+    parts.push(`## Writing (${SITE_URL}/writing)`);
+    parts.push(``);
+    for (const entry of WRITING_ENTRIES) {
+      parts.push(`### ${entry.title} - ${entry.published} (${SITE_URL}/writing/${entry.slug})`);
+      parts.push(``);
+      parts.push(entry.source.trim());
+      parts.push(``);
+    }
   }
 
   parts.push(`## Resume (${SITE_URL}/resume)`);

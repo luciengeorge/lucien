@@ -1,4 +1,4 @@
-import { WORK_ENTRIES } from "#/lib/content/registry";
+import { WORK_ENTRIES, WRITING_ENTRIES } from "#/lib/content/registry";
 import { CACHE_HEADER, SITE_URL } from "#/lib/site-config";
 import { createFileRoute } from "@tanstack/react-router";
 
@@ -25,6 +25,13 @@ function buildSitemap(): string {
       loc: `${SITE_URL}/work/${entry.slug}`,
       lastmod,
       changefreq: "monthly",
+      priority: "0.7",
+    })),
+    { loc: `${SITE_URL}/writing`, lastmod, changefreq: "monthly", priority: "0.8" },
+    ...WRITING_ENTRIES.map<SitemapEntry>((entry) => ({
+      loc: `${SITE_URL}/writing/${entry.slug}`,
+      lastmod: entry.updated ?? entry.published,
+      changefreq: "yearly",
       priority: "0.7",
     })),
     { loc: `${SITE_URL}/skills`, lastmod, changefreq: "monthly", priority: "0.8" },

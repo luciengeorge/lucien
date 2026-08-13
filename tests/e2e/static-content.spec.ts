@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { WORK_META } from "../../src/lib/content/work-meta";
+import { WRITING_META } from "../../src/lib/content/writing-meta";
 
 const SITE_URL = "https://www.luciengeorge.com";
 
@@ -51,6 +52,20 @@ const PAGE_CASES: PageCase[] = [
     h1: new RegExp(`^${escapeRegex(company)}$`),
     jsonLdTypes: ["Article", "BreadcrumbList"],
     canonical: `${SITE_URL}/work/${slug}`,
+  })),
+  {
+    path: "/writing",
+    title: /Writing/,
+    h1: /Writing/,
+    jsonLdTypes: ["Blog", "BlogPosting"],
+    canonical: `${SITE_URL}/writing`,
+  },
+  ...WRITING_META.map<PageCase>(({ slug, title }) => ({
+    path: `/writing/${slug}`,
+    title: new RegExp(escapeRegex(title)),
+    h1: new RegExp(`^${escapeRegex(title)}$`),
+    jsonLdTypes: ["BlogPosting", "BreadcrumbList"],
+    canonical: `${SITE_URL}/writing/${slug}`,
   })),
 ];
 

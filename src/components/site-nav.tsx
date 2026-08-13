@@ -32,6 +32,7 @@ const PRIMARY_ITEMS: NavItem[] = [
   { to: "/", label: "Chat" },
   { to: "/about", label: "About" },
   { to: "/work", label: "Work" },
+  { to: "/writing", label: "Writing" },
   { to: "/skills", label: "Skills" },
   { to: "/education", label: "Education" },
 ];

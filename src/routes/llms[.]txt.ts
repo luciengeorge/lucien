@@ -1,4 +1,4 @@
-import { WORK_ENTRIES } from "#/lib/content/registry";
+import { WORK_ENTRIES, WRITING_ENTRIES } from "#/lib/content/registry";
 import { CACHE_HEADER, SITE_URL } from "#/lib/site-config";
 import { createFileRoute } from "@tanstack/react-router";
 
@@ -21,6 +21,13 @@ function buildLlmsIndex(): string {
     ...WORK_ENTRIES.map(
       (entry) =>
         `- [${entry.role} at ${entry.company}](${SITE_URL}/work/${entry.slug}): ${entry.summary} ([Markdown](${SITE_URL}/work/${entry.slug}.md))`,
+    ),
+    ``,
+    `## Writing`,
+    `- [Writing index](${SITE_URL}/writing): Articles by Lucien on what he has built and how it works. ([Markdown](${SITE_URL}/writing.md))`,
+    ...WRITING_ENTRIES.map(
+      (entry) =>
+        `- [${entry.title}](${SITE_URL}/writing/${entry.slug}): ${entry.summary} ([Markdown](${SITE_URL}/writing/${entry.slug}.md))`,
     ),
     ``,
     `## Optional`,

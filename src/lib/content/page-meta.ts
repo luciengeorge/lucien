@@ -38,6 +38,20 @@ export const RESUME_META: PageMeta = {
     "Resume of Lucien George, Senior Product Engineer at Fyxer. Past: Shopify, Le Wagon, and startups. McGill BEng in Software Engineering.",
 };
 
+export const WRITING_INDEX_META: PageMeta = {
+  title: "Lucien George | Writing",
+  description:
+    "Writing by Lucien George on product engineering: AI applications and retrieval, desktop and native app work, testing, and the parts that turned out to be wrong.",
+};
+
+/** Per-article title/description for a `/writing/$slug` page. */
+export function buildWritingEntryMeta(entry: { title: string; description: string }): PageMeta {
+  return {
+    title: `${entry.title} | Lucien George`,
+    description: entry.description,
+  };
+}
+
 /** Per-entry title/description for a `/work/$slug` page, derived from its WorkEntry. */
 export function buildWorkEntryMeta(entry: { company: string; role: string; summary: string }): PageMeta {
   return {
