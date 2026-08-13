@@ -1,4 +1,3 @@
-import { findWorkEntry } from "#/lib/content/registry";
 import { WORK_META } from "#/lib/content/work-meta";
 
 /** The real work entry slugs, used to build the `link_work_entry` tool's z.enum input. */
@@ -16,7 +15,7 @@ export interface LinkWorkEntryOutput {
  * slug falls back to the work index instead of failing the tool call.
  */
 export function buildLinkWorkEntryOutput(slug: string): LinkWorkEntryOutput {
-  const entry = findWorkEntry(slug);
+  const entry = WORK_META.find((meta) => meta.slug === slug);
   if (!entry) {
     return { company: "Lucien George", role: "", slug, url: "/work" };
   }

@@ -1,5 +1,5 @@
 import { openai } from "@ai-sdk/openai";
-import { generateText } from "ai";
+import { generateText, stepCountIs } from "ai";
 import { ConvexHttpClient } from "convex/browser";
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { readFile, writeFile } from "node:fs/promises";
@@ -10,6 +10,7 @@ import { fileURLToPath } from "node:url";
 import type { ActorResult, CategorySummary, EvalCase, EvalCategory, EvalReport, EvalResult } from "./types";
 
 import { api } from "../convex/_generated/api";
+import { buildChatTools } from "../src/lib/chat/tools";
 import { judge } from "./judge";
 import { DEFAULT_ACTOR_MODEL, DEFAULT_EXPANSION_MODEL, DEFAULT_JUDGE_MODEL } from "./models";
 import { EvalCaseSchema } from "./types";
@@ -102,6 +103,12 @@ async function actorRun({
     prompt: evalCase.question,
     temperature: 0,
     seed: EVAL_SEED,
+    stopWhen: stepCountIs(3),
+    tools: buildChatTools({
+      conversationId: `eval-${evalCase.id}`,
+      // Never actually messages Lucien: the harness would send 57 of these per run.
+      postContact: () => Promise.resolve(true),
+    }),
   });
 
   return {

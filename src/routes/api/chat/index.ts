@@ -8,23 +8,14 @@ import {
   MAX_HISTORY_MESSAGES,
   parseSerializedMessages,
 } from "#/lib/chat-types";
+import { buildChatTools } from "#/lib/chat/tools";
 import { getConversationSession } from "#/lib/conversation-session.server";
-import { buildLinkWorkEntryOutput, WORK_ENTRY_SLUGS } from "#/lib/link-work-entry";
 import { createLogger } from "#/lib/logger";
 import { postContactToSlack } from "#/lib/notify-slack";
 import { stripDashes } from "#/lib/strip-dashes";
 import { openai } from "@ai-sdk/openai";
 import { createFileRoute, notFound } from "@tanstack/react-router";
-import {
-  convertToModelMessages,
-  generateId,
-  generateText,
-  stepCountIs,
-  streamText,
-  tool,
-  validateUIMessages,
-} from "ai";
-import { z } from "zod";
+import { convertToModelMessages, generateId, generateText, stepCountIs, streamText, validateUIMessages } from "ai";
 
 import systemPrompt from "../../../../content/system-prompt.md?raw";
 import { api } from "../../../../convex/_generated/api";
@@ -46,7 +37,7 @@ Examples:
  * Rewrites streamed text-delta chunks through stripDashes so the client never sees
  * an em-dash or en-dash, even mid-stream. Non-text chunks pass through unchanged.
  */
-function stripDashesFromStream(): TransformStream<TextStreamPart<ToolSet>, TextStreamPart<ToolSet>> {
+function stripDashesFromStream<Tools extends ToolSet>(): TransformStream<TextStreamPart<Tools>, TextStreamPart<Tools>> {
   return new TransformStream({
     transform(chunk, controller) {
       controller.enqueue(chunk.type === "text-delta" ? { ...chunk, text: stripDashes(chunk.text) } : chunk);
@@ -181,39 +172,10 @@ export const Route = createFileRoute("/api/chat/")({
               logger.warn("chat response empty", { conversationId: id, finishReason, requestId, usage });
             }
           },
-          tools: {
-            download_resume: tool({
-              description:
-                "Provide Lucien's resume as a downloadable PDF. Call this when the user asks for Lucien's resume, CV, or PDF.",
-              inputSchema: z.object({}),
-              execute: async () => ({
-                filename: "lucien-george-resume.pdf",
-                url: "/api/resume/pdf",
-              }),
-            }),
-            link_work_entry: tool({
-              description:
-                "Link to the case study page for one of Lucien's work entries. Call this when pointing the user to more detail on a specific role or project.",
-              inputSchema: z.object({ slug: z.enum(WORK_ENTRY_SLUGS) }),
-              execute: async ({ slug }) => buildLinkWorkEntryOutput(slug),
-            }),
-            contact_lucien: tool({
-              description:
-                "Send a message to Lucien on the visitor's behalf. Call this once the visitor has given a genuine message to send, along with their name and/or contact info if available.",
-              inputSchema: z.object({
-                contact: z.string().max(200).optional(),
-                message: z.string().min(1).max(2000),
-                name: z.string().max(120).optional(),
-              }),
-              execute: async ({ contact, message, name }) => {
-                // Abuse posture v1: this endpoint is already rate-limited per-IP/per-session
-                // (checkChatRateLimit above, plan 002). A dedicated, tighter per-session cap
-                // specifically for contact sends is a future tightening, not required for v1.
-                const sent = await postContactToSlack({ contact, conversationId: id, message, name });
-                return { status: sent ? "sent" : "failed" };
-              },
-            }),
-          },
+          // Abuse posture v1: this endpoint is already rate-limited per-IP/per-session
+          // (checkChatRateLimit above, plan 002). A dedicated, tighter per-session cap
+          // specifically for contact sends is a future tightening, not required for v1.
+          tools: buildChatTools({ conversationId: id, postContact: postContactToSlack }),
         });
 
         logger.info("chat stream started", {
