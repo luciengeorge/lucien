@@ -36,6 +36,8 @@ Two design decisions did most of the work.
 
 **The actor runs the real pipeline, not a mock.** Each case goes through the same query expansion, the same vector search against the live index, the same system prompt as production. If it were mocked, it would pass forever while production rotted. The expansion prompt in the harness is copied verbatim from the route for exactly this reason, and that duplication is deliberate: I would rather have two copies that a test compares than one abstraction that hides a difference.
 
+That intent was better than my execution, and I only found out later. See below.
+
 **The judge grades against retrieved context, not against the expected-facts list.** This sounds like a detail and it is the difference between a useful gate and an annoying one. If you judge fabrication by comparing the answer to a short list of expected facts, every true statement that happens not to be on the list reads as a hallucination. So the judge sees the actual chunks the actor was given and is told, explicitly, that anything supported by that context is grounded even when it goes beyond what the case expected.
 
 The judge is sampled several times per case with the median score taken, because a single sample from a reasoning model is not a stable measurement. Scores roll up per category against thresholds in a config file, and the run exits non-zero if any category misses. That exit code is the gate.
@@ -44,14 +46,29 @@ The judge is sampled several times per case with the median score taken, because
 
 I would rather write this part than pretend the setup is finished.
 
-The gate currently passes every case at a perfect score. Fifty-seven out of fifty-seven, average exactly 1.00, in all three categories including the adversarial one. I first assumed that was a judge problem introduced when I changed models, so I checked the previous run under the old judge. Same result. Both judges score everything perfectly.
+For a long stretch the gate passed every case at a perfect score. Fifty-seven out of fifty-seven, average exactly 1.00, in all three categories including the adversarial one. I assumed that was a judge problem introduced when I swapped models, so I checked the previous run under the previous judge. Same result. Both judges scored everything perfectly.
 
-A gate that has never failed is not evidence that the system is good. It is evidence that the gate is not measuring anything. The thresholds sit at 0.85 and 0.95, which cannot fire when every score is 1.00, and the honest conclusion is that my cases are too easy rather than that my assistant is flawless. Fixing it means writing cases I expect to fail, confirming they do, and only then trusting a pass.
+A gate that has never failed is not evidence that the system is good. It is weak evidence either way, and the thresholds at 0.85 and 0.95 cannot fire when every score is 1.00. So I wrote, in an earlier draft of this piece, that the gate was measuring nothing.
 
-Which is the same rule as the rest of testing, and I skipped it because green looked like success.
+Then it failed one, and the failure was more interesting than the streak.
+
+A factual case about my Shopify work came back at 0.75, marked down for not being concise. The answer was correct and grounded, but it contained this:
+
+```
+... expanded to other major partners. to=link_work_entry code彩票登录:
+{"slug":"shopify"}Lucien worked at Shopify from January 2022 ...
+```
+
+That is the model's internal tool-routing syntax, emitted as visible prose, followed by a corrupted token and then the whole answer a second time.
+
+The cause is the harness, not the assistant. Production passes three tool definitions to the model. The eval actor passes none. Both share the same system prompt, and that prompt tells the model to call one of those tools. Instructed to use a tool it had not been given, the model wrote the call out as text instead.
+
+So the claim I made above, that the actor runs the real pipeline rather than a mock, was true of retrieval and the prompt and false at the tool boundary, which is the one seam I had not thought to check. The gate did discriminate. It just took a run where the model happened to reach for a tool, because whether it does varies between runs even at temperature zero with a fixed seed, since reasoning models ignore both.
+
+Two lessons, and the second one is the one I would keep. A gate that never fails deserves suspicion rather than confidence. And when it finally fires, the first question is not "how do I make this pass" but "which of my assumptions did this just falsify" — because in this case the answer was an assumption sitting in the paragraph above, in an article I had already written.
 
 ## What I would keep
 
-If I rebuilt this tomorrow, three things carry over. One source of content, because two sources of truth is a bug with a delay on it. Evals that exercise the real retrieval path, because the mocked version tests nothing that can break. And a judge that scores against what the model was actually given, because grading against a wishlist punishes correct answers.
+If I rebuilt this tomorrow, four things carry over. One source of content, because two sources of truth is a bug with a delay on it. Evals that exercise the real retrieval path, because the mocked version tests nothing that can break. A judge that scores against what the model was actually given, because grading against a wishlist punishes correct answers. And one source for anything the harness claims to share with production, tools included, because "the same as prod" is a claim that rots quietly until something forces you to check it.
 
 The rest is plumbing, and the plumbing was never the hard part.

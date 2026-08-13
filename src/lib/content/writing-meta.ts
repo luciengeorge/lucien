@@ -27,6 +27,6 @@ export const WRITING_META: readonly WritingMeta[] = [
       "How this site's AI assistant works end to end: markdown as the single source for both the pages and the RAG index, and an eval harness that blocks pull requests when answer quality regresses.",
     published: "2026-08-13",
     summary:
-      "The same markdown renders the pages and grounds the chat, and a 57-case eval suite runs the real retrieval pipeline on every pull request. Including the part where the gate turned out to be measuring nothing.",
+      "The same markdown renders the pages and grounds the chat, and a 57-case eval suite runs the real retrieval pipeline on every pull request. Including the run where the gate finally failed, and what it caught was the harness rather than the assistant.",
   },
 ];
