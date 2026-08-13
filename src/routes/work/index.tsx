@@ -2,6 +2,7 @@ import { DownloadCvButton } from "#/components/download-cv-button";
 import { CompanyLogo } from "#/components/resume/company-logo";
 import { WORK_INDEX_META } from "#/lib/content/page-meta";
 import { WORK_ENTRIES } from "#/lib/content/registry";
+import { usePageScrollRestoration } from "#/lib/scroll-restoration";
 import { buildSeoHead } from "#/lib/seo";
 import { SITE_URL } from "#/lib/site-config";
 import { ArrowRight01Icon } from "@hugeicons-pro/core-stroke-rounded";
@@ -42,8 +43,10 @@ export const Route = createFileRoute("/work/")({
 });
 
 function WorkIndexPage() {
+  const scrollRestoration = usePageScrollRestoration();
+
   return (
-    <div className="min-h-0 grow overflow-y-auto">
+    <div className="min-h-0 grow overflow-y-auto" {...scrollRestoration}>
       <article className="mx-auto w-full max-w-3xl px-4 pt-6 pb-16 sm:px-6 sm:pt-10 sm:pb-20">
         <header className="mb-10 flex flex-col gap-6 border-b border-neutral-950/10 pb-8 sm:flex-row sm:items-end sm:justify-between">
           <div>
