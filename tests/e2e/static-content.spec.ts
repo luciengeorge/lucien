@@ -122,6 +122,21 @@ test.describe("static content pages", () => {
     expect(response?.status()).toBe(404);
   });
 
+  /*
+   * #56 gave the homepage an sr-only h1, which fixed the machine signal and
+   * left the human one: a visitor saw a logo glyph, a nav, and a wall of
+   * assistant prose with no name anywhere. The heading is now on the page.
+   * Measured by height because an sr-only element still reports a 1px box.
+   */
+  test("/ (chat homepage) shows the name rather than hiding it from sighted visitors", async ({ page }) => {
+    await page.goto("/");
+    const h1 = page.locator("h1");
+    await expect(h1).toHaveCount(1);
+    await expect(h1).toContainText("Lucien George");
+    const box = await h1.boundingBox();
+    expect(box?.height ?? 0, "the h1 should be rendered, not screen-reader-only").toBeGreaterThan(20);
+  });
+
   test("/ (chat homepage) has FAQPage + Person + WebSite JSON-LD", async ({ page }) => {
     await page.goto("/");
     const ldNodes = await page.locator('script[type="application/ld+json"]').allTextContents();
