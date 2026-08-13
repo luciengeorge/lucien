@@ -34,9 +34,20 @@ export const Route = createFileRoute("/")({
 function HomePage() {
   const { initialChatState } = Route.useLoaderData();
 
+  /*
+   * A visible identity, not the sr-only stand-in #56 added. The page opened
+   * on a wall of assistant prose with no name, no role and nothing saying
+   * what the box at the bottom was for. This sits in space the transcript
+   * was already leaving empty, so it costs no scroll.
+   */
   return (
     <>
-      <h1 className="sr-only">Lucien George, Senior Product Engineer at Fyxer</h1>
+      <header className="mx-auto w-full max-w-3xl shrink-0 px-4 pb-3 sm:px-6 sm:pb-4">
+        <h1 className="text-xl font-semibold tracking-tight text-neutral-950 sm:text-2xl">Lucien George</h1>
+        <p className="mt-1 text-sm text-neutral-600 sm:text-base">
+          Senior Product Engineer at Fyxer. Ask this page anything about his work.
+        </p>
+      </header>
       <ChatPage initialChatState={initialChatState} />
     </>
   );

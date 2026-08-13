@@ -20,6 +20,7 @@ import { ChatComposerBlock } from "./chat-composer-block";
 import { ChatIntroPlaceholder } from "./chat-intro-placeholder";
 import { ChatNewConversationBar } from "./chat-new-conversation-bar";
 import { ChatPendingReply } from "./chat-pending-reply";
+import { transcriptScrollBehaviour } from "./chat-scroll-position";
 import { ChatStarterPrompts } from "./chat-starter-prompts";
 import { ChatTimelineMessage } from "./chat-timeline-message";
 import { createRateLimitAwareFetch, entryItemClassName, getSettledAssistantAnalyticsEvents } from "./chat.utils";
@@ -158,8 +159,7 @@ export function ChatConversation({
 
         <MessageScrollerProvider
           key={chatState.conversation?.id ?? "new-conversation"}
-          autoScroll
-          defaultScrollPosition="end"
+          {...transcriptScrollBehaviour(visibleMessages)}
         >
           <MessageScroller className="min-h-0 grow">
             <MessageScrollerViewport>
