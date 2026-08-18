@@ -16,6 +16,15 @@ test.describe("SEO / GEO / AEO routes", () => {
     expect(body).toContain("Sitemap: https://www.luciengeorge.com/sitemap.xml");
   });
 
+  test("/robots.txt lets crawlers reach the resume PDF while still blocking the rest of /api/", async ({ request }) => {
+    const body = await (await request.get("/robots.txt")).text();
+    const generic = body.slice(body.indexOf("User-agent: *"), body.indexOf("User-agent: GPTBot"));
+    expect(generic).toContain("Allow: /api/resume/pdf");
+    expect(generic).toContain("Disallow: /api/");
+    // The Allow must precede the Disallow it carves out of, for crawlers that read in order.
+    expect(generic.indexOf("Allow: /api/resume/pdf")).toBeLessThan(generic.indexOf("Disallow: /api/"));
+  });
+
   test("/sitemap.xml is served as XML and lists all canonical routes", async ({ request }) => {
     const res = await request.get("/sitemap.xml");
     expect(res.status()).toBe(200);
