@@ -2,6 +2,11 @@
 
 # Generic crawlers
 User-agent: *
+# The CV PDF is public and linked from /resume, so blocking it made Google report
+# "Blocked by robots.txt". Allow the crawl; the response carries X-Robots-Tag:
+# noindex, which is the only way to reliably keep a URL out of the index (a
+# blocked URL is never fetched, so a noindex on it is never seen).
+Allow: /api/resume/pdf
 Disallow: /api/
 Disallow: /login
 Disallow: /signup

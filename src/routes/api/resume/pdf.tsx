@@ -6,6 +6,13 @@ import { createFileRoute } from "@tanstack/react-router";
 
 const RESUME_FILENAME = "lucien-george-resume.pdf";
 
+/**
+ * Keeps the PDF out of search results while leaving it crawlable, so /resume
+ * stays the one indexed representation of the CV. robots.txt allows this path
+ * precisely so crawlers can fetch it and read this header.
+ */
+const NOINDEX = "noindex";
+
 async function hashEtag(input: string) {
   const encoder = new TextEncoder();
   const data = encoder.encode(input);
@@ -42,6 +49,7 @@ export const Route = createFileRoute("/api/resume/pdf")({
             headers: {
               "Cache-Control": CACHE_HEADER,
               ETag: etag,
+              "X-Robots-Tag": NOINDEX,
             },
             status: 304,
           });
@@ -56,6 +64,7 @@ export const Route = createFileRoute("/api/resume/pdf")({
             "Content-Disposition": `inline; filename="${RESUME_FILENAME}"`,
             "Content-Type": "application/pdf",
             ETag: etag,
+            "X-Robots-Tag": NOINDEX,
           },
           status: 200,
         });

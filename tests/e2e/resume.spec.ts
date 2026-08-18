@@ -35,6 +35,27 @@ test.describe("/resume", () => {
     expect(buffer.subarray(0, 5).toString()).toBe("%PDF-");
   });
 
+  /*
+   * Google reported "Blocked by robots.txt" for this URL: it is linked from the
+   * indexed /resume page, and Disallow: /api/ caught it. A blocked URL can still
+   * be indexed as a bare link, because Google never fetches it and so never sees
+   * a noindex. Allowing the crawl and serving noindex is what actually keeps it
+   * out, and leaves the HTML resume as the one indexed representation.
+   */
+  test("/api/resume/pdf tells crawlers not to index it", async ({ request }) => {
+    const res = await request.get("/api/resume/pdf");
+    expect(res.status()).toBe(200);
+    expect(res.headers()["x-robots-tag"]).toMatch(/noindex/);
+  });
+
+  test("/api/resume/pdf keeps the noindex header on a 304", async ({ request }) => {
+    const first = await request.get("/api/resume/pdf");
+    const etag = first.headers()["etag"];
+    const second = await request.get("/api/resume/pdf", { headers: { "If-None-Match": etag } });
+    expect(second.status()).toBe(304);
+    expect(second.headers()["x-robots-tag"]).toMatch(/noindex/);
+  });
+
   test("/api/resume/pdf honours If-None-Match (returns 304 on cache hit)", async ({ request }) => {
     const first = await request.get("/api/resume/pdf");
     expect(first.status()).toBe(200);
