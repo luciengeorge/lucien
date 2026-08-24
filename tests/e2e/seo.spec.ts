@@ -410,6 +410,9 @@ test.describe("homepage content without JavaScript", () => {
       html,
     );
     expect(stripped.match(/<h1[\s>]/g)).toHaveLength(1);
+    // Not a flat outline: an h1 with nothing under it reads as a heading-less
+    // document to an extractor that scores structure.
+    expect((stripped.match(/<h2[\s>]/g) ?? []).length).toBeGreaterThanOrEqual(1);
 
     const text = stripped
       .replace(/<(script|style|template)[^>]*>[\s\S]*?<\/\1>/gi, " ")
@@ -463,8 +466,25 @@ test.describe("agent instructions and developer resources", () => {
     expect(response?.status()).toBe(200);
     await expect(page).toHaveTitle(/Lucien George \| Developer and agent resources/);
     const text = await page.evaluate(() => document.body?.innerText ?? "");
-    for (const needle of ["llms.txt", "llms-full.txt", "Accept: text/markdown", "github.com/luciengeorge/lucien"]) {
+    for (const needle of ["llms.txt", "llms-full.txt", "text/markdown", "github.com/luciengeorge/lucien"]) {
       expect(text).toContain(needle);
+    }
+  });
+
+  /*
+   * Naming the things this site does not have (OpenAPI, MCP, an SDK, a CLI)
+   * reads to an audit as a claim that it has a developer surface: it switched
+   * on nine checks a portfolio cannot pass, two of them scored as essential.
+   * The pages say the markdown is the whole surface instead.
+   */
+  test("neither /developers nor /agents.md advertises a product surface the site does not have", async ({
+    request,
+  }) => {
+    for (const path of ["/developers.md", "/agents.md"]) {
+      const body = await (await request.get(path, { headers: { Accept: "text/html" } })).text();
+      for (const absent of ["OpenAPI", "MCP", "SDK", "webhook", "rate limit"]) {
+        expect(body, `${path} should not mention ${absent}`).not.toContain(absent);
+      }
     }
   });
 

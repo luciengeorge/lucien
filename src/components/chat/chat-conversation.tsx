@@ -153,7 +153,7 @@ export function ChatConversation({
   };
 
   return (
-    <section className="flex min-h-0 grow overflow-hidden bg-background">
+    <section aria-label="Conversation with Poof" className="flex min-h-0 grow overflow-hidden bg-background">
       <div className="flex min-h-0 w-full grow flex-col gap-2 sm:gap-5">
         <ChatNewConversationBar isDisabled={isStartingNewConversation} onClick={() => void handleNewConversation()} />
 

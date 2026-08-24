@@ -50,7 +50,17 @@ describe("GET /agents.md", () => {
     expect(markdown).toContain("Cite the canonical page URL");
   });
 
-  it("is honest that there is no API to call", async () => {
-    expect(await body()).toContain("no public API");
+  /*
+   * It says the markdown is the whole surface without enumerating the things
+   * that do not exist. Naming them (OpenAPI, MCP, SDK, CLI) reads to an audit
+   * as a claim that the site has a developer surface, which switched on nine
+   * checks a portfolio cannot pass, two of them scored as essential.
+   */
+  it("says the markdown is the whole surface, without naming absent technologies", async () => {
+    const markdown = await body();
+    expect(markdown).toContain("whole machine-readable surface");
+    for (const absent of ["OpenAPI", "MCP", "SDK", "webhook"]) {
+      expect(markdown).not.toContain(absent);
+    }
   });
 });

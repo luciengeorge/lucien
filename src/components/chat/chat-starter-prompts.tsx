@@ -3,11 +3,24 @@ import { Button } from "#/components/ui/button";
 import { STARTER_PROMPTS } from "./chat.constants";
 
 export function ChatStarterPrompts({ onStarterPrompt }: { onStarterPrompt: (prompt: string) => Promise<void> }) {
+  /*
+   * The label is a heading, not a styled paragraph: it names the section the
+   * chips belong to, so it belongs in the outline. The homepage otherwise has
+   * a lone h1 and nothing under it, which an audit reads as a flat document
+   * (and a screen reader gets no region to jump to). Same classes, so nothing
+   * moves on screen.
+   */
   return (
-    <div className="space-y-2 border-t border-neutral-950/8 pt-1 sm:space-y-3">
-      <p className="font-mono text-xs tracking-[0.18em] text-neutral-500 uppercase sm:text-sm sm:tracking-wide">
+    <section
+      aria-labelledby="starter-prompts-heading"
+      className="space-y-2 border-t border-neutral-950/8 pt-1 sm:space-y-3"
+    >
+      <h2
+        id="starter-prompts-heading"
+        className="font-mono text-xs tracking-[0.18em] text-neutral-500 uppercase sm:text-sm sm:tracking-wide"
+      >
         Start here
-      </p>
+      </h2>
       {/*
         These wrap at every width. They used to sit in a horizontal scroller
         below `sm` with no fade, scrollbar or arrow, so at 390px the second
@@ -31,6 +44,6 @@ export function ChatStarterPrompts({ onStarterPrompt }: { onStarterPrompt: (prom
           ))}
         </div>
       </div>
-    </div>
+    </section>
   );
 }
