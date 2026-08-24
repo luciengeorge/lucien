@@ -1,7 +1,7 @@
+import { PageScroll } from "#/components/page-scroll";
 import { formatArticleDate } from "#/lib/content/article-date";
 import { WRITING_INDEX_META } from "#/lib/content/page-meta";
 import { WRITING_ENTRIES } from "#/lib/content/registry";
-import { usePageScrollRestoration } from "#/lib/scroll-restoration";
 import { buildSeoHead } from "#/lib/seo";
 import { SITE_URL } from "#/lib/site-config";
 import { ArrowRight01Icon } from "@hugeicons-pro/core-stroke-rounded";
@@ -42,10 +42,8 @@ export const Route = createFileRoute("/writing/")({
 });
 
 function WritingIndexPage() {
-  const scrollRestoration = usePageScrollRestoration();
-
   return (
-    <div className="min-h-0 grow overflow-y-auto" {...scrollRestoration}>
+    <PageScroll>
       <article className="mx-auto w-full max-w-3xl px-4 pt-6 pb-16 sm:px-6 sm:pt-10 sm:pb-20">
         <header className="mb-10 border-b border-neutral-950/10 pb-8">
           <h1 className="text-3xl font-semibold tracking-tight text-neutral-950 sm:text-4xl">Writing</h1>
@@ -89,6 +87,6 @@ function WritingIndexPage() {
           ))}
         </ol>
       </article>
-    </div>
+    </PageScroll>
   );
 }
