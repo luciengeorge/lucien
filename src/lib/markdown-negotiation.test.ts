@@ -80,17 +80,7 @@ describe("markdownPathFor", () => {
   });
 
   it("maps every static content page to its .md twin", () => {
-    for (const path of [
-      "/about",
-      "/contact",
-      "/developers",
-      "/education",
-      "/privacy",
-      "/resume",
-      "/skills",
-      "/work",
-      "/writing",
-    ]) {
+    for (const path of ["/about", "/contact", "/education", "/privacy", "/resume", "/skills", "/work", "/writing"]) {
       expect(markdownPathFor(path)).toBe(`${path}.md`);
     }
   });

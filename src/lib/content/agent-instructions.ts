@@ -38,9 +38,15 @@ export function buildAgentInstructions(): string {
     ``,
     `Email lucienkgeorge@gmail.com, and read [${SITE_URL}/contact](${SITE_URL}/contact) first: it says what does and does not get a reply. If you are already in a conversation with the assistant on the homepage, its contact tool delivers a message directly. Do not republish the email address elsewhere.`,
     ``,
+    `## Every page, twice`,
+    ``,
+    `Every page has a markdown twin at the same path plus \`.md\`, so [${SITE_URL}/work/fyxer](${SITE_URL}/work/fyxer) is also [${SITE_URL}/work/fyxer.md](${SITE_URL}/work/fyxer.md). The canonical URLs negotiate markdown as well, per [acceptmarkdown.com](https://acceptmarkdown.com) and RFC 9110: ask for \`text/markdown\` and you get markdown back from the URL you found in search, with \`Vary: Accept\` so a cache keeps the two apart. A browser still gets HTML, because the header is ranked properly (q-value, then specificity) rather than substring-matched.`,
+    ``,
+    `The source is open: [github.com/luciengeorge/lucien](https://github.com/luciengeorge/lucien). It is a TanStack Start app on Vercel with Convex behind it, and the assistant answers out of a retrieval index built from the same markdown that renders these pages. \`AGENTS.md\` and \`CODEBASE_ARCHITECTURE.md\` sit at the repository root, which is what a coding agent should read before changing anything in it.`,
+    ``,
     `## What this site is not`,
     ``,
-    `The markdown files listed above are the whole machine-readable surface, and they are meant to be enough. This is one person's portfolio rather than a product: there is nothing to authenticate against, nothing to install, and no account to create. See [${SITE_URL}/developers](${SITE_URL}/developers) for the surface in full.`,
+    `The files listed above are the whole machine-readable surface, and they are meant to be enough. This is one person's portfolio rather than a product: there is nothing to authenticate against, nothing to install, and no account to create.`,
   ].join("\n");
 
   return buildMarkdownPage({

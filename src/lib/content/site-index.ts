@@ -56,7 +56,6 @@ function pageLines(): string[] {
     `- [Resume](${SITE_URL}/resume): full resume, with a PDF at ${SITE_URL}/api/resume/pdf. ([markdown](${SITE_URL}/resume.md))`,
     `- [Contact](${SITE_URL}/contact): how to reach him, and what to reach him about. ([markdown](${SITE_URL}/contact.md))`,
     `- [Privacy](${SITE_URL}/privacy): what this site collects and how to have it deleted. ([markdown](${SITE_URL}/privacy.md))`,
-    `- [Developer and agent resources](${SITE_URL}/developers): the machine-readable surface and the open-source repository behind the site. ([markdown](${SITE_URL}/developers.md))`,
   ];
 }
 

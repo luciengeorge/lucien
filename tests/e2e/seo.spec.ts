@@ -425,26 +425,34 @@ test.describe("homepage content without JavaScript", () => {
     }
   });
 
-  test("the no-JavaScript fallback names every role and routes on to the markdown surface", async ({ request }) => {
+  test("the static summary names every role and routes on to the markdown surface", async ({ request }) => {
     const html = await (await request.get("/", { headers: { Accept: "text/html" } })).text();
-    const fallback = /<noscript>([\s\S]*?)<\/noscript>/i.exec(html)?.[1] ?? "";
+    const summary = /<details[\s\S]*?<\/details>/i.exec(html)?.[0] ?? "";
 
     for (const entry of WORK_META) {
-      expect(fallback).toContain(entry.company);
-      expect(fallback).toContain(entry.period);
+      expect(summary).toContain(entry.company);
+      expect(summary).toContain(entry.period);
     }
-    for (const path of ["/index.md", "/llms.txt", "/llms-full.txt", "/agents.md", "/developers"]) {
-      expect(fallback).toContain(`href="${path}"`);
+    for (const path of ["/index.md", "/llms.txt", "/llms-full.txt", "/agents.md"]) {
+      expect(summary).toContain(`href="${path}"`);
     }
-    expect(fallback).not.toContain("<h1");
+    expect(summary).not.toContain("<h1");
   });
 
-  test("the fallback stays out of the DOM for a browser that runs scripts", async ({ page }) => {
+  /*
+   * Closed by default, so the chat keeps the page, but in the DOM either way:
+   * a <noscript> was stripped by the extractor that scores this, and a reader
+   * who can run scripts got no static answer to "who is this" at all.
+   */
+  test("the static summary is closed by default and openable without scripting", async ({ page }) => {
     await page.goto("/");
     await expect(page.locator("h1")).toHaveCount(1);
-    // <noscript> contents are parsed as raw text when scripting is enabled, so
-    // nothing inside it is queryable and it cannot affect layout.
-    expect(await page.locator("noscript h2").count()).toBe(0);
+    const details = page.locator("details").first();
+    expect(await details.evaluate((el: HTMLDetailsElement) => el.open)).toBe(false);
+    await expect(details.locator("h2").first()).toBeAttached();
+    await details.locator("summary").click();
+    expect(await details.evaluate((el: HTMLDetailsElement) => el.open)).toBe(true);
+    await expect(details.getByRole("heading", { level: 2, name: "Work history" })).toBeVisible();
   });
 });
 
@@ -461,37 +469,35 @@ test.describe("agent instructions and developer resources", () => {
     expect(body.length).toBeGreaterThan(1500);
   });
 
-  test("/developers documents the machine-readable surface and names the site in its title", async ({ page }) => {
-    const response = await page.goto("/developers");
-    expect(response?.status()).toBe(200);
-    await expect(page).toHaveTitle(/Lucien George \| Developer and agent resources/);
-    const text = await page.evaluate(() => document.body?.innerText ?? "");
-    for (const needle of ["llms.txt", "llms-full.txt", "text/markdown", "github.com/luciengeorge/lucien"]) {
-      expect(text).toContain(needle);
+  test("/agents.md documents the markdown surface and the source repository", async ({ request }) => {
+    const body = await (await request.get("/agents.md", { headers: { Accept: "text/html" } })).text();
+    for (const needle of ["text/markdown", "github.com/luciengeorge/lucien", "llms-full.txt"]) {
+      expect(body).toContain(needle);
     }
   });
 
   /*
-   * Naming the things this site does not have (OpenAPI, MCP, an SDK, a CLI)
-   * reads to an audit as a claim that it has a developer surface: it switched
-   * on nine checks a portfolio cannot pass, two of them scored as essential.
-   * The pages say the markdown is the whole surface instead.
+   * A page at /developers is probed as a developer portal and read as REST API
+   * documentation, which switched on nine checks a portfolio cannot pass, two
+   * of them scored as essential. The same content lives in /agents.md, which
+   * is not a probe target, and neither document names a surface the site does
+   * not have.
    */
-  test("neither /developers nor /agents.md advertises a product surface the site does not have", async ({
-    request,
-  }) => {
-    for (const path of ["/developers.md", "/agents.md"]) {
-      const body = await (await request.get(path, { headers: { Accept: "text/html" } })).text();
-      for (const absent of ["OpenAPI", "MCP", "SDK", "webhook", "rate limit"]) {
-        expect(body, `${path} should not mention ${absent}`).not.toContain(absent);
-      }
+  test("no page advertises a product surface the site does not have", async ({ request }) => {
+    for (const path of ["/developers", "/developers.md"]) {
+      expect((await request.get(path, { headers: { Accept: "text/html" } })).status()).toBe(404);
     }
-  });
-
-  test("/developers is discoverable from llms.txt, the sitemap, and the site index", async ({ request }) => {
-    for (const path of ["/llms.txt", "/sitemap.xml", "/index.md"]) {
+    // /agents.md is the document that describes the surface, so it is the one
+    // that must not describe surfaces the site lacks. ("SDK" is not in this
+    // list on purpose: it appears in the Shopify work summary, which is real
+    // history rather than a claim about this site.)
+    const agents = await (await request.get("/agents.md", { headers: { Accept: "text/html" } })).text();
+    for (const absent of ["OpenAPI", "MCP", "webhook", "rate limit"]) {
+      expect(agents, `agents.md should not mention ${absent}`).not.toContain(absent);
+    }
+    for (const path of ["/agents.md", "/index.md", "/llms.txt", "/sitemap.xml"]) {
       const body = await (await request.get(path, { headers: { Accept: "text/html" } })).text();
-      expect(body).toContain("https://www.luciengeorge.com/developers");
+      expect(body, `${path} should not link the removed /developers page`).not.toContain("/developers");
     }
   });
 
