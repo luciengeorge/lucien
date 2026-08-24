@@ -40,7 +40,7 @@ export function buildAgentInstructions(): string {
     ``,
     `## What this site is not`,
     ``,
-    `There is no public API, no OpenAPI specification, no MCP server, and no SDK. The markdown files are the whole interface, and they are meant to be enough. See [${SITE_URL}/developers](${SITE_URL}/developers) for the full machine-readable surface.`,
+    `The markdown files listed above are the whole machine-readable surface, and they are meant to be enough. This is one person's portfolio rather than a product: there is nothing to authenticate against, nothing to install, and no account to create. See [${SITE_URL}/developers](${SITE_URL}/developers) for the surface in full.`,
   ].join("\n");
 
   return buildMarkdownPage({
