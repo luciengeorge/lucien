@@ -250,7 +250,10 @@ test.describe("no non-essential storage", () => {
    * and Google Analytics was removed; this fails if either changes, or if a new
    * cookie appears that the page does not document.
    */
-  const DOCUMENTED = ["lucien-conversation", "toast"];
+  // `cf_clearance` is set by Cloudflare, which sits in front of production but
+  // not in front of a local build, so it appears here only when this suite is
+  // pointed at the deployed site. It is documented on /privacy either way.
+  const DOCUMENTED = ["cf_clearance", "lucien-conversation", "toast"];
 
   test("the homepage sets only the documented functional cookies, and no web storage", async ({ page, context }) => {
     await page.goto("/", { waitUntil: "networkidle" });
