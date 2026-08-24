@@ -51,11 +51,28 @@ test.describe("view transitions", () => {
     await scroller.evaluate((el) => {
       el.scrollTop = 400;
     });
-    // Waits for the recorded position rather than racing the coalesced write.
-    await page.waitForFunction(() => Number(sessionStorage.getItem("page-scroll:/work")) > 0);
-    const before = await scroller.evaluate((el) => el.scrollTop);
 
-    await page.locator("ol li a").last().click();
+    /*
+     * Clicking the last item makes Playwright scroll it into view first, which
+     * moves the list to the bottom (~1155) and, on a slow enough machine, gets
+     * persisted by the coalesced write before the navigation happens. The test
+     * then restored 1155 and failed against the 400 it had set, intermittently
+     * and for no reason to do with the app.
+     *
+     * So scroll deliberately, then wait until the app has actually recorded
+     * that exact position, and assert against what it recorded. Restoration is
+     * still what is under test: the position just is not raced any more.
+     */
+    const link = page.locator("ol li a").last();
+    await link.scrollIntoViewIfNeeded();
+    await page.waitForFunction(() => {
+      const el = document.querySelector("[data-page-scroll]");
+      return el !== null && sessionStorage.getItem("page-scroll:/work") === String(el.scrollTop);
+    });
+    const before = await scroller.evaluate((el) => el.scrollTop);
+    expect(before, "the list should have scrolled to bring the last entry into view").toBeGreaterThan(0);
+
+    await link.click();
     await expect(page).toHaveURL(/\/work\/[a-z-]+$/);
 
     await page.goBack();
