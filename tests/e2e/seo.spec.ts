@@ -257,3 +257,74 @@ test.describe("route <head> metadata", () => {
     }
   });
 });
+
+test.describe("markdown content negotiation (acceptmarkdown.com)", () => {
+  const MARKDOWN_ACCEPT = { Accept: "text/markdown" };
+  const BROWSER_ACCEPT = { Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" };
+  const NEGOTIABLE_PATHS = ["/", "/about", "/work", "/work/fyxer", "/writing", "/skills", "/education", "/resume"];
+
+  for (const path of NEGOTIABLE_PATHS) {
+    test(`${path} serves markdown to a client that asks for it, and declares Vary: Accept`, async ({ request }) => {
+      const res = await request.get(path, { headers: MARKDOWN_ACCEPT });
+      expect(res.status()).toBe(200);
+      expect(res.headers()["content-type"]).toMatch(/text\/markdown/);
+      expect(res.headers()["vary"]).toMatch(/\baccept\b/i);
+      expect(await res.text()).toMatch(/^# /m);
+    });
+
+    test(`${path} still serves HTML to a browser, and declares Vary: Accept`, async ({ request }) => {
+      const res = await request.get(path, { headers: BROWSER_ACCEPT });
+      expect(res.status()).toBe(200);
+      expect(res.headers()["content-type"]).toMatch(/text\/html/);
+      expect(res.headers()["vary"]).toMatch(/\baccept\b/i);
+    });
+  }
+
+  test("/ negotiated as markdown returns the same body as /index.md", async ({ request }) => {
+    const negotiated = await (await request.get("/", { headers: MARKDOWN_ACCEPT })).text();
+    const direct = await (await request.get("/index.md", { headers: { Accept: "text/html" } })).text();
+    expect(negotiated).toBe(direct);
+  });
+
+  test("/index.md maps the site for agents", async ({ request }) => {
+    const res = await request.get("/index.md", { headers: { Accept: "text/html" } });
+    expect(res.status()).toBe(200);
+    expect(res.headers()["content-type"]).toMatch(/text\/markdown/);
+    const body = await res.text();
+    expect(body).toContain("url: https://www.luciengeorge.com/");
+    expect(body).toContain("## When to use this site");
+    expect(body).toContain("https://www.luciengeorge.com/llms-full.txt");
+  });
+});
+
+test.describe("agent-friendly 404s", () => {
+  const MISSING_PATH = "/this-path-does-not-exist-9f3a";
+
+  test("a nonexistent path is a real 404 for every kind of client", async ({ request }) => {
+    for (const headers of [{ Accept: "text/html" }, { Accept: "text/markdown" }, { Accept: "*/*" }]) {
+      const res = await request.get(MISSING_PATH, { headers });
+      expect(res.status()).toBe(404);
+    }
+  });
+
+  test("a client that did not ask for HTML gets a markdown 404 that says where to look next", async ({ request }) => {
+    const res = await request.get(MISSING_PATH, { headers: { Accept: "*/*" } });
+    expect(res.status()).toBe(404);
+    expect(res.headers()["content-type"]).toMatch(/text\/markdown/);
+    const body = await res.text();
+    expect(body).toMatch(/^# 404/m);
+    expect(body).toContain(MISSING_PATH);
+    expect(body).toContain("https://www.luciengeorge.com/llms.txt");
+    expect(body).toContain("https://www.luciengeorge.com/sitemap.xml");
+    expect(body).toContain("https://www.luciengeorge.com/work");
+  });
+
+  test("a browser still gets the rendered 404 page, with links out of the dead end", async ({ page }) => {
+    const response = await page.goto(MISSING_PATH, { waitUntil: "domcontentloaded" });
+    expect(response?.status()).toBe(404);
+    expect(response?.headers()["content-type"]).toMatch(/text\/html/);
+    const recovery = page.getByRole("navigation", { name: "Where to look next" });
+    await expect(recovery.getByRole("link", { name: "Work" })).toHaveAttribute("href", "/work");
+    await expect(recovery.getByRole("link", { name: "llms.txt" })).toHaveAttribute("href", "/llms.txt");
+  });
+});
