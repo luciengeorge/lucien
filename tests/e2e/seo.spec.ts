@@ -398,3 +398,86 @@ test.describe("Organization structured data", () => {
     expect(organization?.address).toMatchObject({ "@type": "PostalAddress", addressLocality: "London" });
   });
 });
+
+test.describe("homepage content without JavaScript", () => {
+  test("the raw document carries a heading and substantive text, with no scripting involved", async ({ request }) => {
+    const html = await (await request.get("/", { headers: { Accept: "text/html" } })).text();
+
+    // What a main-content extractor sees: it drops header, nav, footer, and
+    // aside subtrees, so the homepage's only h1 has to live outside all four.
+    const stripped = ["header", "nav", "footer", "aside"].reduce(
+      (acc, tag) => acc.replace(new RegExp(`<${tag}[^>]*>[\\s\\S]*?</${tag}>`, "gi"), " "),
+      html,
+    );
+    expect(stripped.match(/<h1[\s>]/g)).toHaveLength(1);
+
+    const text = stripped
+      .replace(/<(script|style|template)[^>]*>[\s\S]*?<\/\1>/gi, " ")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    expect(text.length).toBeGreaterThan(2000);
+    for (const fact of ["Lucien George", "Senior Product Engineer", "Fyxer", "London"]) {
+      expect(text).toContain(fact);
+    }
+  });
+
+  test("the no-JavaScript fallback names every role and routes on to the markdown surface", async ({ request }) => {
+    const html = await (await request.get("/", { headers: { Accept: "text/html" } })).text();
+    const fallback = /<noscript>([\s\S]*?)<\/noscript>/i.exec(html)?.[1] ?? "";
+
+    for (const entry of WORK_META) {
+      expect(fallback).toContain(entry.company);
+      expect(fallback).toContain(entry.period);
+    }
+    for (const path of ["/index.md", "/llms.txt", "/llms-full.txt", "/agents.md", "/developers"]) {
+      expect(fallback).toContain(`href="${path}"`);
+    }
+    expect(fallback).not.toContain("<h1");
+  });
+
+  test("the fallback stays out of the DOM for a browser that runs scripts", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator("h1")).toHaveCount(1);
+    // <noscript> contents are parsed as raw text when scripting is enabled, so
+    // nothing inside it is queryable and it cannot affect layout.
+    expect(await page.locator("noscript h2").count()).toBe(0);
+  });
+});
+
+test.describe("agent instructions and developer resources", () => {
+  test("/agents.md tells an agent when to use the site, how to fetch it, and how to cite it", async ({ request }) => {
+    const res = await request.get("/agents.md", { headers: { Accept: "text/html" } });
+    expect(res.status()).toBe(200);
+    expect(res.headers()["content-type"]).toMatch(/text\/markdown/);
+    const body = await res.text();
+    expect(body).toContain("## When to use this site");
+    expect(body).toContain("Do not use this site as a source for anything else");
+    expect(body).toContain("## How to fetch it");
+    expect(body).toContain("Cite the canonical page URL");
+    expect(body.length).toBeGreaterThan(1500);
+  });
+
+  test("/developers documents the machine-readable surface and names the site in its title", async ({ page }) => {
+    const response = await page.goto("/developers");
+    expect(response?.status()).toBe(200);
+    await expect(page).toHaveTitle(/Lucien George \| Developer and agent resources/);
+    const text = await page.evaluate(() => document.body?.innerText ?? "");
+    for (const needle of ["llms.txt", "llms-full.txt", "Accept: text/markdown", "github.com/luciengeorge/lucien"]) {
+      expect(text).toContain(needle);
+    }
+  });
+
+  test("/developers is discoverable from llms.txt, the sitemap, and the site index", async ({ request }) => {
+    for (const path of ["/llms.txt", "/sitemap.xml", "/index.md"]) {
+      const body = await (await request.get(path, { headers: { Accept: "text/html" } })).text();
+      expect(body).toContain("https://www.luciengeorge.com/developers");
+    }
+  });
+
+  test("llms.txt carries when-to-use guidance and links the agent instruction file", async ({ request }) => {
+    const body = await (await request.get("/llms.txt")).text();
+    expect(body).toContain("## When to use this site");
+    expect(body).toContain("https://www.luciengeorge.com/agents.md");
+  });
+});

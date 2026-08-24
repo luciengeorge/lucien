@@ -1,4 +1,5 @@
 import { WORK_ENTRIES, WRITING_ENTRIES } from "#/lib/content/registry";
+import { WHEN_TO_USE_LINES } from "#/lib/content/site-index";
 import { CACHE_HEADER, SITE_URL } from "#/lib/site-config";
 import { createFileRoute } from "@tanstack/react-router";
 
@@ -9,6 +10,10 @@ function buildLlmsIndex(): string {
     `> Senior Product Engineer at Fyxer. Builds products end-to-end, teaches, races karts, and runs ultras in London. Originally from Beirut, Lebanon.`,
     ``,
     `Lucien's personal portfolio is structured as an AI chat ("Poof") backed by a RAG index of these markdown sources. The static pages below are the same content rendered as crawlable HTML.`,
+    ``,
+    ...WHEN_TO_USE_LINES,
+    ``,
+    `Full instructions for agents, including how to cite this site: [${SITE_URL}/agents.md](${SITE_URL}/agents.md).`,
     ``,
     `## About`,
     `- [About Lucien](${SITE_URL}/about): Bio, background, family, interests, and personal life. ([Markdown](${SITE_URL}/about.md))`,
@@ -31,6 +36,11 @@ function buildLlmsIndex(): string {
       (entry) =>
         `- [${entry.title}](${SITE_URL}/writing/${entry.slug}): ${entry.summary} ([Markdown](${SITE_URL}/writing/${entry.slug}.md))`,
     ),
+    ``,
+    `## Developer and agent resources`,
+    `- [Developer and agent resources](${SITE_URL}/developers): The site's machine-readable surface, its markdown conventions, and the open-source repository behind it. ([Markdown](${SITE_URL}/developers.md))`,
+    `- [Agent instructions](${SITE_URL}/agents.md): When to use this site, how to fetch it, and how to cite it.`,
+    `- [Site index](${SITE_URL}/index.md): The site root as markdown, with the full page map.`,
     ``,
     `## Optional`,
     `- [llms-full.txt](${SITE_URL}/llms-full.txt): Concatenated raw markdown of every content section, intended for LLM ingestion.`,

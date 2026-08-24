@@ -56,6 +56,7 @@ function pageLines(): string[] {
     `- [Resume](${SITE_URL}/resume): full resume, with a PDF at ${SITE_URL}/api/resume/pdf. ([markdown](${SITE_URL}/resume.md))`,
     `- [Contact](${SITE_URL}/contact): how to reach him, and what to reach him about. ([markdown](${SITE_URL}/contact.md))`,
     `- [Privacy](${SITE_URL}/privacy): what this site collects and how to have it deleted. ([markdown](${SITE_URL}/privacy.md))`,
+    `- [Developer and agent resources](${SITE_URL}/developers): the machine-readable surface and the open-source repository behind the site. ([markdown](${SITE_URL}/developers.md))`,
   ];
 }
 
@@ -63,6 +64,7 @@ function machineReadableLines(): string[] {
   return [
     `## Machine-readable files`,
     ``,
+    `- [${SITE_URL}/agents.md](${SITE_URL}/agents.md): instructions for an agent: when to use this site, how to fetch it, how to cite it.`,
     `- [${SITE_URL}/llms.txt](${SITE_URL}/llms.txt): link index of every section.`,
     `- [${SITE_URL}/llms-full.txt](${SITE_URL}/llms-full.txt): every section's markdown, concatenated.`,
     `- [${SITE_URL}/sitemap.xml](${SITE_URL}/sitemap.xml): canonical URLs with \`lastmod\`.`,
