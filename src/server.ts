@@ -1,3 +1,4 @@
+import { withAgentRepresentation } from "#/lib/agent-representation";
 import { createLogger } from "#/lib/logger";
 import { wrapFetchWithSentry } from "@sentry/tanstackstart-react";
 import handler, { createServerEntry } from "@tanstack/react-start/server-entry";
@@ -18,7 +19,7 @@ export default createServerEntry(
       });
 
       try {
-        const response = await handler.fetch(request);
+        const response = await withAgentRepresentation(request, (candidate) => handler.fetch(candidate));
         logger.info("request completed", {
           durationMs: Date.now() - startedAt,
           method: request.method,
