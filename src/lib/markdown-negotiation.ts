@@ -143,7 +143,9 @@ export function prefersHtml(header: string | null | undefined): boolean {
 /** HTML pages whose markdown twin lives at `<path>.md`. */
 const NEGOTIABLE_PAGES: ReadonlySet<string> = new Set([
   "/about",
+  "/contact",
   "/education",
+  "/privacy",
   "/resume",
   "/skills",
   "/work",

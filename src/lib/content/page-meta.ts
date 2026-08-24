@@ -14,6 +14,18 @@ export const ABOUT_META: PageMeta = {
     "Lucien George is a senior product engineer at Fyxer, based in London and originally from Beirut. He builds products, races karts, and runs ultras.",
 };
 
+export const CONTACT_META: PageMeta = {
+  title: "Contact Lucien George",
+  description:
+    "How to reach Lucien George: email, the assistant's contact tool, and social profiles. What to get in touch about, and what never gets a reply.",
+};
+
+export const PRIVACY_META: PageMeta = {
+  title: "Privacy | Lucien George",
+  description:
+    "What luciengeorge.com collects: chat conversations, analytics, and error monitoring, who processes each, and how to have your data deleted.",
+};
+
 export const SKILLS_META: PageMeta = {
   title: "Lucien George | Tech stack & skills",
   description:

@@ -328,3 +328,73 @@ test.describe("agent-friendly 404s", () => {
     await expect(recovery.getByRole("link", { name: "llms.txt" })).toHaveAttribute("href", "/llms.txt");
   });
 });
+
+test.describe("trust anchor pages", () => {
+  const TRUST_PAGES = [
+    { path: "/about", heading: "Lucien George" },
+    { path: "/contact", heading: "Get in touch" },
+    { path: "/privacy", heading: "What this site collects" },
+  ];
+
+  for (const { path, heading } of TRUST_PAGES) {
+    test(`${path} is a real page with substantive content`, async ({ page }) => {
+      const response = await page.goto(path);
+      expect(response?.status()).toBe(200);
+      await expect(page.locator("h1")).toContainText(heading);
+      const text = await page.evaluate(() => document.body?.innerText ?? "");
+      expect(text.length).toBeGreaterThan(500);
+    });
+
+    test(`${path} is listed in the sitemap and llms.txt`, async ({ request }) => {
+      const sitemap = await (await request.get("/sitemap.xml")).text();
+      expect(sitemap).toContain(`https://www.luciengeorge.com${path}`);
+      const llms = await (await request.get("/llms.txt")).text();
+      expect(llms).toContain(`https://www.luciengeorge.com${path})`);
+    });
+  }
+
+  test("/contact and /privacy negotiate markdown like every other page", async ({ request }) => {
+    for (const path of ["/contact", "/privacy"]) {
+      const res = await request.get(path, { headers: { Accept: "text/markdown" } });
+      expect(res.status()).toBe(200);
+      expect(res.headers()["content-type"]).toMatch(/text\/markdown/);
+      expect(res.headers()["vary"]).toMatch(/\baccept\b/i);
+      expect((await res.text()).length).toBeGreaterThan(500);
+    }
+  });
+
+  // The footer sits inside <main>, so it carries no contentinfo role: locate it
+  // by the labels on its two navs instead.
+  test("content pages carry a footer linking the trust anchors and the agent files", async ({ page }) => {
+    await page.goto("/about");
+    const pages = page.getByRole("navigation", { name: "Pages" });
+    await expect(pages.getByRole("link", { name: "Contact" })).toHaveAttribute("href", "/contact");
+    await expect(pages.getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "/privacy");
+    const agents = page.getByRole("navigation", { name: "For agents" });
+    await expect(agents.getByRole("link", { name: "llms.txt" })).toHaveAttribute("href", "/llms.txt");
+    await expect(agents.getByRole("link", { name: "index.md" })).toHaveAttribute("href", "/index.md");
+  });
+});
+
+test.describe("Organization structured data", () => {
+  test("the homepage publishes an Organization with a contactPoint and a postal address", async ({ page }) => {
+    await page.goto("/");
+    const blocks = await page.locator('script[type="application/ld+json"]').allTextContents();
+    const graph = blocks.flatMap((block) => {
+      const parsed: unknown = JSON.parse(block);
+      if (typeof parsed !== "object" || parsed === null || !("@graph" in parsed)) return [];
+      const { "@graph": nodes } = parsed;
+      return Array.isArray(nodes) ? nodes : [];
+    });
+
+    const organizations = graph.filter(
+      (node): node is Record<string, unknown> =>
+        typeof node === "object" && node !== null && "@type" in node && node["@type"] === "Organization",
+    );
+    expect(organizations.length).toBeGreaterThan(0);
+
+    const [organization] = organizations;
+    expect(organization?.contactPoint).toMatchObject({ "@type": "ContactPoint", email: expect.any(String) });
+    expect(organization?.address).toMatchObject({ "@type": "PostalAddress", addressLocality: "London" });
+  });
+});

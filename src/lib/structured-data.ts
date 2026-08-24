@@ -3,12 +3,47 @@ import { SOCIAL_LINKS } from "#/lib/social-links";
 
 const SITE_URL = "https://www.luciengeorge.com";
 const OG_IMAGE_URL = `${SITE_URL}/cover.png`;
+const CONTACT_EMAIL = "lucienkgeorge@gmail.com";
 const DESCRIPTION =
   "Senior Product Engineer at Fyxer. Explore Lucien George's work, projects, and interests via Poof, his AI portfolio assistant.";
 
 export const structuredData = {
   "@context": "https://schema.org",
   "@graph": [
+    /*
+     * The publisher of this site, as an entity distinct from the person: an
+     * audit (and a search engine) looks for Organization when it wants an
+     * address and a way to make contact, and answering that with the employer
+     * nested under `worksFor` would mean inventing Fyxer's postal address.
+     */
+    {
+      "@type": "Organization",
+      "@id": `${SITE_URL}/#organization`,
+      name: CANONICAL_NAME,
+      alternateName: "luciengeorge.com",
+      description:
+        "The personal site of Lucien George, Senior Product Engineer at Fyxer: his work history, writing, and an AI assistant that answers questions about them.",
+      url: SITE_URL,
+      logo: `${SITE_URL}/initials.svg`,
+      image: OG_IMAGE_URL,
+      email: CONTACT_EMAIL,
+      contactPoint: {
+        "@type": "ContactPoint",
+        contactType: "professional enquiries",
+        email: CONTACT_EMAIL,
+        url: `${SITE_URL}/contact`,
+        availableLanguage: ["English", "French", "Arabic"],
+      },
+      address: {
+        "@type": "PostalAddress",
+        addressLocality: "London",
+        addressRegion: "England",
+        addressCountry: "GB",
+      },
+      areaServed: { "@type": "Place", name: "Worldwide" },
+      founder: { "@id": `${SITE_URL}/#person` },
+      sameAs: SOCIAL_LINKS.map((link) => link.href),
+    },
     {
       "@type": "Person",
       "@id": `${SITE_URL}/#person`,
@@ -20,7 +55,14 @@ export const structuredData = {
         "Senior Product Engineer at Fyxer. Builds products end-to-end, teaches, races karts, and runs ultras in London. Originally from Beirut, Lebanon.",
       image: OG_IMAGE_URL,
       url: SITE_URL,
-      email: "lucienkgeorge@gmail.com",
+      email: CONTACT_EMAIL,
+      contactPoint: {
+        "@type": "ContactPoint",
+        contactType: "professional enquiries",
+        email: CONTACT_EMAIL,
+        url: `${SITE_URL}/contact`,
+        availableLanguage: ["English", "French", "Arabic"],
+      },
       sameAs: SOCIAL_LINKS.map((link) => link.href),
       address: { "@type": "PostalAddress", addressLocality: "London", addressCountry: "GB" },
       birthPlace: { "@type": "Place", name: "Beirut, Lebanon" },

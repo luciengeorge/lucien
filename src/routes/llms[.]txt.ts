@@ -15,6 +15,8 @@ function buildLlmsIndex(): string {
     `- [Skills & tech stack](${SITE_URL}/skills): Languages, frameworks, and tools Lucien uses. ([Markdown](${SITE_URL}/skills.md))`,
     `- [Education](${SITE_URL}/education): McGill, UNSW Sydney exchange, Le Wagon, Harvard Business School. ([Markdown](${SITE_URL}/education.md))`,
     `- [Resume](${SITE_URL}/resume): Full resume with PDF download. ([Markdown](${SITE_URL}/resume.md))`,
+    `- [Contact](${SITE_URL}/contact): How to reach Lucien, and what to reach him about. ([Markdown](${SITE_URL}/contact.md))`,
+    `- [Privacy](${SITE_URL}/privacy): What this site collects, who processes it, and how to have it deleted. ([Markdown](${SITE_URL}/privacy.md))`,
     ``,
     `## Work history`,
     `- [Work index](${SITE_URL}/work): All roles and outcomes. ([Markdown](${SITE_URL}/work.md))`,

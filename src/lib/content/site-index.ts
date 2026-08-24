@@ -54,6 +54,8 @@ function pageLines(): string[] {
     `- [Skills and tech stack](${SITE_URL}/skills): languages, frameworks, tools. ([markdown](${SITE_URL}/skills.md))`,
     `- [Education](${SITE_URL}/education): McGill, UNSW Sydney, Le Wagon, Harvard Business School. ([markdown](${SITE_URL}/education.md))`,
     `- [Resume](${SITE_URL}/resume): full resume, with a PDF at ${SITE_URL}/api/resume/pdf. ([markdown](${SITE_URL}/resume.md))`,
+    `- [Contact](${SITE_URL}/contact): how to reach him, and what to reach him about. ([markdown](${SITE_URL}/contact.md))`,
+    `- [Privacy](${SITE_URL}/privacy): what this site collects and how to have it deleted. ([markdown](${SITE_URL}/privacy.md))`,
   ];
 }
 
@@ -83,7 +85,7 @@ export function buildSiteIndexMarkdown(): string {
     ``,
     `## Contact`,
     ``,
-    `Email lucienkgeorge@gmail.com. Social profiles are listed in the JSON-LD \`sameAs\` on every page.`,
+    `Email lucienkgeorge@gmail.com, or read [${SITE_URL}/contact](${SITE_URL}/contact) first: it says what does and does not get a reply. Social profiles are listed in the JSON-LD \`sameAs\` on every page.`,
   ].join("\n");
 
   return buildMarkdownPage({

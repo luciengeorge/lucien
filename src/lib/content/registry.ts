@@ -2,6 +2,7 @@ import type { WorkMeta } from "./work-meta";
 import type { WritingMeta } from "./writing-meta";
 
 import bioMd from "../../../content/bio.md?raw";
+import contactMd from "../../../content/contact.md?raw";
 import earlyCareerMd from "../../../content/early-career.md?raw";
 import educationMd from "../../../content/education.md?raw";
 import fyxerMd from "../../../content/fyxer.md?raw";
@@ -9,6 +10,7 @@ import impactLebanonMd from "../../../content/impact-lebanon.md?raw";
 import leWagonMd from "../../../content/le-wagon.md?raw";
 import localistaMd from "../../../content/localista.md?raw";
 import personalMd from "../../../content/personal.md?raw";
+import privacyMd from "../../../content/privacy.md?raw";
 import shopifyMd from "../../../content/shopify.md?raw";
 import skylaMd from "../../../content/skyla.md?raw";
 import techStackMd from "../../../content/tech-stack.md?raw";
@@ -60,6 +62,8 @@ export function findWritingEntry(slug: string): WritingEntry | undefined {
 }
 
 export const ABOUT_SOURCES = [bioMd, personalMd];
+export const CONTACT_SOURCES = [contactMd];
+export const PRIVACY_SOURCES = [privacyMd];
 export const SKILLS_SOURCES = [techStackMd];
 export const EDUCATION_SOURCES = [educationMd];
 

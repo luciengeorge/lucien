@@ -16,11 +16,15 @@ import { Route as SkillsRouteImport } from './routes/skills'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ResumeDotmdRouteImport } from './routes/resume[.]md'
 import { Route as ResumeRouteImport } from './routes/resume'
+import { Route as PrivacyDotmdRouteImport } from './routes/privacy[.]md'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
 import { Route as LlmsFullDottxtRouteImport } from './routes/llms-full[.]txt'
 import { Route as IndexDotmdRouteImport } from './routes/index[.]md'
 import { Route as EducationDotmdRouteImport } from './routes/education[.]md'
 import { Route as EducationRouteImport } from './routes/education'
+import { Route as ContactDotmdRouteImport } from './routes/contact[.]md'
+import { Route as ContactRouteImport } from './routes/contact'
 import { Route as AboutDotmdRouteImport } from './routes/about[.]md'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthRouteImport } from './routes/_auth'
@@ -72,6 +76,16 @@ const ResumeRoute = ResumeRouteImport.update({
   path: '/resume',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrivacyDotmdRoute = PrivacyDotmdRouteImport.update({
+  id: '/privacy.md',
+  path: '/privacy.md',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LlmsDottxtRoute = LlmsDottxtRouteImport.update({
   id: '/llms.txt',
   path: '/llms.txt',
@@ -95,6 +109,16 @@ const EducationDotmdRoute = EducationDotmdRouteImport.update({
 const EducationRoute = EducationRouteImport.update({
   id: '/education',
   path: '/education',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactDotmdRoute = ContactDotmdRouteImport.update({
+  id: '/contact.md',
+  path: '/contact.md',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutDotmdRoute = AboutDotmdRouteImport.update({
@@ -178,11 +202,15 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/about.md': typeof AboutDotmdRoute
+  '/contact': typeof ContactRoute
+  '/contact.md': typeof ContactDotmdRoute
   '/education': typeof EducationRoute
   '/education.md': typeof EducationDotmdRoute
   '/index.md': typeof IndexDotmdRoute
   '/llms-full.txt': typeof LlmsFullDottxtRoute
   '/llms.txt': typeof LlmsDottxtRoute
+  '/privacy': typeof PrivacyRoute
+  '/privacy.md': typeof PrivacyDotmdRoute
   '/resume': typeof ResumeRoute
   '/resume.md': typeof ResumeDotmdRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -206,11 +234,15 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/about.md': typeof AboutDotmdRoute
+  '/contact': typeof ContactRoute
+  '/contact.md': typeof ContactDotmdRoute
   '/education': typeof EducationRoute
   '/education.md': typeof EducationDotmdRoute
   '/index.md': typeof IndexDotmdRoute
   '/llms-full.txt': typeof LlmsFullDottxtRoute
   '/llms.txt': typeof LlmsDottxtRoute
+  '/privacy': typeof PrivacyRoute
+  '/privacy.md': typeof PrivacyDotmdRoute
   '/resume': typeof ResumeRoute
   '/resume.md': typeof ResumeDotmdRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -236,11 +268,15 @@ export interface FileRoutesById {
   '/_auth': typeof AuthRouteWithChildren
   '/about': typeof AboutRoute
   '/about.md': typeof AboutDotmdRoute
+  '/contact': typeof ContactRoute
+  '/contact.md': typeof ContactDotmdRoute
   '/education': typeof EducationRoute
   '/education.md': typeof EducationDotmdRoute
   '/index.md': typeof IndexDotmdRoute
   '/llms-full.txt': typeof LlmsFullDottxtRoute
   '/llms.txt': typeof LlmsDottxtRoute
+  '/privacy': typeof PrivacyRoute
+  '/privacy.md': typeof PrivacyDotmdRoute
   '/resume': typeof ResumeRoute
   '/resume.md': typeof ResumeDotmdRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -266,11 +302,15 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/about.md'
+    | '/contact'
+    | '/contact.md'
     | '/education'
     | '/education.md'
     | '/index.md'
     | '/llms-full.txt'
     | '/llms.txt'
+    | '/privacy'
+    | '/privacy.md'
     | '/resume'
     | '/resume.md'
     | '/sitemap.xml'
@@ -294,11 +334,15 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/about.md'
+    | '/contact'
+    | '/contact.md'
     | '/education'
     | '/education.md'
     | '/index.md'
     | '/llms-full.txt'
     | '/llms.txt'
+    | '/privacy'
+    | '/privacy.md'
     | '/resume'
     | '/resume.md'
     | '/sitemap.xml'
@@ -323,11 +367,15 @@ export interface FileRouteTypes {
     | '/_auth'
     | '/about'
     | '/about.md'
+    | '/contact'
+    | '/contact.md'
     | '/education'
     | '/education.md'
     | '/index.md'
     | '/llms-full.txt'
     | '/llms.txt'
+    | '/privacy'
+    | '/privacy.md'
     | '/resume'
     | '/resume.md'
     | '/sitemap.xml'
@@ -353,11 +401,15 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRouteWithChildren
   AboutRoute: typeof AboutRoute
   AboutDotmdRoute: typeof AboutDotmdRoute
+  ContactRoute: typeof ContactRoute
+  ContactDotmdRoute: typeof ContactDotmdRoute
   EducationRoute: typeof EducationRoute
   EducationDotmdRoute: typeof EducationDotmdRoute
   IndexDotmdRoute: typeof IndexDotmdRoute
   LlmsFullDottxtRoute: typeof LlmsFullDottxtRoute
   LlmsDottxtRoute: typeof LlmsDottxtRoute
+  PrivacyRoute: typeof PrivacyRoute
+  PrivacyDotmdRoute: typeof PrivacyDotmdRoute
   ResumeRoute: typeof ResumeRoute
   ResumeDotmdRoute: typeof ResumeDotmdRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -427,6 +479,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResumeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/privacy.md': {
+      id: '/privacy.md'
+      path: '/privacy.md'
+      fullPath: '/privacy.md'
+      preLoaderRoute: typeof PrivacyDotmdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/llms.txt': {
       id: '/llms.txt'
       path: '/llms.txt'
@@ -460,6 +526,20 @@ declare module '@tanstack/react-router' {
       path: '/education'
       fullPath: '/education'
       preLoaderRoute: typeof EducationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact.md': {
+      id: '/contact.md'
+      path: '/contact.md'
+      fullPath: '/contact.md'
+      preLoaderRoute: typeof ContactDotmdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/about.md': {
@@ -587,11 +667,15 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRouteWithChildren,
   AboutRoute: AboutRoute,
   AboutDotmdRoute: AboutDotmdRoute,
+  ContactRoute: ContactRoute,
+  ContactDotmdRoute: ContactDotmdRoute,
   EducationRoute: EducationRoute,
   EducationDotmdRoute: EducationDotmdRoute,
   IndexDotmdRoute: IndexDotmdRoute,
   LlmsFullDottxtRoute: LlmsFullDottxtRoute,
   LlmsDottxtRoute: LlmsDottxtRoute,
+  PrivacyRoute: PrivacyRoute,
+  PrivacyDotmdRoute: PrivacyDotmdRoute,
   ResumeRoute: ResumeRoute,
   ResumeDotmdRoute: ResumeDotmdRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
