@@ -12,13 +12,14 @@ The site measures traffic, not people. In production only: Vercel Analytics and 
 
 ## Cookies
 
-Three, none for advertising or tracking, and all of them signed and HTTP-only:
+Four at most, none for advertising or tracking, and every one of them HTTP-only:
 
 - The conversation id above, without which the chat does not work.
 - A one-shot cookie that carries a status message across a page load, so an action can report its own result. It holds the message and nothing else.
+- `cf_clearance`, set by Cloudflare, which sits in front of this site. It records that your browser passed a bot check, so you are not challenged on every page. Cloudflare sets it, not this site.
 - Sign-in cookies, which only ever exist for the site's owner: sign-in is an allowlist of one, so there is no visitor account and no visitor password anywhere.
 
-That is the complete list, which is why the site has no cookie banner.
+That is the complete list. All four are strictly necessary, which is why the site has no cookie banner.
 
 ## Legal basis and processors
 
