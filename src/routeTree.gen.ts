@@ -23,8 +23,6 @@ import { Route as LlmsFullDottxtRouteImport } from './routes/llms-full[.]txt'
 import { Route as IndexDotmdRouteImport } from './routes/index[.]md'
 import { Route as EducationDotmdRouteImport } from './routes/education[.]md'
 import { Route as EducationRouteImport } from './routes/education'
-import { Route as DevelopersDotmdRouteImport } from './routes/developers[.]md'
-import { Route as DevelopersRouteImport } from './routes/developers'
 import { Route as ContactDotmdRouteImport } from './routes/contact[.]md'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as AgentsDotmdRouteImport } from './routes/agents[.]md'
@@ -112,16 +110,6 @@ const EducationDotmdRoute = EducationDotmdRouteImport.update({
 const EducationRoute = EducationRouteImport.update({
   id: '/education',
   path: '/education',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DevelopersDotmdRoute = DevelopersDotmdRouteImport.update({
-  id: '/developers.md',
-  path: '/developers.md',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DevelopersRoute = DevelopersRouteImport.update({
-  id: '/developers',
-  path: '/developers',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContactDotmdRoute = ContactDotmdRouteImport.update({
@@ -223,8 +211,6 @@ export interface FileRoutesByFullPath {
   '/agents.md': typeof AgentsDotmdRoute
   '/contact': typeof ContactRoute
   '/contact.md': typeof ContactDotmdRoute
-  '/developers': typeof DevelopersRoute
-  '/developers.md': typeof DevelopersDotmdRoute
   '/education': typeof EducationRoute
   '/education.md': typeof EducationDotmdRoute
   '/index.md': typeof IndexDotmdRoute
@@ -258,8 +244,6 @@ export interface FileRoutesByTo {
   '/agents.md': typeof AgentsDotmdRoute
   '/contact': typeof ContactRoute
   '/contact.md': typeof ContactDotmdRoute
-  '/developers': typeof DevelopersRoute
-  '/developers.md': typeof DevelopersDotmdRoute
   '/education': typeof EducationRoute
   '/education.md': typeof EducationDotmdRoute
   '/index.md': typeof IndexDotmdRoute
@@ -295,8 +279,6 @@ export interface FileRoutesById {
   '/agents.md': typeof AgentsDotmdRoute
   '/contact': typeof ContactRoute
   '/contact.md': typeof ContactDotmdRoute
-  '/developers': typeof DevelopersRoute
-  '/developers.md': typeof DevelopersDotmdRoute
   '/education': typeof EducationRoute
   '/education.md': typeof EducationDotmdRoute
   '/index.md': typeof IndexDotmdRoute
@@ -332,8 +314,6 @@ export interface FileRouteTypes {
     | '/agents.md'
     | '/contact'
     | '/contact.md'
-    | '/developers'
-    | '/developers.md'
     | '/education'
     | '/education.md'
     | '/index.md'
@@ -367,8 +347,6 @@ export interface FileRouteTypes {
     | '/agents.md'
     | '/contact'
     | '/contact.md'
-    | '/developers'
-    | '/developers.md'
     | '/education'
     | '/education.md'
     | '/index.md'
@@ -403,8 +381,6 @@ export interface FileRouteTypes {
     | '/agents.md'
     | '/contact'
     | '/contact.md'
-    | '/developers'
-    | '/developers.md'
     | '/education'
     | '/education.md'
     | '/index.md'
@@ -440,8 +416,6 @@ export interface RootRouteChildren {
   AgentsDotmdRoute: typeof AgentsDotmdRoute
   ContactRoute: typeof ContactRoute
   ContactDotmdRoute: typeof ContactDotmdRoute
-  DevelopersRoute: typeof DevelopersRoute
-  DevelopersDotmdRoute: typeof DevelopersDotmdRoute
   EducationRoute: typeof EducationRoute
   EducationDotmdRoute: typeof EducationDotmdRoute
   IndexDotmdRoute: typeof IndexDotmdRoute
@@ -565,20 +539,6 @@ declare module '@tanstack/react-router' {
       path: '/education'
       fullPath: '/education'
       preLoaderRoute: typeof EducationRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/developers.md': {
-      id: '/developers.md'
-      path: '/developers.md'
-      fullPath: '/developers.md'
-      preLoaderRoute: typeof DevelopersDotmdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/developers': {
-      id: '/developers'
-      path: '/developers'
-      fullPath: '/developers'
-      preLoaderRoute: typeof DevelopersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contact.md': {
@@ -730,8 +690,6 @@ const rootRouteChildren: RootRouteChildren = {
   AgentsDotmdRoute: AgentsDotmdRoute,
   ContactRoute: ContactRoute,
   ContactDotmdRoute: ContactDotmdRoute,
-  DevelopersRoute: DevelopersRoute,
-  DevelopersDotmdRoute: DevelopersDotmdRoute,
   EducationRoute: EducationRoute,
   EducationDotmdRoute: EducationDotmdRoute,
   IndexDotmdRoute: IndexDotmdRoute,

@@ -56,12 +56,18 @@ function HomePage() {
           meetings without sending a bot into the call. Ask this page anything about his work.
         </p>
       </div>
-      <noscript>
+      <details className="group mx-auto w-full max-w-3xl shrink-0 px-4 sm:px-6">
+        <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 font-mono text-[11px] tracking-[0.14em] text-neutral-500 uppercase transition-colors hover:text-neutral-950">
+          <span aria-hidden className="transition-transform group-open:rotate-90">
+            &rsaquo;
+          </span>
+          Or read the short version
+        </summary>
         <div
-          className="mx-auto prose max-w-3xl overflow-y-auto px-4 pb-10 prose-neutral sm:px-6"
+          className="prose prose-sm mt-4 max-h-[50vh] max-w-none overflow-y-auto pb-4 prose-neutral"
           dangerouslySetInnerHTML={{ __html: HOMEPAGE_FALLBACK_HTML }}
         />
-      </noscript>
+      </details>
       <ChatPage initialChatState={initialChatState} />
     </>
   );

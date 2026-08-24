@@ -9,14 +9,21 @@ function text(): string {
     .trim();
 }
 
-describe("homepage no-JavaScript fallback", () => {
+describe("homepage static summary (the disclosure under the intro)", () => {
   it("carries enough prose to stand in for the chat", () => {
     expect(text().length).toBeGreaterThan(1500);
   });
 
-  it("never introduces a second h1, since the visible identity block owns the only one", () => {
+  it("never introduces a second h1, since the identity block owns the only one", () => {
     expect(HOMEPAGE_FALLBACK_HTML).not.toContain("<h1");
-    expect(HOMEPAGE_FALLBACK_HTML).toContain("<h2");
+  });
+
+  /*
+   * The homepage scored "H1 but flat heading structure" with one h2 on the
+   * page. Its outline comes from here, so this is what has to carry it.
+   */
+  it("carries a real outline, not a single heading", () => {
+    expect((HOMEPAGE_FALLBACK_HTML.match(/<h2/g) ?? []).length).toBeGreaterThanOrEqual(4);
   });
 
   it("answers who and where without a second request", () => {
@@ -48,7 +55,7 @@ describe("homepage no-JavaScript fallback", () => {
   });
 
   it("points a crawler at the markdown surface rather than leaving it in a dead chat", () => {
-    for (const path of ["/index.md", "/llms.txt", "/llms-full.txt", "/agents.md", "/developers"]) {
+    for (const path of ["/index.md", "/llms.txt", "/llms-full.txt", "/agents.md"]) {
       expect(HOMEPAGE_FALLBACK_HTML).toContain(`href="${path}"`);
     }
   });

@@ -21,6 +21,7 @@ const MACHINE_READABLE = [
   { href: "/llms.txt", label: "llms.txt" },
   { href: "/llms-full.txt", label: "llms-full.txt" },
   { href: "/index.md", label: "index.md" },
+  { href: "/agents.md", label: "agents.md" },
   { href: "/sitemap.xml", label: "sitemap.xml" },
 ] as const;
 

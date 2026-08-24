@@ -53,7 +53,6 @@ describe("llms.txt agent guidance", () => {
   it("links the dedicated agent instruction file and the developer resources", async () => {
     const body = await llmsTxt();
     expect(body).toContain(`${SITE_URL}/agents.md`);
-    expect(body).toContain(`${SITE_URL}/developers`);
     expect(body).toContain(`${SITE_URL}/index.md`);
   });
 });

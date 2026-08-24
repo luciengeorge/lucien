@@ -3,19 +3,20 @@ import { WORK_META } from "#/lib/content/work-meta";
 import { WRITING_META } from "#/lib/content/writing-meta";
 
 /**
- * The homepage without JavaScript.
+ * The homepage's static substance: the bio, the roles with dates, the writing,
+ * and the routes into the rest of the site including the markdown ones.
  *
- * The homepage is a chat, so with scripting off it is an inert transcript and a
- * dead textbox. Anything reading the raw document (an AI crawler, a
- * text-mode browser, a reader with scripting blocked) needs the substance the
- * conversation would otherwise have to be asked for, which is what this is: the
- * bio, the roles with dates, the writing, and the routes into the rest of the
- * site including the markdown ones.
+ * This lived in a `<noscript>` first, which was wrong twice over. A crawler
+ * that extracts the main content of a page strips `noscript` along with the
+ * landmark elements, so it counted for nothing (measured: the homepage read as
+ * 1,317 chars with a single heading while this sat in the document). And a
+ * visitor who *can* run scripts still gets a chat with no static answer to
+ * "who is this", which is the one question a first visit asks.
  *
- * `<noscript>` is the right container rather than a hidden div: with scripting
- * enabled the parser treats its contents as raw text, so it never enters the
- * DOM and costs nothing at runtime, and with scripting disabled it renders as
- * the page it should have been.
+ * A closed `<details>` fixes both. It is one muted line until someone opens
+ * it, so the chat keeps the page; its content is in the DOM either way, so
+ * anything reading the document sees the prose and the heading outline; and it
+ * opens without scripting, which is what the fallback was for.
  */
 function fallbackMarkdown(): string {
   const roles = WORK_META.map((entry) => `- **${entry.role} at ${entry.company}**, ${entry.period}. ${entry.summary}`);
@@ -36,6 +37,10 @@ function fallbackMarkdown(): string {
     ``,
     ...writing,
     ``,
+    `## Skills`,
+    ``,
+    `TypeScript and JavaScript first, with React and the TanStack ecosystem (Start, Router, Query, Form), Tailwind CSS, and Convex. Ruby on Rails and Python behind that, Electron for desktop, and native iOS, Android, and React Native for mobile. English, French, and Arabic.`,
+    ``,
     `## Read the rest`,
     ``,
     `- [About](/about) and [Skills](/skills): background, and the stack in detail.`,
@@ -46,9 +51,9 @@ function fallbackMarkdown(): string {
     ``,
     `## For crawlers and agents`,
     ``,
-    `This chat is not the only way in, and it is not the source of truth. The same content is served as markdown: [/index.md](/index.md) maps the site, [/llms.txt](/llms.txt) indexes it, [/llms-full.txt](/llms-full.txt) is all of it in one file, and [/agents.md](/agents.md) says when this site is the right source and how to cite it. Every page also has a \`.md\` twin and answers \`Accept: text/markdown\` on its canonical URL. See [/developers](/developers).`,
+    `This chat is not the only way in, and it is not the source of truth. The same content is served as markdown: [/index.md](/index.md) maps the site, [/llms.txt](/llms.txt) indexes it, [/llms-full.txt](/llms-full.txt) is all of it in one file, and [/agents.md](/agents.md) says when this site is the right source and how to cite it. Every page also has a \`.md\` twin and answers \`Accept: text/markdown\` on its canonical URL.`,
   ].join("\n");
 }
 
-/** Pre-rendered so `<noscript>` can take it as a single opaque HTML string. */
+/** Pre-rendered so the disclosure can take it as one opaque HTML string. */
 export const HOMEPAGE_FALLBACK_HTML = renderMarkdown(fallbackMarkdown());
