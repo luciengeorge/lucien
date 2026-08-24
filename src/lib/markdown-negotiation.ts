@@ -144,6 +144,7 @@ export function prefersHtml(header: string | null | undefined): boolean {
 const NEGOTIABLE_PAGES: ReadonlySet<string> = new Set([
   "/about",
   "/contact",
+  "/developers",
   "/education",
   "/privacy",
   "/resume",

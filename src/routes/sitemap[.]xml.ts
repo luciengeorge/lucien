@@ -38,6 +38,7 @@ function buildSitemap(): string {
     { loc: `${SITE_URL}/education`, lastmod, changefreq: "monthly", priority: "0.7" },
     { loc: `${SITE_URL}/resume`, lastmod, changefreq: "monthly", priority: "0.9" },
     { loc: `${SITE_URL}/contact`, lastmod, changefreq: "yearly", priority: "0.6" },
+    { loc: `${SITE_URL}/developers`, lastmod, changefreq: "monthly", priority: "0.6" },
     { loc: `${SITE_URL}/privacy`, lastmod, changefreq: "yearly", priority: "0.3" },
   ];
 

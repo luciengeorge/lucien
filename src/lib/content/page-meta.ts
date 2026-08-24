@@ -20,6 +20,12 @@ export const CONTACT_META: PageMeta = {
     "How to reach Lucien George: email, the assistant's contact tool, and social profiles. What to get in touch about, and what never gets a reply.",
 };
 
+export const DEVELOPERS_META: PageMeta = {
+  title: "Lucien George | Developer and agent resources",
+  description:
+    "The machine-readable surface of luciengeorge.com: llms.txt, llms-full.txt, a markdown twin for every page, Accept: text/markdown negotiation, JSON-LD, and the open-source repository behind the site.",
+};
+
 export const PRIVACY_META: PageMeta = {
   title: "Privacy | Lucien George",
   description:

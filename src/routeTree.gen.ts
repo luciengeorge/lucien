@@ -23,8 +23,11 @@ import { Route as LlmsFullDottxtRouteImport } from './routes/llms-full[.]txt'
 import { Route as IndexDotmdRouteImport } from './routes/index[.]md'
 import { Route as EducationDotmdRouteImport } from './routes/education[.]md'
 import { Route as EducationRouteImport } from './routes/education'
+import { Route as DevelopersDotmdRouteImport } from './routes/developers[.]md'
+import { Route as DevelopersRouteImport } from './routes/developers'
 import { Route as ContactDotmdRouteImport } from './routes/contact[.]md'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as AgentsDotmdRouteImport } from './routes/agents[.]md'
 import { Route as AboutDotmdRouteImport } from './routes/about[.]md'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthRouteImport } from './routes/_auth'
@@ -111,6 +114,16 @@ const EducationRoute = EducationRouteImport.update({
   path: '/education',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DevelopersDotmdRoute = DevelopersDotmdRouteImport.update({
+  id: '/developers.md',
+  path: '/developers.md',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DevelopersRoute = DevelopersRouteImport.update({
+  id: '/developers',
+  path: '/developers',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ContactDotmdRoute = ContactDotmdRouteImport.update({
   id: '/contact.md',
   path: '/contact.md',
@@ -119,6 +132,11 @@ const ContactDotmdRoute = ContactDotmdRouteImport.update({
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AgentsDotmdRoute = AgentsDotmdRouteImport.update({
+  id: '/agents.md',
+  path: '/agents.md',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutDotmdRoute = AboutDotmdRouteImport.update({
@@ -202,8 +220,11 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/about.md': typeof AboutDotmdRoute
+  '/agents.md': typeof AgentsDotmdRoute
   '/contact': typeof ContactRoute
   '/contact.md': typeof ContactDotmdRoute
+  '/developers': typeof DevelopersRoute
+  '/developers.md': typeof DevelopersDotmdRoute
   '/education': typeof EducationRoute
   '/education.md': typeof EducationDotmdRoute
   '/index.md': typeof IndexDotmdRoute
@@ -234,8 +255,11 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/about.md': typeof AboutDotmdRoute
+  '/agents.md': typeof AgentsDotmdRoute
   '/contact': typeof ContactRoute
   '/contact.md': typeof ContactDotmdRoute
+  '/developers': typeof DevelopersRoute
+  '/developers.md': typeof DevelopersDotmdRoute
   '/education': typeof EducationRoute
   '/education.md': typeof EducationDotmdRoute
   '/index.md': typeof IndexDotmdRoute
@@ -268,8 +292,11 @@ export interface FileRoutesById {
   '/_auth': typeof AuthRouteWithChildren
   '/about': typeof AboutRoute
   '/about.md': typeof AboutDotmdRoute
+  '/agents.md': typeof AgentsDotmdRoute
   '/contact': typeof ContactRoute
   '/contact.md': typeof ContactDotmdRoute
+  '/developers': typeof DevelopersRoute
+  '/developers.md': typeof DevelopersDotmdRoute
   '/education': typeof EducationRoute
   '/education.md': typeof EducationDotmdRoute
   '/index.md': typeof IndexDotmdRoute
@@ -302,8 +329,11 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/about.md'
+    | '/agents.md'
     | '/contact'
     | '/contact.md'
+    | '/developers'
+    | '/developers.md'
     | '/education'
     | '/education.md'
     | '/index.md'
@@ -334,8 +364,11 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/about.md'
+    | '/agents.md'
     | '/contact'
     | '/contact.md'
+    | '/developers'
+    | '/developers.md'
     | '/education'
     | '/education.md'
     | '/index.md'
@@ -367,8 +400,11 @@ export interface FileRouteTypes {
     | '/_auth'
     | '/about'
     | '/about.md'
+    | '/agents.md'
     | '/contact'
     | '/contact.md'
+    | '/developers'
+    | '/developers.md'
     | '/education'
     | '/education.md'
     | '/index.md'
@@ -401,8 +437,11 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRouteWithChildren
   AboutRoute: typeof AboutRoute
   AboutDotmdRoute: typeof AboutDotmdRoute
+  AgentsDotmdRoute: typeof AgentsDotmdRoute
   ContactRoute: typeof ContactRoute
   ContactDotmdRoute: typeof ContactDotmdRoute
+  DevelopersRoute: typeof DevelopersRoute
+  DevelopersDotmdRoute: typeof DevelopersDotmdRoute
   EducationRoute: typeof EducationRoute
   EducationDotmdRoute: typeof EducationDotmdRoute
   IndexDotmdRoute: typeof IndexDotmdRoute
@@ -528,6 +567,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EducationRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/developers.md': {
+      id: '/developers.md'
+      path: '/developers.md'
+      fullPath: '/developers.md'
+      preLoaderRoute: typeof DevelopersDotmdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/developers': {
+      id: '/developers'
+      path: '/developers'
+      fullPath: '/developers'
+      preLoaderRoute: typeof DevelopersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/contact.md': {
       id: '/contact.md'
       path: '/contact.md'
@@ -540,6 +593,13 @@ declare module '@tanstack/react-router' {
       path: '/contact'
       fullPath: '/contact'
       preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/agents.md': {
+      id: '/agents.md'
+      path: '/agents.md'
+      fullPath: '/agents.md'
+      preLoaderRoute: typeof AgentsDotmdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/about.md': {
@@ -667,8 +727,11 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRouteWithChildren,
   AboutRoute: AboutRoute,
   AboutDotmdRoute: AboutDotmdRoute,
+  AgentsDotmdRoute: AgentsDotmdRoute,
   ContactRoute: ContactRoute,
   ContactDotmdRoute: ContactDotmdRoute,
+  DevelopersRoute: DevelopersRoute,
+  DevelopersDotmdRoute: DevelopersDotmdRoute,
   EducationRoute: EducationRoute,
   EducationDotmdRoute: EducationDotmdRoute,
   IndexDotmdRoute: IndexDotmdRoute,

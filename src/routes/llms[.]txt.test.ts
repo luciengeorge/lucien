@@ -34,3 +34,26 @@ describe("GET /llms.txt", () => {
     }
   });
 });
+
+async function llmsTxt(): Promise<string> {
+  return (await getHandler()({ request: new Request("http://localhost/llms.txt") })).text();
+}
+
+describe("llms.txt agent guidance", () => {
+  it("tells an agent when this site is the right source", async () => {
+    const body = await llmsTxt();
+    expect(body).toContain("## When to use this site");
+    expect(body).toContain("Senior Product Engineer at Fyxer");
+  });
+
+  it("says when to look elsewhere, so the section is guidance rather than marketing", async () => {
+    expect(await llmsTxt()).toContain("Do not use this site as a source for anything else");
+  });
+
+  it("links the dedicated agent instruction file and the developer resources", async () => {
+    const body = await llmsTxt();
+    expect(body).toContain(`${SITE_URL}/agents.md`);
+    expect(body).toContain(`${SITE_URL}/developers`);
+    expect(body).toContain(`${SITE_URL}/index.md`);
+  });
+});

@@ -1,6 +1,7 @@
 import type { ChatConversationState } from "#/lib/chat-types";
 
 import { ChatPage } from "#/components/chat/chat-page";
+import { HOMEPAGE_FALLBACK_HTML } from "#/lib/content/homepage-fallback";
 import { fetchHomepageIntro } from "#/lib/homepage-intro";
 import { SITE_URL } from "#/lib/site-config";
 import { createFileRoute } from "@tanstack/react-router";
@@ -39,15 +40,27 @@ function HomePage() {
    * on a wall of assistant prose with no name, no role and nothing saying
    * what the box at the bottom was for. This sits in space the transcript
    * was already leaving empty, so it costs no scroll.
+   *
+   * A div rather than a <header>: an extractor looking for the main content of
+   * a page drops header, nav, and footer elements wherever they sit, and the
+   * only h1 on the homepage was inside one. An audit read the document as
+   * having no heading at all while the same document reported h1=1 to a
+   * checker counting tags.
    */
   return (
     <>
-      <header className="mx-auto w-full max-w-3xl shrink-0 px-4 pb-3 sm:px-6 sm:pb-4">
+      <div className="mx-auto w-full max-w-3xl shrink-0 px-4 pb-3 sm:px-6 sm:pb-4">
         <h1 className="text-xl font-semibold tracking-tight text-neutral-950 sm:text-2xl">Lucien George</h1>
         <p className="mt-1 text-sm text-neutral-600 sm:text-base">
           Senior Product Engineer at Fyxer. Ask this page anything about his work.
         </p>
-      </header>
+      </div>
+      <noscript>
+        <div
+          className="mx-auto prose max-w-3xl overflow-y-auto px-4 pb-10 prose-neutral sm:px-6"
+          dangerouslySetInnerHTML={{ __html: HOMEPAGE_FALLBACK_HTML }}
+        />
+      </noscript>
       <ChatPage initialChatState={initialChatState} />
     </>
   );
