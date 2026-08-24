@@ -1,6 +1,7 @@
 import type { LinkComponentProps } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
+import { SiteFooter } from "#/components/site-footer";
 import { renderMarkdown } from "#/lib/content/markdown";
 import { usePageScrollRestoration } from "#/lib/scroll-restoration";
 import { ArrowLeft01Icon } from "@hugeicons-pro/core-stroke-rounded";
@@ -76,6 +77,7 @@ export function ContentPage({
 
         {footer ? <div className="mt-12 border-t border-neutral-950/10 pt-8">{footer}</div> : null}
       </article>
+      <SiteFooter />
     </div>
   );
 }
