@@ -17,7 +17,7 @@ export const ABOUT_META: PageMeta = {
 export const CONTACT_META: PageMeta = {
   title: "Contact Lucien George",
   description:
-    "How to reach Lucien George: email, the assistant's contact tool, and social profiles. What to get in touch about, and what never gets a reply.",
+    "How to reach Lucien George: email, the assistant's contact tool, and social profiles, plus where he is based and which languages he reads.",
 };
 
 export const PRIVACY_META: PageMeta = {

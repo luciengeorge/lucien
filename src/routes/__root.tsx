@@ -18,7 +18,6 @@ import { SpeedInsights } from "@vercel/speed-insights/react";
 import { useEffect, useState } from "react";
 
 import ConvexProvider from "../integrations/convex/provider";
-import { GoogleAnalyticsPageViews, GoogleAnalyticsScripts } from "../integrations/google-analytics/provider";
 import PostHogInit from "../integrations/posthog/provider";
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 import TanStackQueryProvider from "../integrations/tanstack-query/root-provider";
@@ -188,13 +187,11 @@ function RootDocument({ children }: { children: ReactNode }) {
       <head>
         <HeadContent />
         <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
-        <GoogleAnalyticsScripts />
       </head>
       <body className="font-sans wrap-anywhere antialiased">
         <GlobalLoading />
         <Analytics />
         <SpeedInsights />
-        <GoogleAnalyticsPageViews />
         <ConvexProvider>
           <TanStackQueryProvider>
             <PostHogInit />
