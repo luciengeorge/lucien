@@ -23,11 +23,20 @@ export function loadPostHog(): Promise<PostHog | null> {
   }
 
   initPromise = import("posthog-js").then(({ default: posthog }) => {
+    /*
+     * Cookieless: PostHog stores nothing in cookies, localStorage or
+     * sessionStorage, and counts visitors with a server-side privacy-preserving
+     * hash instead. That is what lets the site run with no consent banner and
+     * no non-essential cookies at all, which is worth more than the
+     * cross-session identity we lose (autocapture was already off, so the only
+     * events are the ones the code names).
+     */
     posthog.init(posthogKey, {
       api_host: posthogHost || "https://eu.i.posthog.com",
       autocapture: false,
       capture_pageleave: true,
       capture_pageview: true,
+      cookieless_mode: "always",
       defaults: "2026-01-30",
       person_profiles: "identified_only",
     });

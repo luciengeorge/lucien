@@ -242,3 +242,36 @@ test.describe("site footer", () => {
     expect(Math.abs(gap), `footer bottom was ${gap}px from the bottom of the scroll area`).toBeLessThan(4);
   });
 });
+
+test.describe("no non-essential storage", () => {
+  /*
+   * The privacy page claims a complete cookie list and no banner, which is only
+   * true while nothing sets a tracking cookie. PostHog runs in cookieless mode
+   * and Google Analytics was removed; this fails if either changes, or if a new
+   * cookie appears that the page does not document.
+   */
+  const DOCUMENTED = ["lucien-conversation", "toast"];
+
+  test("the homepage sets only the documented functional cookies, and no web storage", async ({ page, context }) => {
+    await page.goto("/", { waitUntil: "networkidle" });
+    await page.waitForTimeout(1500);
+
+    const names = (await context.cookies()).map((cookie) => cookie.name).sort();
+    for (const name of names) {
+      expect(DOCUMENTED, `cookie "${name}" is not documented on /privacy`).toContain(name);
+    }
+
+    const stored = await page.evaluate(() => ({
+      local: Object.keys(localStorage),
+      session: Object.keys(sessionStorage),
+    }));
+    expect(stored.local.filter((key) => key.startsWith("ph_"))).toEqual([]);
+    expect(stored.session.filter((key) => key.startsWith("ph_"))).toEqual([]);
+  });
+
+  test("no Google Analytics anywhere in the document or the CSP", async ({ request }) => {
+    const res = await request.get("/", { headers: { Accept: "text/html" } });
+    expect(await res.text()).not.toContain("googletagmanager");
+    expect(res.headers()["content-security-policy"]).not.toContain("googletagmanager");
+  });
+});
