@@ -184,3 +184,61 @@ test.describe("static content pages", () => {
     }
   });
 });
+
+test.describe("site footer", () => {
+  // Every page with content of its own carries it. The chat homepage does not:
+  // it is a fixed-height conversation with no scroll area to end.
+  const FOOTER_PATHS = [
+    "/about",
+    "/skills",
+    "/education",
+    "/contact",
+    "/privacy",
+    "/work",
+    `/work/${WORK_META[0]?.slug ?? "fyxer"}`,
+    "/writing",
+    `/writing/${WRITING_META[0]?.slug ?? ""}`,
+    "/resume",
+  ];
+
+  for (const path of FOOTER_PATHS) {
+    test(`${path} carries the footer`, async ({ page }) => {
+      await page.goto(path);
+      const pages = page.getByRole("navigation", { name: "Pages" });
+      await expect(pages.getByRole("link", { name: "Contact" })).toHaveAttribute("href", "/contact");
+      await expect(pages.getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "/privacy");
+      await expect(page.getByRole("navigation", { name: "For agents" })).toBeVisible();
+    });
+  }
+
+  test("/ (chat homepage) has no footer", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByRole("navigation", { name: "Pages" })).toHaveCount(0);
+  });
+
+  /*
+   * A short page on a tall viewport leaves slack in the scroll area, and the
+   * footer belongs at the bottom of it rather than floating under the last
+   * paragraph with empty space beneath.
+   */
+  test("the footer sits at the bottom of the scroll area, not under the last paragraph", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 1400 });
+    await page.goto("/writing");
+
+    const scroller = page.locator("[data-page-scroll]");
+    await expect(scroller).toHaveCount(1);
+
+    const scrollerBox = await scroller.boundingBox();
+    const footerBox = await page.locator("footer").boundingBox();
+    expect(scrollerBox).not.toBeNull();
+    expect(footerBox).not.toBeNull();
+
+    // The page is short enough that nothing scrolls, so this is a pure
+    // layout assertion: the footer's bottom edge meets the scroller's.
+    const scrolls = await scroller.evaluate((el) => el.scrollHeight > el.clientHeight + 1);
+    expect(scrolls, "/writing should be short enough to leave slack at this height").toBe(false);
+
+    const gap = scrollerBox!.y + scrollerBox!.height - (footerBox!.y + footerBox!.height);
+    expect(Math.abs(gap), `footer bottom was ${gap}px from the bottom of the scroll area`).toBeLessThan(4);
+  });
+});

@@ -1,9 +1,8 @@
 import type { LinkComponentProps } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
-import { SiteFooter } from "#/components/site-footer";
+import { PageScroll } from "#/components/page-scroll";
 import { renderMarkdown } from "#/lib/content/markdown";
-import { usePageScrollRestoration } from "#/lib/scroll-restoration";
 import { ArrowLeft01Icon } from "@hugeicons-pro/core-stroke-rounded";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Link } from "@tanstack/react-router";
@@ -36,10 +35,9 @@ export function ContentPage({
   back,
 }: ContentPageProps) {
   const html = sources.map((source) => renderMarkdown(source)).join("\n");
-  const scrollRestoration = usePageScrollRestoration();
 
   return (
-    <div className="min-h-0 grow overflow-y-auto" {...scrollRestoration}>
+    <PageScroll>
       <article className="mx-auto w-full max-w-3xl px-4 pt-6 pb-16 sm:px-6 sm:pt-10 sm:pb-20">
         {back ? (
           <Link
@@ -77,7 +75,6 @@ export function ContentPage({
 
         {footer ? <div className="mt-12 border-t border-neutral-950/10 pt-8">{footer}</div> : null}
       </article>
-      <SiteFooter />
-    </div>
+    </PageScroll>
   );
 }
