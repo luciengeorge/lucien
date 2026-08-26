@@ -5,6 +5,12 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "#/comp
 import { File01Icon, Navigation03Icon } from "@hugeicons-pro/core-stroke-rounded";
 import { HugeiconsIcon } from "@hugeicons/react";
 
+/** True on touch-primary devices. False during SSR, where there is no `matchMedia`. */
+function isCoarsePointer(): boolean {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return false;
+  return window.matchMedia("(pointer: coarse)").matches;
+}
+
 export function ChatComposer({
   canSubmit,
   disabled,
@@ -32,6 +38,7 @@ export function ChatComposer({
       <InputGroup className="rounded-3xl border-transparent bg-neutral-950/3 ring-1 ring-neutral-950/10 has-[[data-slot=input-group-control]:focus-visible]:border-transparent has-[[data-slot=input-group-control]:focus-visible]:ring-2 has-[[data-slot=input-group-control]:focus-visible]:ring-neutral-950/15">
         <InputGroupTextarea
           aria-label="Ask Poof about Lucien"
+          autoFocus={!isCoarsePointer()}
           className="max-h-40 min-h-0 resize-none overflow-y-auto py-3 pl-4 text-base placeholder:text-neutral-500 sm:py-3.5 sm:pl-5 sm:text-base"
           disabled={isInputBusy}
           name="message"
