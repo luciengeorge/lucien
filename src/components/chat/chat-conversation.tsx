@@ -21,6 +21,7 @@ import { ChatIntroPlaceholder } from "./chat-intro-placeholder";
 import { ChatNewConversationBar } from "./chat-new-conversation-bar";
 import { ChatPendingReply } from "./chat-pending-reply";
 import { transcriptScrollBehaviour } from "./chat-scroll-position";
+import { ChatSendFailed } from "./chat-send-failed";
 import { ChatStarterPrompts } from "./chat-starter-prompts";
 import { ChatTimelineMessage } from "./chat-timeline-message";
 import { createRateLimitAwareFetch, entryItemClassName, getSettledAssistantAnalyticsEvents } from "./chat.utils";
@@ -59,7 +60,7 @@ export function ChatConversation({
     void startConversation({});
   }, [chatState.conversation, startConversation]);
 
-  const { messages, sendMessage, status } = useChat({
+  const { clearError, messages, regenerate, sendMessage, status } = useChat({
     id: chatState.conversation?.id ?? "new-conversation",
     messages: initialMessages,
     transport: new DefaultChatTransport({
@@ -111,13 +112,7 @@ export function ChatConversation({
     }
   }, [capture, status, visibleMessages]);
 
-  /*
-    Two different reasons the composer cannot send, and they need different
-    treatment. Before the conversation exists there is nowhere to send, so the
-    input is genuinely unusable. While a reply streams the input is perfectly
-    usable - you just cannot send a second message yet - so disabling it there
-    only served to blur it and throw away your place.
-  */
+  // Disabling the input while streaming would blur it, so the two reasons stay apart.
   const isReady = Boolean(chatState.conversation);
   const isStreaming = status === "submitted" || status === "streaming";
   const isBusy = isStreaming || !isReady;
@@ -189,6 +184,14 @@ export function ChatConversation({
                   </MessageScrollerItem>
                 ))}
                 {showPendingReply ? <ChatPendingReply isFirst={visibleMessages.length === 0} /> : null}
+                {status === "error" ? (
+                  <ChatSendFailed
+                    onRetry={() => {
+                      clearError();
+                      void regenerate();
+                    }}
+                  />
+                ) : null}
               </MessageScrollerContent>
             </MessageScrollerViewport>
             <MessageScrollerButton />

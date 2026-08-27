@@ -48,21 +48,18 @@ test.describe("composer after sending", () => {
   test("clears and refocuses immediately, and actually sends", async ({ page }) => {
     await page.goto("/");
     const composer = page.getByRole("textbox").first();
-    // The composer is disabled until the conversation exists, so this also
-    // waits for the app to be genuinely ready to send.
+    // Disabled until the conversation exists, so this also waits for readiness.
     await expect(composer).toBeEnabled({ timeout: 15_000 });
 
     const sent = page.waitForRequest((r) => r.url().includes("/api/chat") && r.method() === "POST");
     await composer.fill("What does he build?");
     await composer.press("Enter");
 
-    // The send must really happen. An earlier version of this test only
-    // checked that the box emptied, which passed even when nothing was sent.
+    // Assert the send itself: an emptied box alone passes even when nothing sent.
     await sent;
     await expect(page.getByText("What does he build?")).toBeVisible({ timeout: 10_000 });
 
-    // Both of these while the reply is still streaming. Measured at 5.4s
-    // before the change, during which the text sat in a blurred input.
+    // Both while the reply is still streaming; it took 5.4s before the change.
     await expect(composer).toHaveValue("", { timeout: 2_000 });
     await expect(composer).toBeFocused({ timeout: 2_000 });
   });
@@ -80,5 +77,30 @@ test.describe("composer after sending", () => {
     await expect(composer).toHaveValue("", { timeout: 2_000 });
     await composer.fill("And where?");
     await expect(composer).toHaveValue("And where?");
+  });
+});
+
+test.describe("when a message fails to send", () => {
+  test("says so, and offers a retry that actually re-sends", async ({ page }) => {
+    await page.goto("/");
+    const composer = page.getByRole("textbox").first();
+    await expect(composer).toBeEnabled({ timeout: 15_000 });
+
+    let attempts = 0;
+    await page.route("**/api/chat", (route) => {
+      attempts += 1;
+      if (attempts === 1) return route.fulfill({ status: 500, body: "boom" });
+      return route.continue();
+    });
+
+    await composer.fill("What does he build?");
+    await composer.press("Enter");
+
+    const failure = page.getByRole("status").filter({ hasText: /didn't go through/i });
+    await expect(failure).toBeVisible({ timeout: 10_000 });
+
+    await page.getByRole("button", { name: /try again/i }).click();
+    await expect.poll(() => attempts, { timeout: 10_000 }).toBeGreaterThan(1);
+    await expect(failure).toBeHidden({ timeout: 10_000 });
   });
 });
