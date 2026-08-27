@@ -111,7 +111,16 @@ export function ChatConversation({
     }
   }, [capture, status, visibleMessages]);
 
-  const isBusy = status === "submitted" || status === "streaming" || !chatState.conversation;
+  /*
+    Two different reasons the composer cannot send, and they need different
+    treatment. Before the conversation exists there is nowhere to send, so the
+    input is genuinely unusable. While a reply streams the input is perfectly
+    usable - you just cannot send a second message yet - so disabling it there
+    only served to blur it and throw away your place.
+  */
+  const isReady = Boolean(chatState.conversation);
+  const isStreaming = status === "submitted" || status === "streaming";
+  const isBusy = isStreaming || !isReady;
 
   const handleSend = async (message: string) => {
     capture(AnalyticsEvent.chatMessageSubmitted, {
@@ -195,7 +204,12 @@ export function ChatConversation({
         <div className="sticky bottom-0 z-10">
           <div className="relative mx-auto w-full max-w-3xl px-4 sm:px-6">
             <div className="bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/75">
-              <ChatComposerBlock isBusy={isBusy} onResumeRequest={handleResumeRequest} onSend={handleSend} />
+              <ChatComposerBlock
+                isReady={isReady}
+                isStreaming={isStreaming}
+                onResumeRequest={handleResumeRequest}
+                onSend={handleSend}
+              />
             </div>
           </div>
         </div>

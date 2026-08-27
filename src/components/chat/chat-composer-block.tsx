@@ -8,11 +8,15 @@ const FormSchema = z.object({
 });
 
 export function ChatComposerBlock({
-  isBusy,
+  isReady,
+  isStreaming,
   onResumeRequest,
   onSend,
 }: {
-  isBusy: boolean;
+  /** False until the conversation exists, when there is nowhere to send. */
+  isReady: boolean;
+  /** True while a reply is arriving: still typable, not yet sendable. */
+  isStreaming: boolean;
   onResumeRequest: () => void;
   onSend: (message: string) => Promise<void>;
 }) {
@@ -22,8 +26,13 @@ export function ChatComposerBlock({
     },
     validators: {
       onSubmit: FormSchema,
-      onSubmitAsync: async ({ value }) => {
-        await onSend(value.message);
+      /*
+        Clear first, send second, and do not await the send. `onSend` resolves
+        only when the whole reply has streamed - measured at 5.4s - so awaiting
+        it left the sent text sitting in the box for the entire response.
+      */
+      onSubmitAsync: ({ value }) => {
+        void onSend(value.message);
         form.reset();
       },
     },
@@ -48,7 +57,8 @@ export function ChatComposerBlock({
           {(field) => (
             <ChatComposer
               canSubmit={canSubmit}
-              disabled={isBusy}
+              isReady={isReady}
+              isStreaming={isStreaming}
               isSubmitting={isSubmitting}
               message={String(message)}
               onBlur={() => field.handleBlur()}

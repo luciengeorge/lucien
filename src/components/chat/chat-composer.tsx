@@ -13,7 +13,8 @@ function isCoarsePointer(): boolean {
 
 export function ChatComposer({
   canSubmit,
-  disabled,
+  isReady,
+  isStreaming,
   isSubmitting,
   message,
   onBlur,
@@ -22,7 +23,8 @@ export function ChatComposer({
   onSubmit,
 }: {
   canSubmit: boolean;
-  disabled: boolean;
+  isReady: boolean;
+  isStreaming: boolean;
   isSubmitting: boolean;
   message: string;
   onBlur: React.FocusEventHandler<HTMLTextAreaElement>;
@@ -30,8 +32,7 @@ export function ChatComposer({
   onResumeRequest: () => void;
   onSubmit: React.SubmitEventHandler<HTMLFormElement>;
 }) {
-  const isInputBusy = disabled || isSubmitting;
-  const canSend = !isInputBusy && canSubmit && message.length > 0;
+  const canSend = isReady && !isStreaming && !isSubmitting && canSubmit && message.length > 0;
 
   return (
     <form className="border-t border-neutral-950/8 pt-2.5 pb-2 sm:pt-4 sm:pb-3" onSubmit={onSubmit}>
@@ -40,7 +41,7 @@ export function ChatComposer({
           aria-label="Ask Poof about Lucien"
           autoFocus={!isCoarsePointer()}
           className="max-h-40 min-h-0 resize-none overflow-y-auto py-3 pl-4 text-base placeholder:text-neutral-500 sm:py-3.5 sm:pl-5 sm:text-base"
-          disabled={isInputBusy}
+          disabled={!isReady}
           name="message"
           onBlur={onBlur}
           onChange={(event) => onChange(event.target.value)}
@@ -64,7 +65,7 @@ export function ChatComposer({
                 render={
                   <Button
                     className="size-9 shrink-0 rounded-full text-neutral-700 hover:bg-neutral-950/6 hover:text-neutral-950 sm:size-10"
-                    disabled={isInputBusy}
+                    disabled={!isReady || isStreaming}
                     onClick={onResumeRequest}
                     size="icon"
                     type="button"

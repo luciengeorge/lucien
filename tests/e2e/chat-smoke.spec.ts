@@ -43,3 +43,42 @@ test.describe("composer focus on touch", () => {
     await expect(composer).not.toBeFocused();
   });
 });
+
+test.describe("composer after sending", () => {
+  test("clears and refocuses immediately, and actually sends", async ({ page }) => {
+    await page.goto("/");
+    const composer = page.getByRole("textbox").first();
+    // The composer is disabled until the conversation exists, so this also
+    // waits for the app to be genuinely ready to send.
+    await expect(composer).toBeEnabled({ timeout: 15_000 });
+
+    const sent = page.waitForRequest((r) => r.url().includes("/api/chat") && r.method() === "POST");
+    await composer.fill("What does he build?");
+    await composer.press("Enter");
+
+    // The send must really happen. An earlier version of this test only
+    // checked that the box emptied, which passed even when nothing was sent.
+    await sent;
+    await expect(page.getByText("What does he build?")).toBeVisible({ timeout: 10_000 });
+
+    // Both of these while the reply is still streaming. Measured at 5.4s
+    // before the change, during which the text sat in a blurred input.
+    await expect(composer).toHaveValue("", { timeout: 2_000 });
+    await expect(composer).toBeFocused({ timeout: 2_000 });
+  });
+
+  test("stays typable while the reply streams, so the next question can be written", async ({ page }) => {
+    await page.goto("/");
+    const composer = page.getByRole("textbox").first();
+    await expect(composer).toBeEnabled({ timeout: 15_000 });
+
+    const sent = page.waitForRequest((r) => r.url().includes("/api/chat") && r.method() === "POST");
+    await composer.fill("What does he build?");
+    await composer.press("Enter");
+    await sent;
+
+    await expect(composer).toHaveValue("", { timeout: 2_000 });
+    await composer.fill("And where?");
+    await expect(composer).toHaveValue("And where?");
+  });
+});
