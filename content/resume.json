@@ -23,7 +23,13 @@
           "employmentType": "Full-time",
           "start": "2025-09",
           "end": null,
-          "bullets": ["Senior product engineer in the notetaker team. Leading the development of the notetaker app."]
+          "bullets": [
+            "Founded and shipped Fyxer's desktop notetaker from zero to one: a native macOS and Windows app that records meetings without a bot, now at ~35,000 recordings a month from ~2,000 monthly active users.",
+            "Built Fyxer's unified agentic chat over meetings and email, turning two prototypes into the production system now reaching 5,000 to 8,000 distinct senders a month.",
+            "Ran the reliability analysis and roadmap that took desktop capture rate from 33% to ~55% and week-8 retention from a projected 3% to ~34%.",
+            "Moved to the Access / B2B pod in April 2026: made Fyxer's SCIM endpoint RFC 7644 compliant, shipped Microsoft Marketplace signups end to end, and built the enterprise analytics dashboard.",
+            "Cracked Outlook signature extraction with no Microsoft API, and built a CI gate that renders every transactional email in real Outlook before it can ship."
+          ]
         }
       ]
     },
