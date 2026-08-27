@@ -8,11 +8,13 @@ const FormSchema = z.object({
 });
 
 export function ChatComposerBlock({
-  isBusy,
+  isReady,
+  isStreaming,
   onResumeRequest,
   onSend,
 }: {
-  isBusy: boolean;
+  isReady: boolean;
+  isStreaming: boolean;
   onResumeRequest: () => void;
   onSend: (message: string) => Promise<void>;
 }) {
@@ -22,8 +24,9 @@ export function ChatComposerBlock({
     },
     validators: {
       onSubmit: FormSchema,
-      onSubmitAsync: async ({ value }) => {
-        await onSend(value.message);
+      // `onSend` only resolves once the whole reply has streamed, so clear first.
+      onSubmitAsync: ({ value }) => {
+        void onSend(value.message);
         form.reset();
       },
     },
@@ -48,7 +51,8 @@ export function ChatComposerBlock({
           {(field) => (
             <ChatComposer
               canSubmit={canSubmit}
-              disabled={isBusy}
+              isReady={isReady}
+              isStreaming={isStreaming}
               isSubmitting={isSubmitting}
               message={String(message)}
               onBlur={() => field.handleBlur()}

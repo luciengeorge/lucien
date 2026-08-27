@@ -16,3 +16,91 @@ test.describe("chat homepage smoke", () => {
     expect(errors, `pageerrors:\n${errors.join("\n")}`).toEqual([]);
   });
 });
+
+test.describe("composer focus on landing", () => {
+  test("focuses the input when a visitor lands with a keyboard", async ({ page }) => {
+    await page.goto("/");
+    const composer = page.getByRole("textbox").first();
+    await expect(composer).toBeVisible({ timeout: 10_000 });
+    // The composer is disabled on first paint (the conversation is created
+    // client-side), so focus has to arrive once it is enabled.
+    await expect(composer).toBeEnabled({ timeout: 10_000 });
+    await expect(composer).toBeFocused({ timeout: 5_000 });
+  });
+});
+
+test.describe("composer focus on touch", () => {
+  test.use({ hasTouch: true, isMobile: true, viewport: { height: 844, width: 390 } });
+
+  test("leaves the input alone, so the keyboard does not ambush the page", async ({ page }) => {
+    await page.goto("/");
+    const composer = page.getByRole("textbox").first();
+    await expect(composer).toBeVisible({ timeout: 10_000 });
+    await expect(composer).toBeEnabled({ timeout: 10_000 });
+    // Give the focus effect the same window it gets on desktop before asserting.
+    await page.waitForTimeout(1500);
+    expect(await page.evaluate(() => window.matchMedia("(pointer: coarse)").matches)).toBe(true);
+    await expect(composer).not.toBeFocused();
+  });
+});
+
+test.describe("composer after sending", () => {
+  test("clears and refocuses immediately, and actually sends", async ({ page }) => {
+    await page.goto("/");
+    const composer = page.getByRole("textbox").first();
+    // Disabled until the conversation exists, so this also waits for readiness.
+    await expect(composer).toBeEnabled({ timeout: 15_000 });
+
+    const sent = page.waitForRequest((r) => r.url().includes("/api/chat") && r.method() === "POST");
+    await composer.fill("What does he build?");
+    await composer.press("Enter");
+
+    // Assert the send itself: an emptied box alone passes even when nothing sent.
+    await sent;
+    await expect(page.getByText("What does he build?")).toBeVisible({ timeout: 10_000 });
+
+    // Both while the reply is still streaming; it took 5.4s before the change.
+    await expect(composer).toHaveValue("", { timeout: 2_000 });
+    await expect(composer).toBeFocused({ timeout: 2_000 });
+  });
+
+  test("stays typable while the reply streams, so the next question can be written", async ({ page }) => {
+    await page.goto("/");
+    const composer = page.getByRole("textbox").first();
+    await expect(composer).toBeEnabled({ timeout: 15_000 });
+
+    const sent = page.waitForRequest((r) => r.url().includes("/api/chat") && r.method() === "POST");
+    await composer.fill("What does he build?");
+    await composer.press("Enter");
+    await sent;
+
+    await expect(composer).toHaveValue("", { timeout: 2_000 });
+    await composer.fill("And where?");
+    await expect(composer).toHaveValue("And where?");
+  });
+});
+
+test.describe("when a message fails to send", () => {
+  test("says so, and offers a retry that actually re-sends", async ({ page }) => {
+    await page.goto("/");
+    const composer = page.getByRole("textbox").first();
+    await expect(composer).toBeEnabled({ timeout: 15_000 });
+
+    let attempts = 0;
+    await page.route("**/api/chat", (route) => {
+      attempts += 1;
+      if (attempts === 1) return route.fulfill({ status: 500, body: "boom" });
+      return route.continue();
+    });
+
+    await composer.fill("What does he build?");
+    await composer.press("Enter");
+
+    const failure = page.getByRole("status").filter({ hasText: /didn't go through/i });
+    await expect(failure).toBeVisible({ timeout: 10_000 });
+
+    await page.getByRole("button", { name: /try again/i }).click();
+    await expect.poll(() => attempts, { timeout: 10_000 }).toBeGreaterThan(1);
+    await expect(failure).toBeHidden({ timeout: 10_000 });
+  });
+});
