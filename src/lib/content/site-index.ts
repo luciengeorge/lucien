@@ -74,7 +74,7 @@ function machineReadableLines(): string[] {
 
 export function buildSiteIndexMarkdown(): string {
   const body = [
-    `Lucien George is a Senior Product Engineer at Fyxer, based in London and originally from Beirut, Lebanon. He leads development of Fyxer's notetaker: a native macOS and Windows desktop app that records meetings without sending a bot into the call, plus the AI tooling that searches and extracts insight from what it captures. Before Fyxer he worked at Shopify and Le Wagon, and co-founded Localista, Skyla, and Impact Lebanon. He works across TypeScript, React, Ruby on Rails, Python, Electron, and native mobile, and he teaches, races karts, and runs ultras.`,
+    `Lucien George is a Senior Product Engineer at Fyxer, based in London and originally from Beirut, Lebanon. He founded Fyxer's notetaker, a native macOS and Windows desktop app that records meetings without sending a bot into the call, plus the AI tooling that searches and extracts insight from what it captures, and now works on Fyxer's enterprise product. Before Fyxer he worked at Shopify and Le Wagon, and co-founded Localista, Skyla, and Impact Lebanon. He works across TypeScript, React, Ruby on Rails, Python, Electron, and native mobile, and he teaches, races karts, and runs ultras.`,
     ``,
     `This file is the agent entry point for ${SITE_URL}: a map of every page, its markdown twin, and the machine-readable files, so you can answer most questions in one or two fetches.`,
     ``,

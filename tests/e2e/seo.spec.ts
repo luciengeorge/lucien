@@ -186,7 +186,8 @@ test.describe("route <head> metadata", () => {
     {
       path: "/work/fyxer",
       title: "Senior Product Engineer at Fyxer | Lucien George",
-      description: "Leads the notetaker desktop app at Fyxer - a background meeting recorder for macOS and Windows.",
+      description:
+        "Founded Fyxer's notetaker desktop app, then moved to the enterprise pod - SCIM, marketplace billing, and Outlook.",
       ogType: "article",
       canonical: "https://www.luciengeorge.com/work/fyxer",
       jsonLdType: "Article",

@@ -25,7 +25,7 @@ function fallbackMarkdown(): string {
   return [
     `## About Lucien`,
     ``,
-    `Lucien George is a fullstack developer and product engineer based in London, United Kingdom, originally from Beirut, Lebanon. As a Senior Product Engineer at Fyxer he leads development of the notetaker: a native macOS and Windows desktop app that records meetings without sending a bot into the call, together with the AI tooling that searches and extracts insight from what it captures. Before Fyxer he worked at Shopify and taught at Le Wagon, and he co-founded Localista, Skyla, and Impact Lebanon.`,
+    `Lucien George is a fullstack developer and product engineer based in London, United Kingdom, originally from Beirut, Lebanon. As a Senior Product Engineer at Fyxer he founded the notetaker: a native macOS and Windows desktop app that records meetings without sending a bot into the call, together with the AI tooling that searches and extracts insight from what it captures. He now works on Fyxer's enterprise product, from SCIM provisioning to Microsoft Marketplace billing. Before Fyxer he worked at Shopify and taught at Le Wagon, and he co-founded Localista, Skyla, and Impact Lebanon.`,
     ``,
     `He works across TypeScript, JavaScript, React and the TanStack ecosystem, Ruby on Rails, Python, Electron, and native mobile, with Convex and SQL behind them. He speaks English, French, and Arabic. Outside work he teaches, races karts, and runs ultras. His name is Lucien George, no s.`,
     ``,
