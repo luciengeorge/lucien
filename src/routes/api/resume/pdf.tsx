@@ -1,6 +1,6 @@
 import { loadResume } from "#/lib/resume/load";
 import { ResumeDocument } from "#/lib/resume/pdf-document";
-import { CACHE_HEADER } from "#/lib/site-config";
+import { CACHE_HEADER, SITE_URL } from "#/lib/site-config";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { createFileRoute } from "@tanstack/react-router";
 
@@ -25,18 +25,6 @@ async function hashEtag(input: string) {
   return `"${hex.slice(0, 16)}"`;
 }
 
-function resolveBaseUrl(request: Request) {
-  try {
-    const url = new URL(request.url);
-    if (url.host) return `${url.protocol}//${url.host}`;
-  } catch {
-    // ignore
-  }
-  const proto = request.headers.get("x-forwarded-proto") ?? "https";
-  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? "localhost:3000";
-  return `${proto}://${host}`;
-}
-
 export const Route = createFileRoute("/api/resume/pdf")({
   server: {
     handlers: {
@@ -55,8 +43,14 @@ export const Route = createFileRoute("/api/resume/pdf")({
           });
         }
 
-        const baseUrl = resolveBaseUrl(request);
-        const buffer = await renderToBuffer(<ResumeDocument baseUrl={baseUrl} resume={resume} />);
+        // Company logos are fetched server-side while rendering, so they have to
+        // come from an origin this request can actually read. Resolving them
+        // against the request's own host breaks on protected preview
+        // deployments: the self-fetch is redirected to the login page, and
+        // react-pdf rejects the extensionless redirect target ("Not valid image
+        // extension") and silently drops the image. The canonical origin serves
+        // the same assets, publicly, from every environment.
+        const buffer = await renderToBuffer(<ResumeDocument baseUrl={SITE_URL} resume={resume} />);
 
         return new Response(new Uint8Array(buffer), {
           headers: {
