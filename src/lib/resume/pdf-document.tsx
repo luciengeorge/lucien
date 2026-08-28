@@ -16,18 +16,18 @@ const COLORS = {
 const styles = StyleSheet.create({
   bullet: {
     color: COLORS.muted,
-    fontSize: 9.5,
-    lineHeight: 1.5,
+    fontSize: 9,
+    lineHeight: 1.4,
   },
   bulletRow: {
     flexDirection: "row",
-    marginBottom: 3,
+    marginBottom: 2,
   },
   bulletText: {
     color: COLORS.muted,
     flex: 1,
-    fontSize: 9.5,
-    lineHeight: 1.5,
+    fontSize: 9,
+    lineHeight: 1.4,
   },
   column: {
     flexDirection: "column",
@@ -39,22 +39,16 @@ const styles = StyleSheet.create({
   },
   educationDegree: {
     color: COLORS.text,
-    fontSize: 10.5,
+    fontSize: 10,
     fontWeight: 500,
   },
   educationItem: {
-    marginBottom: 10,
+    marginBottom: 3,
   },
   educationMeta: {
     color: COLORS.muted,
-    fontSize: 9,
-    marginTop: 1.5,
-  },
-  educationNote: {
-    color: COLORS.subtle,
     fontSize: 8.5,
-    lineHeight: 1.4,
-    marginTop: 3,
+    marginTop: 1,
   },
   experienceBody: {
     flex: 1,
@@ -73,14 +67,22 @@ const styles = StyleSheet.create({
   experienceItem: {
     flexDirection: "row",
     gap: 10,
-    marginBottom: 11,
+    marginBottom: 6,
     position: "relative",
+  },
+  footerRow: {
+    borderTopColor: COLORS.border,
+    borderTopWidth: 0.6,
+    flexDirection: "row",
+    gap: 20,
+    marginTop: 2,
+    paddingTop: 8,
   },
   header: {
     borderBottomColor: COLORS.border,
     borderBottomWidth: 0.6,
-    marginBottom: 16,
-    paddingBottom: 12,
+    marginBottom: 10,
+    paddingBottom: 9,
   },
   headerContact: {
     color: COLORS.muted,
@@ -138,16 +140,16 @@ const styles = StyleSheet.create({
     fontFamily: "Helvetica",
     fontSize: 9.5,
     paddingHorizontal: 40,
-    paddingVertical: 32,
+    paddingVertical: 28,
   },
   pill: {
     backgroundColor: "#f4f4f5",
     borderRadius: 3,
     color: COLORS.text,
-    fontSize: 8.5,
-    marginBottom: 4,
-    marginRight: 4,
-    paddingHorizontal: 6,
+    fontSize: 8,
+    marginBottom: 3,
+    marginRight: 3,
+    paddingHorizontal: 5,
     paddingVertical: 2,
   },
   pillGroup: {
@@ -155,7 +157,7 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
   },
   roleEntry: {
-    marginTop: 6,
+    marginTop: 4,
   },
   roleHeaderRow: {
     alignItems: "baseline",
@@ -176,28 +178,17 @@ const styles = StyleSheet.create({
     color: COLORS.subtle,
     fontWeight: 400,
   },
-  row: {
-    flexDirection: "row",
-    gap: 26,
-  },
   sectionHeading: {
     color: COLORS.subtle,
     fontSize: 9,
     fontWeight: 600,
     letterSpacing: 1.5,
-    marginBottom: 10,
+    marginBottom: 7,
     textTransform: "uppercase",
-  },
-  sidebar: {
-    flexDirection: "column",
-    width: 170,
-  },
-  sidebarBlock: {
-    marginBottom: 16,
   },
   timelineLine: {
     backgroundColor: COLORS.timeline,
-    bottom: -11,
+    bottom: -6,
     left: 13.5,
     position: "absolute",
     top: 28,
@@ -305,57 +296,51 @@ export function ResumeDocument({ baseUrl, resume }: { baseUrl: string; resume: R
           </View>
         </View>
 
-        <View style={styles.row}>
-          <View style={styles.sidebar}>
-            <View style={styles.sidebarBlock}>
-              <Text style={styles.sectionHeading}>Education</Text>
-              {education.map((item, index) => (
-                <View key={`${item.school}-${index}`} style={styles.educationItem}>
-                  <Text style={styles.educationDegree}>{item.degree}</Text>
-                  <Text style={styles.educationMeta}>
-                    {item.school} · {item.location}
-                  </Text>
-                  <Text style={styles.educationMeta}>
-                    {item.start === item.end ? item.start : `${item.start} – ${item.end}`}
-                  </Text>
-                  {item.note ? <Text style={styles.educationNote}>{item.note}</Text> : null}
-                </View>
+        <View style={styles.column}>
+          <Text style={styles.sectionHeading}>Experience</Text>
+          {experiences.map((experience, index) => (
+            <ExperienceBlock
+              key={`${experience.company}-${index}`}
+              baseUrl={baseUrl}
+              experience={experience}
+              isLast={index === experiences.length - 1}
+            />
+          ))}
+        </View>
+
+        <View style={styles.footerRow}>
+          <View style={[styles.column, { flex: 1.5 }]}>
+            <Text style={styles.sectionHeading}>Education</Text>
+            {education.map((item, index) => (
+              <View key={`${item.school}-${index}`} style={styles.educationItem}>
+                <Text style={styles.educationDegree}>{item.degree}</Text>
+                <Text style={styles.educationMeta}>
+                  {item.school} · {item.location} · {item.start === item.end ? item.start : `${item.start}-${item.end}`}
+                </Text>
+              </View>
+            ))}
+          </View>
+
+          <View style={[styles.column, { flex: 1.15 }]}>
+            <Text style={styles.sectionHeading}>Programming</Text>
+            <View style={styles.pillGroup}>
+              {skills.programming.map((skill) => (
+                <Text key={skill} style={styles.pill}>
+                  {skill}
+                </Text>
               ))}
-            </View>
-
-            <View style={styles.sidebarBlock}>
-              <Text style={styles.sectionHeading}>Programming</Text>
-              <View style={styles.pillGroup}>
-                {skills.programming.map((skill) => (
-                  <Text key={skill} style={styles.pill}>
-                    {skill}
-                  </Text>
-                ))}
-              </View>
-            </View>
-
-            <View style={styles.sidebarBlock}>
-              <Text style={styles.sectionHeading}>Languages</Text>
-              <View style={styles.pillGroup}>
-                {skills.spokenLanguages.map((language) => (
-                  <Text key={language} style={styles.pill}>
-                    {language}
-                  </Text>
-                ))}
-              </View>
             </View>
           </View>
 
-          <View style={[styles.column, { flex: 1 }]}>
-            <Text style={styles.sectionHeading}>Experience</Text>
-            {experiences.map((experience, index) => (
-              <ExperienceBlock
-                key={`${experience.company}-${index}`}
-                baseUrl={baseUrl}
-                experience={experience}
-                isLast={index === experiences.length - 1}
-              />
-            ))}
+          <View style={[styles.column, { flex: 0.55 }]}>
+            <Text style={styles.sectionHeading}>Languages</Text>
+            <View style={styles.pillGroup}>
+              {skills.spokenLanguages.map((language) => (
+                <Text key={language} style={styles.pill}>
+                  {language}
+                </Text>
+              ))}
+            </View>
           </View>
         </View>
       </Page>

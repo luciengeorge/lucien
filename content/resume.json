@@ -1,7 +1,7 @@
 {
   "personal": {
     "name": "Lucien George",
-    "title": "Fullstack Developer",
+    "title": "Senior Product Engineer",
     "email": "lucienkgeorge@gmail.com",
     "phone": "+44 7 845 714513",
     "location": "London, UK",
@@ -24,11 +24,10 @@
           "start": "2025-09",
           "end": null,
           "bullets": [
-            "Founded and shipped Fyxer's desktop notetaker from zero to one: a native macOS and Windows app that records meetings without a bot, now at ~35,000 recordings a month from ~2,000 monthly active users.",
-            "Built Fyxer's unified agentic chat over meetings and email, turning two prototypes into the production system now reaching 5,000 to 8,000 distinct senders a month.",
-            "Ran the reliability analysis and roadmap that took desktop capture rate from 33% to ~55% and week-8 retention from a projected 3% to ~34%.",
-            "Moved to the Access / B2B pod in April 2026: made Fyxer's SCIM endpoint RFC 7644 compliant, shipped Microsoft Marketplace signups end to end, and built the enterprise analytics dashboard.",
-            "Cracked Outlook signature extraction with no Microsoft API, and built a CI gate that renders every transactional email in real Outlook before it can ship."
+            "Founded Fyxer's desktop notetaker, zero to one: a native macOS and Windows meeting recorder that needs no bot. Now ~35,000 recordings a month from ~2,000 MAU.",
+            "Turned two prototypes into Fyxer's production agentic chat over meetings and email, now reaching 5,000 to 8,000 senders a month; owns ~85% of that codebase.",
+            "Reversed an internal decision to kill the product with a multi-week analysis, then shipped the roadmap: capture rate 33% to ~55%, week-8 retention 3% to ~34%.",
+            "On the enterprise pod since Apr 2026: SCIM to RFC 7644 (Entra validator 0 to 21/21), Microsoft Marketplace billing end to end, and the enterprise analytics dashboard."
           ]
         }
       ]
@@ -44,7 +43,10 @@
           "employmentType": "Full-time",
           "start": "2024-04",
           "end": "2025-07",
-          "bullets": ["Co-Founder and CTO at Localista."]
+          "bullets": [
+            "Architected and built a B2B event marketing platform end to end on TypeScript, Remix, and Redis: guest lists, campaigns, live event tools, post-event analytics.",
+            "Led two engineers, and called the pivot with the investors once the event market proved unwilling to adopt new tooling."
+          ]
         }
       ]
     },
@@ -59,7 +61,9 @@
           "employmentType": "Full-time",
           "start": "2023-09",
           "end": "2024-04",
-          "bullets": ["Co-Founder at Skyla."]
+          "bullets": [
+            "Led an AI support chatbot for Shopify stores in the first months of the OpenAI API: one-click install, then API and scraping to auto-build each store's knowledge base."
+          ]
         }
       ]
     },
@@ -75,7 +79,7 @@
           "start": "2023-05",
           "end": "2023-09",
           "bullets": [
-            "Worked in parallel on the Shopify Checkout, an SDK for marketplaces on both iOS and Android, and on the Shopify core application."
+            "Led Shopify's native checkout SDK for iOS and Android: partner checkout code down 75%, conversion up over 15%, load times down 90%. Shipped first to Meta-powered apps."
           ]
         },
         {
@@ -83,7 +87,9 @@
           "employmentType": "Full-time",
           "start": "2022-01",
           "end": "2023-05",
-          "bullets": ["Worked on an API for marketplaces in the core Shopify application."]
+          "bullets": [
+            "Built the marketplaces API in Shopify core, putting Shopify Checkout in the hands of marketplace partners."
+          ]
         }
       ]
     },
@@ -98,7 +104,9 @@
           "employmentType": "Self-employed",
           "start": "2019-10",
           "end": "2026-04",
-          "bullets": ["Responsible for building our online presence by creating our two websites."]
+          "bullets": [
+            "Built the online presence for a Lebanese diaspora non-profit whose fundraiser after the 2020 Beirut explosion went from a $15,000 goal to $8.3M in under 48 hours."
+          ]
         }
       ]
     },
@@ -113,10 +121,7 @@
           "employmentType": "Full-time",
           "start": "2021-07",
           "end": "2021-12",
-          "bullets": [
-            "Technical lead of the B2B platform and office management app.",
-            "Responsible for the growth of the London dev team."
-          ]
+          "bullets": ["Technical lead on the B2B platform and office app; grew and managed the London dev team."]
         },
         {
           "role": "Lead Teacher and Software Engineer",
@@ -124,17 +129,8 @@
           "start": "2019-05",
           "end": "2021-07",
           "bullets": [
-            "Worked on the company's internal platforms.",
-            "Gave several lectures that are part of our 9-week long web development and data science bootcamps.",
-            "Managed the teaching team."
+            "Taught hundreds of students across 9-week web and data science bootcamps; ran the teaching team."
           ]
-        },
-        {
-          "role": "Teaching Assistant",
-          "employmentType": "Freelance",
-          "start": "2019-01",
-          "end": "2019-04",
-          "bullets": ["Teaching assistant at Le Wagon for their full-time and part-time bootcamps."]
         }
       ]
     },
@@ -149,7 +145,7 @@
           "employmentType": "Freelance",
           "start": "2018-12",
           "end": "2019-04",
-          "bullets": ["Worked on the company's main website and their clients' websites."]
+          "bullets": []
         }
       ]
     }
@@ -169,7 +165,7 @@
       "location": "London, UK",
       "start": "2018",
       "end": "2018",
-      "note": "Batch #190. 9-week intensive coding bootcamp covering HTML, CSS, Bootstrap, JavaScript ES2015, SQL, Git, GitHub, Heroku, Ruby on Rails, React, and Redux."
+      "note": "Batch #190. 9-week intensive full-stack bootcamp."
     },
     {
       "school": "UNSW",
@@ -177,7 +173,7 @@
       "location": "Sydney, Australia",
       "start": "2017",
       "end": "2017",
-      "note": "Exchange semester at the University of New South Wales."
+      "note": null
     },
     {
       "school": "McGill University",
@@ -185,7 +181,7 @@
       "location": "Montreal, Canada",
       "start": "2013",
       "end": "2018",
-      "note": "Bachelor of Engineering in Software Engineering."
+      "note": null
     }
   ],
   "skills": {
@@ -194,16 +190,12 @@
       "JavaScript",
       "React",
       "React Router",
-      "Remix",
       "Next.js",
       "React Native",
       "Ruby on Rails",
       "Python",
       "FastAPI",
       "SQL",
-      "HTML",
-      "CSS",
-      "Java",
       "Kotlin",
       "Swift"
     ],
