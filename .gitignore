@@ -19,3 +19,8 @@ tests/e2e/.auth/
 
 # Isolated git worktrees created by Claude Code agents
 .claude/worktrees/
+
+# Per-editor MCP configs. `.mcp.json` is tracked deliberately; the Cursor and
+# Codex equivalents were removed in 138e611 and their tools keep rewriting them.
+.codex/
+.cursor/
