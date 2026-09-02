@@ -104,3 +104,38 @@ test.describe("when a message fails to send", () => {
     await expect(failure).toBeHidden({ timeout: 10_000 });
   });
 });
+
+test.describe("composer with an empty message", () => {
+  /**
+   * `InputGroup` washed the whole group out via `has-disabled:opacity-50`,
+   * which is `:has(:disabled)` and so matched the send button too. The send
+   * button is disabled exactly when the message is empty, so an empty composer
+   * dimmed its own border, background and the resume button. Only the send
+   * button should look unavailable.
+   */
+  test("dims the send button only, not the whole composer", async ({ page }) => {
+    await page.goto("/");
+    const composer = page.getByRole("textbox").first();
+    await expect(composer).toBeVisible({ timeout: 10_000 });
+    await expect(composer).toBeEnabled({ timeout: 10_000 });
+    await expect(composer).toHaveValue("");
+
+    const group = page.locator("[data-slot=input-group]");
+    // Exact: a starter prompt reads "Can I see Lucien's resume?" and matches otherwise.
+    const resume = page.getByRole("button", { exact: true, name: "Resume" });
+    const send = page.getByRole("button", { name: "Send" });
+
+    await expect(send).toBeDisabled();
+    await expect(resume).toBeEnabled();
+
+    const opacityOf = async (target: typeof group) => target.evaluate((node) => window.getComputedStyle(node).opacity);
+
+    expect(await opacityOf(group), "the composer itself must not be dimmed").toBe("1");
+    expect(await opacityOf(resume), "the resume button must not be dimmed").toBe("1");
+
+    // Typing must not be what restores a normal-looking composer.
+    await composer.fill("hello");
+    await expect(send).toBeEnabled();
+    expect(await opacityOf(group)).toBe("1");
+  });
+});
