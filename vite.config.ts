@@ -28,6 +28,11 @@ const config = defineConfig({
     }),
   ],
   clearScreen: false,
+  resolve: {
+    // streamdown and class-variance-authority still import these; `cn` exports drop-in
+    // twMerge/clsx, so aliasing keeps one class-merging implementation in the bundle.
+    alias: { "tailwind-merge": "cn", clsx: "cn" },
+  },
   define: {
     __CONTENT_LAST_MODIFIED__: JSON.stringify(contentLastModified()),
   },
