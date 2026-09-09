@@ -3,6 +3,7 @@ import { match } from "ts-pattern";
 import { z } from "zod";
 
 import type { ChatMessage, ChatStatus } from "./chat.types";
+import type { PoofMarkState } from "./poof-mark";
 
 import { ChatContactCard } from "./chat-contact-card";
 import { ChatMarkdown } from "./chat-markdown";
@@ -10,6 +11,7 @@ import { ChatResumeCard } from "./chat-resume-card";
 import { ChatStatusMarker } from "./chat-status-marker";
 import { ChatWorkLinkCard } from "./chat-work-link-card";
 import { TOOL_PROGRESS_LABELS } from "./chat.constants";
+import { PoofMark } from "./poof-mark";
 
 const ResumeToolOutputSchema = z.object({
   filename: z.string(),
@@ -160,16 +162,26 @@ export function ChatTimelineMessage({
     : [];
   const hasToolActivity = hasToolCard || toolProgressChips.length > 0;
 
+  // The mark belongs to the turn that is still being produced: a settled answer, a past
+  // turn, and the user's own messages all read as plain text. A tool in flight outranks
+  // streaming text, because looking something up is the more specific thing to show.
+  const isLiveAssistantTurn = role === "assistant" && isActive && !isSettled;
+  const hasPendingTool = resumeIsPending || workLinkIsPending || contactIsPending;
+  const markState: PoofMarkState = hasPendingTool ? "working" : textParts.length > 0 ? "speaking" : "thinking";
+
   return (
     <div className="space-y-4">
-      <p
-        className={cn(
-          "font-mono text-sm tracking-wide uppercase",
-          role === "assistant" ? "text-neutral-500" : "text-neutral-400",
-        )}
-      >
-        {role === "user" ? "You" : "Poof"}
-      </p>
+      <div className="flex items-center gap-2">
+        {isLiveAssistantTurn ? <PoofMark state={markState} /> : null}
+        <p
+          className={cn(
+            "font-mono text-sm tracking-wide uppercase",
+            role === "assistant" ? "text-neutral-500" : "text-neutral-400",
+          )}
+        >
+          {role === "user" ? "You" : "Poof"}
+        </p>
+      </div>
 
       {reasoningParts.length > 0 ? (
         <div className="space-y-2 border-l border-neutral-950/8 pl-4">
