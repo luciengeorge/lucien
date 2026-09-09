@@ -4,6 +4,7 @@ import { devtools } from "@tanstack/devtools-vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
 import { nitro } from "nitro/vite";
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
@@ -31,7 +32,9 @@ const config = defineConfig({
   resolve: {
     // streamdown and class-variance-authority still import these; `cn` exports drop-in
     // twMerge/clsx, so aliasing keeps one class-merging implementation in the bundle.
-    alias: { "tailwind-merge": "cn", clsx: "cn" },
+    // clsx goes through a shim because `cn` has no default export and some consumers
+    // (@tanstack/devtools) default-import it. See shims/clsx.ts.
+    alias: { "tailwind-merge": "cn", clsx: fileURLToPath(new URL("./shims/clsx.ts", import.meta.url)) },
   },
   define: {
     __CONTENT_LAST_MODIFIED__: JSON.stringify(contentLastModified()),
