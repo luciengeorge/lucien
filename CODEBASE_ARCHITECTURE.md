@@ -9,11 +9,11 @@ Lucien George's personal site + AI portfolio assistant ("Poof"). A single TanSta
 - **Data**: TanStack Query + `@convex-dev/react-query`
 - **Forms**: TanStack Form + Zod
 - **Backend**: Convex (`@convex-dev/rag`, `@convex-dev/better-auth`, `@convex-dev/action-cache`)
-- **AI**: Vercel AI SDK (`ai` v6) + OpenAI (`gpt-5.4-nano` expansion, `gpt-5.4-mini` chat/intro, `text-embedding-3-small` embeddings)
+- **AI**: Vercel AI SDK (`ai` v6) + OpenAI (`gpt-5.6-luna` expansion, `gpt-5.6-luna` chat/intro, `text-embedding-3-small` embeddings)
 - **Auth**: Better Auth (email/password, verification, owner-only allowlist)
 - **UI**: shadcn-style components on Base UI / Radix + CVA, Tailwind CSS v4, `motion`, `sonner`, hugeicons/lucide
 - **PDF**: `@react-pdf/renderer` (resume)
-- **Observability**: Sentry, PostHog, Vercel Analytics + Speed Insights, Google Analytics
+- **Observability**: Sentry, PostHog, Vercel Analytics + Speed Insights
 - **Quality**: Vitest (convex/node/jsdom), Playwright (e2e), Poof eval harness; oxfmt + oxlint, `tsgo` typecheck
 - **Runtime**: pnpm, Node 22; deployed on Vercel
 
@@ -45,7 +45,7 @@ Browser ──► TanStack Start (Nitro / Vercel)
 
 ### Provider tree (`src/routes/__root.tsx`)
 
-`ConvexProvider` → `TanStackQueryProvider` → (`PostHogInit`, `Toaster`, `SiteNav`, `<main>{routes}</main>`, devtools), with Vercel Analytics + Speed Insights + Google Analytics and JSON-LD in the document shell.
+`ConvexProvider` → `TanStackQueryProvider` → (`PostHogInit`, `Toaster`, `SiteNav`, `<main>{routes}</main>`, devtools), with Vercel Analytics + Speed Insights and JSON-LD in the document shell.
 
 ### Entry points
 
@@ -58,7 +58,7 @@ Browser ──► TanStack Start (Nitro / Vercel)
 
 ### Routes (`src/routes/`)
 
-File-based. Pages: `/` (chat), `/about`, `/skills`, `/education`, `/work` + `/work/$slug`, `/resume`, `/login`, `/signup`. API: `/api/chat` (POST), `/api/auth/$`, `/api/resume/pdf`. SEO: `/sitemap.xml`, `/llms.txt`, `/llms-full.txt`. `__root.tsx` owns global SEO meta + JSON-LD (Person / WebSite / FAQPage); per-route heads add page-specific meta + structured data. `routeTree.gen.ts` is generated.
+File-based. Pages: `/` (chat), `/about`, `/skills`, `/education`, `/contact`, `/privacy`, `/work` + `/work/$slug`, `/writing` + `/writing/$slug`, `/resume`, `/login`, `/signup`. API: `/api/chat` (POST), `/api/auth/$`, `/api/resume/pdf`. SEO: `/sitemap.xml`, `/llms.txt`, `/llms-full.txt`. Agent surface: a `.md` twin of every page (filenames escape the dot, e.g. `about[.]md.ts`) plus `/index.md` and `/agents.md`; `src/lib/markdown-negotiation.ts` parses `Accept` with q-values and `src/lib/agent-representation.ts` rewrites the request to the twin, so a client that prefers markdown gets source instead of HTML. `__root.tsx` owns global SEO meta + JSON-LD (Organization / Person / WebSite / FAQPage); per-route heads add page-specific meta + structured data via `buildSeoHead`. `routeTree.gen.ts` is generated; `*.test.ts` files colocated here are excluded from it by `routeFileIgnorePattern` in `vite.config.ts`.
 
 ### Components (`src/components/`)
 
@@ -69,12 +69,17 @@ File-based. Pages: `/` (chat), `/about`, `/skills`, `/education`, `/work` + `/wo
 
 ### Lib (`src/lib/`)
 
-- `content/registry.ts` + `content/work-meta.ts` - single source for work entries; joins metadata with `?raw` markdown
-- `resume/{load,schema,pdf-document}` - resume loading (zod-validated), formatting, PDF
+- `content/registry.ts` + `content/{work,writing}-meta.ts` - single source for work and writing entries; the meta files carry no `?raw` imports so Playwright specs can import them, and `registry.ts` joins them to the markdown
+- `content/{markdown,markdown-page,page-meta,site-index,agent-instructions,homepage-fallback,article-date}.ts` - markdown rendering (`marked`), YAML frontmatter for the `.md` twins, and the shared title/description source so head tags and markdown never drift
+- `markdown-negotiation.ts`, `agent-representation.ts`, `not-found-markdown.ts` - RFC 9110 `Accept` negotiation and the markdown 404
+- `seo.ts` (`buildSeoHead`), `structured-data.ts` (JSON-LD `@graph`), `site-config.ts`, `name-misspellings.ts`
+- `page-caching.ts` - sets `Cache-Control` on HTML SSR responses only (never on a `Set-Cookie` response)
+- `resume/{load,schema,pdf-document,markdown}` - resume loading (zod-validated), formatting, PDF, markdown
 - `auth-config.ts` / `auth-client.ts` / `auth-server.ts` - Better Auth wiring
 - `conversation-session.server.ts`, `toast-session.server.ts` - sealed-cookie sessions (`TOAST_SECRET`)
-- `functions/` - server functions (session, toast, start-new-conversation)
-- `analytics.ts` (typed PostHog events), `logger.ts`, `social-links.ts`, `homepage-intro.ts`, `utils.ts` (`cn()`)
+- `functions/` - server functions: `get-session`, `get-toast`, `set-toast`, `redirect-with-toast`, `start-new-conversation`
+- `chat-types.ts`, `chat-intro.ts`, `chat/tools.ts`, `link-work-entry.ts`, `conversation-intro.server.ts`, `notify-slack.ts` - chat request/message schemas and the three chat tools
+- `analytics.ts` (typed PostHog events), `logger.ts`, `correlation-id.ts`, `strip-dashes.ts`, `social-links.ts`, `homepage-intro.ts`, `work-slug-for-company.ts`, `scroll-restoration.ts`, `use-pending-nav.ts`, `toast.ts`, `schemas/auth.ts`, `utils.ts` (`cn()`)
 
 ## Backend (`convex/`)
 
@@ -97,7 +102,7 @@ UI messages are stored as JSON parts with extracted columns for queryability. Be
 
 ## Content (`content/`)
 
-Markdown is the single source of truth for both the chat RAG index and the rendered HTML pages + `/llms-full.txt`. Files: bio, personal, education, tech-stack, socials, and one per work entry (fyxer, localista, skyla, shopify, le-wagon, impact-lebanon, early-career). `system-prompt.md` holds Poof's prompt (`{retrieved_context}` slot; skipped by seeding). `resume.json` is structured and validated by `src/lib/resume/schema.ts`. `scripts/seed.ts` (`pnpm seed`) embeds the markdown into Convex RAG.
+Markdown is the single source of truth for both the chat RAG index and the rendered HTML pages + `/llms-full.txt`. Files: bio, personal, education, tech-stack, socials, contact, privacy, signature-work, one per work entry (fyxer, localista, skyla, shopify, le-wagon, impact-lebanon, early-career), and `writing/` for articles. `socials.md` and `signature-work.md` are seeded for RAG but never rendered as pages. `system-prompt.md` holds Poof's prompt (`{retrieved_context}` slot; skipped by seeding). `resume.json` is structured and validated by `src/lib/resume/schema.ts`. `scripts/seed.ts` (`pnpm seed`) embeds the markdown into Convex RAG.
 
 ## Sessions (three, independent)
 
@@ -109,9 +114,9 @@ Markdown is the single source of truth for both the chat RAG index and the rende
 
 1. Validate body (`ChatRequestSchema`) and the conversation-session cookie.
 2. Load the conversation from Convex; validate UI messages.
-3. Expand the query (`gpt-5.4-nano`).
+3. Expand the query (`gpt-5.6-luna`).
 4. RAG search (`searchContext`) → inject into `system-prompt.md`.
-5. Persist the user message; stream the answer (`gpt-5.4-mini`, `stepCountIs(3)`) with a `download_resume` tool.
+5. Persist the user message; stream the answer (`gpt-5.6-luna`, `stepCountIs(3)`) with a `download_resume` tool.
 6. `onFinish` persists the assistant message.
 
 The homepage's first message is a cached LLM intro (`convex/intro.ts`) read cookie-free and baked into first paint.
@@ -122,7 +127,7 @@ The homepage's first message is a cached LLM intro (`convex/intro.ts`) read cook
 - **Nitro** (`nitro.config.ts`): security headers on all routes; homepage edge-cached (`s-maxage=86400`, SWR); `/api/**` `no-store`; `/resume.pdf` → 301.
 - **Sentry**: browser (lazy) + server (`instrument.server.mjs`); source maps at build.
 - **PostHog**: global provider, conditional on `VITE_POSTHOG_KEY`; typed events in `src/lib/analytics.ts`.
-- **Vercel** Analytics + Speed Insights; Google Analytics.
+- **Vercel** Analytics + Speed Insights.
 
 ## Testing
 

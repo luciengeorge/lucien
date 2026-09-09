@@ -15,7 +15,9 @@ const config = defineConfig({
     devtools(),
     tsconfigPaths({ projects: ["./tsconfig.json"] }),
     tailwindcss(),
-    tanstackStart(),
+    // Tests live next to the routes they cover, but the generator treats every file under
+    // src/routes as a route candidate and warns once per test file on every build.
+    tanstackStart({ router: { routeFileIgnorePattern: "\\.test\\.tsx?$" } }),
     nitro(),
     viteReact({
       babel: {
