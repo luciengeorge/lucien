@@ -19,8 +19,9 @@ const EASE_OUT: [number, number, number, number] = [0.22, 1, 0.36, 1];
  * wherever the face is into the new pose instead of cutting. `oscillation` is what the
  * state *does* on top of that: relative keyframe loops that start and end on identity, so
  * each repeat wraps seamlessly and entering a state never cuts. Anything a state *holds*,
- * including the mean of a sweep, lives in `pose`, never in the loop. Under prefers-reduced-motion the oscillation is dropped
- * and the pose is applied instantly, which keeps the three states legible without motion.
+ * including the mean of a sweep, lives in `pose`, never in the loop. Under
+ * prefers-reduced-motion the oscillation is dropped and the pose is applied instantly,
+ * which keeps the three states legible without motion.
  *
  * The three are kept apart on three axes at once so they never blur together: thinking is
  * slow and upward, working is fast and horizontal with narrowed eyes, writing is rhythmic
@@ -124,14 +125,16 @@ export function PoofMark({
   const loop = (layer: Layer): Transition => (still ? { duration: 0 } : { repeat: Infinity, ...layer.timing });
 
   // The box collapses over the tail of the pop, once the face is already shrinking, so the
-  // label glides into place rather than snapping the moment the face is gone.
+  // label glides into place rather than snapping the moment the face is gone. The box owns
+  // its own trailing space (mr-3) and collapses that too, so the header wrappers need no gap
+  // and there is no spacing constant elsewhere for this exit to fall out of step with.
   const exitTiming: Transition = still ? { duration: 0 } : { duration: 0.3, delay: 0.14, ease: EASE_OUT };
 
   return (
     <motion.div
-      className={cn("size-14 shrink-0", className)}
+      className={cn("mr-3 size-14 shrink-0", className)}
       data-slot="poof-mark-box"
-      exit={{ height: 0, marginRight: -12, width: 0 }}
+      exit={{ height: 0, marginRight: 0, width: 0 }}
       transition={exitTiming}
     >
       <motion.svg
