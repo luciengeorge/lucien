@@ -20,6 +20,11 @@ const EASE_OUT: [number, number, number, number] = [0.22, 1, 0.36, 1];
  *
  * `moving` is the looping pose; `rest` is the single frame it collapses to under
  * prefers-reduced-motion, chosen so the state is still legible without motion.
+ *
+ * Every value in a `moving` pose is a keyframe array, including the constant offsets
+ * (`rotate: [8, 8]`). A bare scalar inside a repeating target is normalised to
+ * `[current, target]` and replays from identity on every cycle, so `rotate: 8` would
+ * have the head roll up from level every 3.2s instead of staying cocked.
  */
 type Expression = {
   eyes: { moving: TargetAndTransition; rest: TargetAndTransition; timing: Transition };
@@ -31,18 +36,18 @@ type Expression = {
 const blink = (open: number): TargetAndTransition => ({ scaleY: [open, open, 0.1, open] });
 const BLINK_TIMING: Transition = { duration: 4.2, ease: "easeInOut", times: [0, 0.9, 0.95, 1] };
 
-const EXPRESSIONS: Record<PoofMarkState, Expression> = {
+export const EXPRESSIONS: Record<PoofMarkState, Expression> = {
   // Head cocked, eyes a little narrowed and looking up, drifting side to side as if
   // recalling something. Everything here is slow.
   thinking: {
     eyes: { moving: blink(0.85), rest: { scaleY: 0.85 }, timing: BLINK_TIMING },
     figure: {
-      moving: { rotate: 8, scale: [1, 1.03, 1] },
+      moving: { rotate: [8, 8], scale: [1, 1.03, 1] },
       rest: { rotate: 8, scale: 1 },
       timing: { duration: 3.2, ease: "easeInOut" },
     },
     gaze: {
-      moving: { x: [-2.5, 3, -2.5], y: -3.5 },
+      moving: { x: [-2.5, 3, -2.5], y: [-3.5, -3.5] },
       rest: { x: 1.5, y: -3.5 },
       timing: { duration: 3.4, ease: "easeInOut" },
     },
@@ -52,12 +57,12 @@ const EXPRESSIONS: Record<PoofMarkState, Expression> = {
   working: {
     eyes: { moving: blink(0.45), rest: { scaleY: 0.45 }, timing: BLINK_TIMING },
     figure: {
-      moving: { scaleX: 1.05, scaleY: [0.93, 0.98, 0.93], y: 1 },
+      moving: { scaleX: [1.05, 1.05], scaleY: [0.93, 0.98, 0.93], y: [1, 1] },
       rest: { scaleX: 1.05, scaleY: 0.94, y: 1 },
       timing: { duration: 0.42, ease: "easeInOut" },
     },
     gaze: {
-      moving: { x: [-3, 3, -3], y: 0.5 },
+      moving: { x: [-3, 3, -3], y: [0.5, 0.5] },
       rest: { x: 0, y: 0.5 },
       timing: { duration: 0.85, ease: "easeInOut" },
     },

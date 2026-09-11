@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { PoofMark } from "./poof-mark";
+import { EXPRESSIONS, PoofMark } from "./poof-mark";
 
 afterEach(() => {
   cleanup();
@@ -36,28 +36,29 @@ describe("PoofMark", () => {
     expect(container.querySelector('[data-slot="poof-mark-prop"]')).toBeNull();
   });
 
-  it("still renders every state under reduced motion", () => {
-    const original = globalThis.matchMedia;
-    globalThis.matchMedia = (query: string): MediaQueryList => ({
-      addEventListener: () => {},
-      addListener: () => {},
-      dispatchEvent: () => false,
-      matches: query.includes("prefers-reduced-motion"),
-      media: query,
-      onchange: null,
-      removeEventListener: () => {},
-      removeListener: () => {},
-    });
+  it("keeps the three states distinguishable once motion is removed", () => {
+    // Under prefers-reduced-motion every loop collapses to its `rest` frame. jsdom never
+    // runs motion's frame loop, so this pins the claim at the data level: the three resting
+    // frames must differ, or the state is illegible for anyone who has motion turned off.
+    const states = ["thinking", "working", "writing"] as const;
+    const pairs = [
+      [states[0], states[1]],
+      [states[1], states[2]],
+      [states[0], states[2]],
+    ] as const;
 
-    try {
-      for (const state of ["thinking", "working", "writing"] as const) {
-        const { container } = render(<PoofMark state={state} />);
-        expect(mark(container)?.getAttribute("data-state")).toBe(state);
-        expect(container.querySelectorAll('[data-slot="poof-mark-eye"]')).toHaveLength(2);
-        cleanup();
+    for (const [a, b] of pairs) {
+      expect(EXPRESSIONS[a].eyes.rest).not.toEqual(EXPRESSIONS[b].eyes.rest);
+      expect(EXPRESSIONS[a].gaze.rest).not.toEqual(EXPRESSIONS[b].gaze.rest);
+    }
+    // And the figure holds a pose, not a snapshot mid-loop: every moving value is a keyframe
+    // array, so a repeating transition never replays a scalar from identity.
+    for (const state of states) {
+      for (const track of [EXPRESSIONS[state].figure, EXPRESSIONS[state].gaze, EXPRESSIONS[state].eyes]) {
+        for (const value of Object.values(track.moving)) {
+          expect(Array.isArray(value)).toBe(true);
+        }
       }
-    } finally {
-      globalThis.matchMedia = original;
     }
   });
 });
