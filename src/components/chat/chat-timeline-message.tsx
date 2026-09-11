@@ -3,7 +3,7 @@ import { match } from "ts-pattern";
 import { z } from "zod";
 
 import type { ChatMessage, ChatStatus } from "./chat.types";
-import type { PoofMarkState, PoofMarkTool } from "./poof-mark";
+import type { PoofMarkState } from "./poof-mark";
 
 import { ChatContactCard } from "./chat-contact-card";
 import { ChatMarkdown } from "./chat-markdown";
@@ -147,19 +147,16 @@ export function ChatTimelineMessage({
   const contactIsPending = message.parts.some((part) => part.type === "tool-contact_lucien" && isToolPartPending(part));
   // A non-active (past) turn never shows an in-progress chip: it always reveals its card
   // immediately above (see `revealToolCards`), so there's nothing left to hold a chip for.
-  const chip = (tool: PoofMarkTool, key: string): { key: string; label: string; tool: PoofMarkTool } => ({
-    key: `${message.id}-${key}-progress`,
-    label: TOOL_PROGRESS_LABELS[tool],
-    tool,
-  });
   const toolProgressChips = isActive
     ? [
-        resumeIsPending || (resumeToolParts.length > 0 && !revealToolCards) ? [chip("download_resume", "resume")] : [],
+        resumeIsPending || (resumeToolParts.length > 0 && !revealToolCards)
+          ? [{ key: `${message.id}-resume-progress`, label: TOOL_PROGRESS_LABELS.download_resume }]
+          : [],
         workLinkIsPending || (workLinkToolParts.length > 0 && !revealToolCards)
-          ? [chip("link_work_entry", "work-link")]
+          ? [{ key: `${message.id}-work-link-progress`, label: TOOL_PROGRESS_LABELS.link_work_entry }]
           : [],
         contactIsPending || (contactToolParts.length > 0 && !revealToolCards)
-          ? [chip("contact_lucien", "contact")]
+          ? [{ key: `${message.id}-contact-progress`, label: TOOL_PROGRESS_LABELS.contact_lucien }]
           : [],
       ].flat()
     : [];
@@ -170,13 +167,13 @@ export function ChatTimelineMessage({
   // streaming text, and "in progress" means whatever the chip below is showing, so the face
   // and the chip can never tell two different stories about the same moment.
   const isLiveAssistantTurn = role === "assistant" && isActive && !isSettled;
-  const activeTool = toolProgressChips[0]?.tool;
-  const markState: PoofMarkState = activeTool ? "working" : textParts.length > 0 ? "writing" : "thinking";
+  const showsToolProgress = toolProgressChips.length > 0;
+  const markState: PoofMarkState = showsToolProgress ? "working" : textParts.length > 0 ? "writing" : "thinking";
 
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        {isLiveAssistantTurn ? <PoofMark state={markState} tool={activeTool} /> : null}
+        {isLiveAssistantTurn ? <PoofMark state={markState} /> : null}
         <p
           className={cn(
             "font-mono text-sm tracking-wide uppercase",

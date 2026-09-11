@@ -105,9 +105,6 @@ describe("ChatTimelineMessage Poof mark", () => {
   function markState(container: HTMLElement): string | null {
     return container.querySelector('[data-slot="poof-mark"]')?.getAttribute("data-state") ?? null;
   }
-  function markDepiction(container: HTMLElement): string | null {
-    return container.querySelector('[data-slot="poof-mark"]')?.getAttribute("data-depiction") ?? null;
-  }
 
   it("shows Poof writing while the live turn streams text", () => {
     const { container } = render(
@@ -117,13 +114,12 @@ describe("ChatTimelineMessage Poof mark", () => {
     expect(markState(container)).toBe("writing");
   });
 
-  it("shows Poof doing the specific tool job while a call is in flight", () => {
+  it("shows Poof working while a tool call is in flight", () => {
     const { container } = render(
       <ChatTimelineMessage isActive message={message([workLinkInputPart("input-available")])} status="streaming" />,
     );
 
     expect(markState(container)).toBe("working");
-    expect(markDepiction(container)).toBe("finding");
   });
 
   it("regression: keeps working, in step with the chip, after the tool resolves but before text starts", () => {
@@ -136,7 +132,6 @@ describe("ChatTimelineMessage Poof mark", () => {
 
     expect(screen.getByText("Getting Lucien's resume…")).not.toBeNull();
     expect(markState(container)).toBe("working");
-    expect(markDepiction(container)).toBe("fetching");
   });
 
   it("drops the mark once the turn settles, so a finished answer reads as plain text", () => {
