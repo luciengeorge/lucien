@@ -156,21 +156,33 @@ jobs:
                 tail -40 dev.log
                 exit 1
               fi
-              # Liveness alone is not enough: Vite may catch a dependency-optimization failure
-              # and log it rather than exit, and curl never executes the client module graph
-              # where the #78 import lived. The log carries the failure either way, so fail on it.
-              if grep -qE "No matching export|Failed to scan for dependencies|error during dependency optimization|Build failed with [0-9]+ error" dev.log; then
-                echo "::error::dev server is up but the dependency prebundle failed"
-                grep -nE "No matching export|Failed to scan for dependencies|error during dependency optimization|Build failed" dev.log | head -20
-                exit 1
-              fi
-              echo "dev server answered HTTP $code after ${i}s, is still running, and logged no prebundle failure"
+              # Liveness alone is not enough: Vite opens the socket before its background
+              # dependency scan finishes, catches a scan failure and logs it rather than exiting,
+              # and curl never executes the client module graph where the #78 import lived. So
+              # keep watching the log and the process for a settle budget before calling it green.
+              markers='No matching export|Failed to scan for dependencies|error during dependency optimization|Build failed with [0-9]+ error'
+              settle=0
+              while [ $settle -lt 20 ]; do
+                if grep -qE "$markers" dev.log; then
+                  echo "::error::dev server is up but the dependency prebundle failed"
+                  grep -nE "$markers" dev.log | head -20
+                  exit 1
+                fi
+                if ! kill -0 "$DEV_PID" 2>/dev/null; then
+                  echo "::error::dev server exited ${settle}s after answering HTTP $code"
+                  tail -40 dev.log
+                  exit 1
+                fi
+                settle=$((settle + 1))
+                sleep 1
+              done
+              echo "dev server answered HTTP $code after $i attempts, stayed up for ${settle}s more, and logged no prebundle failure"
               exit 0
             fi
             i=$((i + 1))
             sleep 1
           done
-          echo "::error::dev server did not answer within 90s"
+          echo "::error::dev server did not answer after 90 attempts"
           tail -40 dev.log
           exit 1
 
