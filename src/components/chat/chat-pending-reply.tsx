@@ -6,7 +6,7 @@ export function ChatPendingReply({ isFirst }: { isFirst: boolean }) {
   return (
     <div className={entryItemClassName(isFirst)}>
       <div className="space-y-4">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <PoofMark state="thinking" />
           <p className="font-mono text-sm tracking-wide text-neutral-500 uppercase">Poof</p>
         </div>

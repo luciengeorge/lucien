@@ -3,7 +3,7 @@ import { match } from "ts-pattern";
 import { z } from "zod";
 
 import type { ChatMessage, ChatStatus } from "./chat.types";
-import type { PoofMarkState } from "./poof-mark";
+import type { PoofMarkState, PoofMarkTool } from "./poof-mark";
 
 import { ChatContactCard } from "./chat-contact-card";
 import { ChatMarkdown } from "./chat-markdown";
@@ -147,32 +147,36 @@ export function ChatTimelineMessage({
   const contactIsPending = message.parts.some((part) => part.type === "tool-contact_lucien" && isToolPartPending(part));
   // A non-active (past) turn never shows an in-progress chip: it always reveals its card
   // immediately above (see `revealToolCards`), so there's nothing left to hold a chip for.
+  const chip = (tool: PoofMarkTool, key: string): { key: string; label: string; tool: PoofMarkTool } => ({
+    key: `${message.id}-${key}-progress`,
+    label: TOOL_PROGRESS_LABELS[tool],
+    tool,
+  });
   const toolProgressChips = isActive
     ? [
-        resumeIsPending || (resumeToolParts.length > 0 && !revealToolCards)
-          ? [{ key: `${message.id}-resume-progress`, label: TOOL_PROGRESS_LABELS.download_resume }]
-          : [],
+        resumeIsPending || (resumeToolParts.length > 0 && !revealToolCards) ? [chip("download_resume", "resume")] : [],
         workLinkIsPending || (workLinkToolParts.length > 0 && !revealToolCards)
-          ? [{ key: `${message.id}-work-link-progress`, label: TOOL_PROGRESS_LABELS.link_work_entry }]
+          ? [chip("link_work_entry", "work-link")]
           : [],
         contactIsPending || (contactToolParts.length > 0 && !revealToolCards)
-          ? [{ key: `${message.id}-contact-progress`, label: TOOL_PROGRESS_LABELS.contact_lucien }]
+          ? [chip("contact_lucien", "contact")]
           : [],
       ].flat()
     : [];
   const hasToolActivity = hasToolCard || toolProgressChips.length > 0;
 
   // The mark belongs to the turn that is still being produced: a settled answer, a past
-  // turn, and the user's own messages all read as plain text. A tool in flight outranks
-  // streaming text, because looking something up is the more specific thing to show.
+  // turn, and the user's own messages all read as plain text. A tool in progress outranks
+  // streaming text, and "in progress" means whatever the chip below is showing, so the face
+  // and the chip can never tell two different stories about the same moment.
   const isLiveAssistantTurn = role === "assistant" && isActive && !isSettled;
-  const hasPendingTool = resumeIsPending || workLinkIsPending || contactIsPending;
-  const markState: PoofMarkState = hasPendingTool ? "working" : textParts.length > 0 ? "speaking" : "thinking";
+  const activeTool = toolProgressChips[0]?.tool;
+  const markState: PoofMarkState = activeTool ? "working" : textParts.length > 0 ? "writing" : "thinking";
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        {isLiveAssistantTurn ? <PoofMark state={markState} /> : null}
+      <div className="flex items-center gap-3">
+        {isLiveAssistantTurn ? <PoofMark state={markState} tool={activeTool} /> : null}
         <p
           className={cn(
             "font-mono text-sm tracking-wide uppercase",

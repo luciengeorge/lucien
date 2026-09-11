@@ -105,21 +105,38 @@ describe("ChatTimelineMessage Poof mark", () => {
   function markState(container: HTMLElement): string | null {
     return container.querySelector('[data-slot="poof-mark"]')?.getAttribute("data-state") ?? null;
   }
+  function markDepiction(container: HTMLElement): string | null {
+    return container.querySelector('[data-slot="poof-mark"]')?.getAttribute("data-depiction") ?? null;
+  }
 
-  it("marks the live turn while it is streaming text", () => {
+  it("shows Poof writing while the live turn streams text", () => {
     const { container } = render(
       <ChatTimelineMessage isActive message={message([textPart("Lucien is")])} status="streaming" />,
     );
 
-    expect(markState(container)).toBe("speaking");
+    expect(markState(container)).toBe("writing");
   });
 
-  it("marks the live turn as working while a tool call is in flight", () => {
+  it("shows Poof doing the specific tool job while a call is in flight", () => {
     const { container } = render(
       <ChatTimelineMessage isActive message={message([workLinkInputPart("input-available")])} status="streaming" />,
     );
 
     expect(markState(container)).toBe("working");
+    expect(markDepiction(container)).toBe("finding");
+  });
+
+  it("regression: keeps working, in step with the chip, after the tool resolves but before text starts", () => {
+    // The chip below keys off "tool finished but its card is still held back", not just "tool
+    // pending". If the face keys off pending alone it drops to thinking while the chip still says
+    // "Getting Lucien's resume…", which reads as two different stories about the same moment.
+    const { container } = render(
+      <ChatTimelineMessage isActive message={message([resumeOutputPart()])} status="streaming" />,
+    );
+
+    expect(screen.getByText("Getting Lucien's resume…")).not.toBeNull();
+    expect(markState(container)).toBe("working");
+    expect(markDepiction(container)).toBe("fetching");
   });
 
   it("drops the mark once the turn settles, so a finished answer reads as plain text", () => {
