@@ -105,6 +105,87 @@ jobs:
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
         run: pnpm build
 
+  dev-smoke:
+    name: Dev server boots
+    # Every other job runs `pnpm build` or `build && start`. Only `pnpm dev` exercises
+    # Vite's esbuild dependency prebundle, which is where #78 broke local development
+    # for a full PR cycle while CI stayed green. This boots the dev server and requires
+    # it to stay alive and answer one request.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Boot the dev server and answer one request
+        env:
+          VITE_CONVEX_URL: ${{ secrets.VITE_CONVEX_URL || 'https://example.convex.cloud' }}
+          VITE_CONVEX_SITE_URL: ${{ secrets.VITE_CONVEX_SITE_URL || 'https://example.convex.site' }}
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET || 'ci-placeholder-secret-min-32-characters-long' }}
+          TOAST_SECRET: ${{ secrets.TOAST_SECRET || 'ci-placeholder-secret-min-32-characters-long' }}
+          SITE_URL: http://localhost:3000
+        run: |
+          # `pnpm dev` wraps vite in dotenv-cli, which expects this file to exist.
+          touch .env.local
+          pnpm dev > dev.log 2>&1 &
+          DEV_PID=$!
+          trap 'kill "$DEV_PID" 2>/dev/null' EXIT
+          i=0
+          while [ $i -lt 90 ]; do
+            if ! kill -0 "$DEV_PID" 2>/dev/null; then
+              echo "::error::dev server exited before it could answer a request"
+              tail -40 dev.log
+              exit 1
+            fi
+            # curl prints 000 when it cannot connect; anything else is a real HTTP answer.
+            # Any status counts: a 5xx from an unreachable Convex still proves the prebundle ran.
+            # `|| true` matters: this step runs under `bash -e`, and a failing substitution in an
+            # assignment aborts the script, which killed the first run 28ms in on the first probe.
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://localhost:3000/ 2>/dev/null || true)
+            if [ -n "$code" ] && [ "$code" != "000" ]; then
+              sleep 1
+              if ! kill -0 "$DEV_PID" 2>/dev/null; then
+                echo "::error::dev server answered HTTP $code and then exited"
+                tail -40 dev.log
+                exit 1
+              fi
+              # Liveness alone is not enough: Vite opens the socket before its background
+              # dependency scan finishes, catches a scan failure and logs it rather than exiting,
+              # and curl never executes the client module graph where the #78 import lived. So
+              # keep watching the log and the process for a settle budget before calling it green.
+              markers='No matching export|Failed to scan for dependencies|error during dependency optimization|Build failed with [0-9]+ error'
+              settle=0
+              while [ $settle -lt 20 ]; do
+                if grep -qE "$markers" dev.log; then
+                  echo "::error::dev server is up but the dependency prebundle failed"
+                  grep -nE "$markers" dev.log | head -20
+                  exit 1
+                fi
+                if ! kill -0 "$DEV_PID" 2>/dev/null; then
+                  echo "::error::dev server exited ${settle}s after answering HTTP $code"
+                  tail -40 dev.log
+                  exit 1
+                fi
+                settle=$((settle + 1))
+                sleep 1
+              done
+              echo "dev server answered HTTP $code after $i attempts, stayed up for ${settle}s more, and logged no prebundle failure"
+              exit 0
+            fi
+            i=$((i + 1))
+            sleep 1
+          done
+          echo "::error::dev server did not answer after 90 attempts"
+          tail -40 dev.log
+          exit 1
+
   e2e:
     name: Playwright e2e
     runs-on: ubuntu-latest

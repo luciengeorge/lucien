@@ -22,15 +22,14 @@ A TanStack Start full-stack app: a public chat UI grounded (RAG) in markdown abo
 - Vercel AI SDK (`ai` v6) + OpenAI
 - Better Auth (email/password, verification, allowlist gate)
 - `@react-pdf/renderer` (resume PDF)
-- Sentry, PostHog, Vercel Analytics + Speed Insights, Google Analytics
+- Sentry, PostHog, Vercel Analytics + Speed Insights
 - Vitest (unit/convex/jsdom) + Playwright (e2e) + a Poof eval harness
 - oxfmt + oxlint, `tsgo` (TS native preview) for typecheck
 - pnpm, Node 22
 
 ### Models
 
-- Query expansion: `gpt-5.4-nano`
-- Chat + intro generation: `gpt-5.4-mini`
+- Query expansion, chat, intro generation, weekly digest: `gpt-5.6-luna`
 - Embeddings: `text-embedding-3-small` (1536 dims)
 
 ## App structure
@@ -39,7 +38,7 @@ A TanStack Start full-stack app: a public chat UI grounded (RAG) in markdown abo
 src/
   routes/                 Pages + API routes (file-based)
   components/             chat/, ui/, content/, resume/, site-nav, etc.
-  integrations/           Convex, PostHog, Google Analytics, TanStack Query providers
+  integrations/           Convex, PostHog, TanStack Query providers
   lib/                    auth, content registry, resume, sessions, analytics, logger, schemas
   router.tsx start.ts server.ts styles.css
 convex/
@@ -60,23 +59,27 @@ tests/e2e/                Playwright specs
 ## Routes
 
 - `/` chat page (edge-cacheable)
-- `/about`, `/skills`, `/education` content pages (rendered from `content/`)
+- `/about`, `/skills`, `/education`, `/contact`, `/privacy` content pages (rendered from `content/`)
 - `/work`, `/work/$slug` work history (entries from `src/lib/content/work-meta.ts`)
+- `/writing`, `/writing/$slug` articles (entries from `src/lib/content/writing-meta.ts`)
 - `/resume` HTML resume · `/api/resume/pdf` PDF · `/resume.pdf` → 301 to the PDF
 - `/login`, `/signup` auth pages
 - `/api/chat` streamed chat API (POST only)
 - `/api/auth/$` Better Auth handler
 - `/sitemap.xml`, `/llms.txt`, `/llms-full.txt` SEO / AI-crawler surfaces
+- A `.md` twin of every page (`/about.md`, `/work/$slug.md`, `/resume.md`, …) plus `/index.md`
+  and `/agents.md`. Requests that prefer markdown via `Accept` are served the twin, so agents get
+  source instead of HTML (`src/lib/markdown-negotiation.ts`, `src/lib/agent-representation.ts`)
 
 ## How chat works
 
 1. The frontend posts `{ id, message }` to `/api/chat`.
 2. The handler checks the conversation-session cookie (`sessionId` must match the conversation `id`).
 3. It loads the conversation from Convex (`getConversationById`).
-4. The last user message is expanded into a richer search query with `gpt-5.4-nano`.
-5. Convex RAG search runs in namespace `portfolio` (`limit 5`, `vectorScoreThreshold 0.4`).
+4. The last user message is expanded into a richer search query with `gpt-5.6-luna`.
+5. Convex RAG search runs in namespace `portfolio` (`limit 8`, `vectorScoreThreshold 0.4`).
 6. Retrieved context is injected into `content/system-prompt.md` (`{retrieved_context}`).
-7. The user message is persisted; `gpt-5.4-mini` streams the answer (with a `download_resume` tool).
+7. The user message is persisted; `gpt-5.6-luna` streams the answer (with the `download_resume`, `link_work_entry` and `contact_lucien` tools).
 8. `onFinish` persists the assistant message.
 
 The homepage's first message is a separate **cached intro** (`convex/intro.ts`, action-cache, 30-day TTL) so a new visit renders an LLM intro without a per-request model call.
@@ -209,7 +212,7 @@ pnpm seed
 
 - Sentry wired for client (lazy-loaded) and server (`instrument.server.mjs`)
 - PostHog provider mounted globally (typed events in `src/lib/analytics.ts`)
-- Vercel Analytics + Speed Insights; Google Analytics
+- Vercel Analytics + Speed Insights
 
 Relevant files: `src/start.ts`, `src/server.ts`, `src/router.tsx`, `vite.config.ts`, `nitro.config.ts`, `src/integrations/posthog/provider.tsx`.
 

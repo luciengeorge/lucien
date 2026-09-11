@@ -14,3 +14,16 @@ class MockIntersectionObserver implements IntersectionObserver {
 }
 
 globalThis.IntersectionObserver = MockIntersectionObserver;
+
+// jsdom has no matchMedia; motion's useReducedMotion (used by PoofMark) reads it on mount.
+// Reports "no preference", so tests exercise the animated path rather than the reduced one.
+globalThis.matchMedia ??= (query: string): MediaQueryList => ({
+  addEventListener: () => {},
+  addListener: () => {},
+  dispatchEvent: () => false,
+  matches: false,
+  media: query,
+  onchange: null,
+  removeEventListener: () => {},
+  removeListener: () => {},
+});
