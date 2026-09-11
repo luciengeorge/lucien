@@ -156,7 +156,15 @@ jobs:
                 tail -40 dev.log
                 exit 1
               fi
-              echo "dev server answered HTTP $code after ${i}s and is still running"
+              # Liveness alone is not enough: Vite may catch a dependency-optimization failure
+              # and log it rather than exit, and curl never executes the client module graph
+              # where the #78 import lived. The log carries the failure either way, so fail on it.
+              if grep -qE "No matching export|Failed to scan for dependencies|error during dependency optimization|Build failed with [0-9]+ error" dev.log; then
+                echo "::error::dev server is up but the dependency prebundle failed"
+                grep -nE "No matching export|Failed to scan for dependencies|error during dependency optimization|Build failed" dev.log | head -20
+                exit 1
+              fi
+              echo "dev server answered HTTP $code after ${i}s, is still running, and logged no prebundle failure"
               exit 0
             fi
             i=$((i + 1))
