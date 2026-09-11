@@ -1,4 +1,5 @@
 import { cn } from "#/lib/utils";
+import { AnimatePresence } from "motion/react";
 import { match } from "ts-pattern";
 import { z } from "zod";
 
@@ -73,14 +74,20 @@ export function ChatTimelineMessage({
   status: ChatStatus;
 }) {
   const role = message.role === "user" ? "user" : "assistant";
+  // gpt-5.6-luna emits a reasoning part whose text is empty. A "Thinking" header over nothing
+  // reads as a stuck status and outlives the answer, so only text that can actually be shown counts.
   const reasoningParts = message.parts.flatMap((part, index) =>
     match(part)
-      .with({ type: "reasoning" }, (reasoningPart) => [
-        {
-          key: `${message.id}-reasoning-${index}`,
-          text: reasoningPart.text,
-        },
-      ])
+      .with({ type: "reasoning" }, (reasoningPart) =>
+        reasoningPart.text.trim().length > 0
+          ? [
+              {
+                key: `${message.id}-reasoning-${index}`,
+                text: reasoningPart.text,
+              },
+            ]
+          : [],
+      )
       .otherwise(() => []),
   );
   const textParts = message.parts.flatMap((part, index) =>
@@ -173,7 +180,10 @@ export function ChatTimelineMessage({
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        {isLiveAssistantTurn ? <PoofMark state={markState} /> : null}
+        {/* Not `initial={false}`: that would freeze the face's keyframe loops on first render. */}
+        <AnimatePresence>
+          {isLiveAssistantTurn ? <PoofMark key="poof" entrance={false} state={markState} /> : null}
+        </AnimatePresence>
         <p
           className={cn(
             "font-mono text-sm tracking-wide uppercase",

@@ -62,8 +62,14 @@ describe("PoofMark", () => {
         expect(typeof value).toBe("number");
       }
       for (const layer of [oscillation.eyes, oscillation.figure, oscillation.gaze]) {
-        for (const value of Object.values(layer.moving)) {
+        for (const [property, value] of Object.entries(layer.moving)) {
           expect(Array.isArray(value)).toBe(true);
+          if (!Array.isArray(value)) continue;
+          // Anything a state holds belongs in `pose`, where it eases. A loop that is anchored
+          // off identity is a held offset in the wrong layer, and it cold-starts with a cut.
+          const identity = property.startsWith("scale") ? 1 : 0;
+          expect(value[0]).toBe(identity);
+          expect(value[value.length - 1]).toBe(identity);
         }
       }
     }

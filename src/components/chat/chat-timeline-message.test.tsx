@@ -32,6 +32,10 @@ function workLinkInputPart(state: "input-streaming" | "input-available"): ChatMe
   };
 }
 
+function reasoningPart(text: string): ChatMessage["parts"][number] {
+  return { state: "done", text, type: "reasoning" };
+}
+
 function message(parts: ChatMessage["parts"][number][]): ChatMessage {
   return { id: "msg-1", parts, role: "assistant" };
 }
@@ -134,6 +138,16 @@ describe("ChatTimelineMessage Poof mark", () => {
     expect(markState(container)).toBe("working");
   });
 
+  it("renders the mark already visible, since it replaces the pending-reply mark in the same spot", () => {
+    // The pending reply and the timeline message are different React subtrees, so the face is a
+    // second instance. If it played the mount fade the handoff blinked for a frame or two.
+    const { container } = render(<ChatTimelineMessage isActive message={message([])} status="streaming" />);
+
+    const svg = container.querySelector('[data-slot="poof-mark"]');
+    expect(svg).not.toBeNull();
+    expect(svg?.getAttribute("style") ?? "").not.toContain("opacity: 0");
+  });
+
   it("drops the mark once the turn settles, so a finished answer reads as plain text", () => {
     const { container } = render(
       <ChatTimelineMessage isActive message={message([textPart("Lucien is a product engineer.")])} status="ready" />,
@@ -160,5 +174,30 @@ describe("ChatTimelineMessage Poof mark", () => {
     );
 
     expect(markState(container)).toBeNull();
+  });
+});
+
+describe("ChatTimelineMessage reasoning", () => {
+  it("does not render a Thinking header for a reasoning part with no text", () => {
+    // gpt-5.6-luna emits a reasoning part whose text is empty. A header over nothing looks like
+    // a stuck status, and it stays on screen after the answer has finished.
+    render(
+      <ChatTimelineMessage isActive message={message([reasoningPart(""), textPart("Lucien is")])} status="ready" />,
+    );
+
+    expect(screen.queryByText("Thinking")).toBeNull();
+  });
+
+  it("does render the Thinking header when there is reasoning text to show", () => {
+    render(
+      <ChatTimelineMessage
+        isActive
+        message={message([reasoningPart("Checking which role is most recent."), textPart("Lucien is")])}
+        status="ready"
+      />,
+    );
+
+    expect(screen.getByText("Thinking")).not.toBeNull();
+    expect(screen.getByText("Checking which role is most recent.")).not.toBeNull();
   });
 });
