@@ -79,7 +79,7 @@ tests/e2e/                Playwright specs
 4. The last user message is expanded into a richer search query with `gpt-5.6-luna`.
 5. Convex RAG search runs in namespace `portfolio` (`limit 8`, `vectorScoreThreshold 0.4`).
 6. Retrieved context is injected into `content/system-prompt.md` (`{retrieved_context}`).
-7. The user message is persisted; `gpt-5.6-luna` streams the answer (with a `download_resume` tool).
+7. The user message is persisted; `gpt-5.6-luna` streams the answer (with the `download_resume`, `link_work_entry` and `contact_lucien` tools).
 8. `onFinish` persists the assistant message.
 
 The homepage's first message is a separate **cached intro** (`convex/intro.ts`, action-cache, 30-day TTL) so a new visit renders an LLM intro without a per-request model call.

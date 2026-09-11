@@ -9,7 +9,7 @@ Lucien George's personal site + AI portfolio assistant ("Poof"). A single TanSta
 - **Data**: TanStack Query + `@convex-dev/react-query`
 - **Forms**: TanStack Form + Zod
 - **Backend**: Convex (`@convex-dev/rag`, `@convex-dev/better-auth`, `@convex-dev/action-cache`)
-- **AI**: Vercel AI SDK (`ai` v6) + OpenAI (`gpt-5.6-luna` expansion, `gpt-5.6-luna` chat/intro, `text-embedding-3-small` embeddings)
+- **AI**: Vercel AI SDK (`ai` v6) + OpenAI (`gpt-5.6-luna` for expansion, chat, intro and digest; `text-embedding-3-small` embeddings)
 - **Auth**: Better Auth (email/password, verification, owner-only allowlist)
 - **UI**: shadcn-style components on Base UI / Radix + CVA, Tailwind CSS v4, `motion`, `sonner`, hugeicons/lucide
 - **PDF**: `@react-pdf/renderer` (resume)
@@ -116,7 +116,7 @@ Markdown is the single source of truth for both the chat RAG index and the rende
 2. Load the conversation from Convex; validate UI messages.
 3. Expand the query (`gpt-5.6-luna`).
 4. RAG search (`searchContext`) → inject into `system-prompt.md`.
-5. Persist the user message; stream the answer (`gpt-5.6-luna`, `stepCountIs(3)`) with a `download_resume` tool.
+5. Persist the user message; stream the answer (`gpt-5.6-luna`, `stepCountIs(3)`) with the `download_resume`, `link_work_entry` and `contact_lucien` tools.
 6. `onFinish` persists the assistant message.
 
 The homepage's first message is a cached LLM intro (`convex/intro.ts`) read cookie-free and baked into first paint.
