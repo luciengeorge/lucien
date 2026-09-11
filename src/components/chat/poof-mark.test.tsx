@@ -37,9 +37,9 @@ describe("PoofMark", () => {
   });
 
   it("keeps the three states distinguishable once motion is removed", () => {
-    // Under prefers-reduced-motion every loop collapses to its `rest` frame. jsdom never
-    // runs motion's frame loop, so this pins the claim at the data level: the three resting
-    // frames must differ, or the state is illegible for anyone who has motion turned off.
+    // Under prefers-reduced-motion the oscillation is dropped and only the pose remains.
+    // jsdom never runs motion's frame loop, so this pins the claim at the data level: the
+    // three poses must differ, or the state is illegible for anyone with motion turned off.
     const states = ["thinking", "working", "writing"] as const;
     const pairs = [
       [states[0], states[1]],
@@ -48,14 +48,21 @@ describe("PoofMark", () => {
     ] as const;
 
     for (const [a, b] of pairs) {
-      expect(EXPRESSIONS[a].eyes.rest).not.toEqual(EXPRESSIONS[b].eyes.rest);
-      expect(EXPRESSIONS[a].gaze.rest).not.toEqual(EXPRESSIONS[b].gaze.rest);
+      expect(EXPRESSIONS[a].pose.eyes).not.toEqual(EXPRESSIONS[b].pose.eyes);
+      expect(EXPRESSIONS[a].pose.gaze).not.toEqual(EXPRESSIONS[b].pose.gaze);
     }
-    // And the figure holds a pose, not a snapshot mid-loop: every moving value is a keyframe
-    // array, so a repeating transition never replays a scalar from identity.
-    for (const state of states) {
-      for (const track of [EXPRESSIONS[state].figure, EXPRESSIONS[state].gaze, EXPRESSIONS[state].eyes]) {
-        for (const value of Object.values(track.moving)) {
+  });
+
+  it("keeps what a state holds and what it does on separate layers", () => {
+    // Poses are plain scalars so a state change eases into them. Oscillations are keyframe
+    // arrays so a repeating loop never replays a scalar from identity and snaps back.
+    for (const state of ["thinking", "working", "writing"] as const) {
+      const { oscillation, pose } = EXPRESSIONS[state];
+      for (const value of [...Object.values(pose.eyes), ...Object.values(pose.figure), ...Object.values(pose.gaze)]) {
+        expect(typeof value).toBe("number");
+      }
+      for (const layer of [oscillation.eyes, oscillation.figure, oscillation.gaze]) {
+        for (const value of Object.values(layer.moving)) {
           expect(Array.isArray(value)).toBe(true);
         }
       }
