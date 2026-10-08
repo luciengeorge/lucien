@@ -9,13 +9,18 @@ import { ResumeSchema } from "./schema";
 const resume = ResumeSchema.parse(resumeJson);
 
 describe("renderResumeMarkdown", () => {
-  it("renders the personal header: name, title, email, phone, location", () => {
+  it("renders the personal header: name, title, email, location", () => {
     const md = renderResumeMarkdown(resume);
     expect(md).toContain(resume.personal.name);
     expect(md).toContain(resume.personal.title);
     expect(md).toContain(resume.personal.email);
     expect(md).toContain(resume.personal.location);
-    if (resume.personal.phone) expect(md).toContain(resume.personal.phone);
+  });
+
+  // The schema strips unknown keys, so a phone number re-added to resume.json
+  // would vanish silently from the renderers but still ship in the raw JSON.
+  it("keeps the phone number out of resume.json", () => {
+    expect(resumeJson.personal).not.toHaveProperty("phone");
   });
 
   it("renders personal links (github, linkedin, website)", () => {

@@ -15,8 +15,7 @@ function renderPersonal(resume: Resume): string {
   const { personal } = resume;
   const lines = [`**${personal.name}** - ${personal.title} · ${personal.location}`];
 
-  const contact = [personal.email, personal.phone].filter((value): value is string => Boolean(value));
-  lines.push(contact.join(" · "));
+  lines.push(personal.email);
 
   const links = [
     personal.links.github ? `GitHub: ${personal.links.github}` : null,

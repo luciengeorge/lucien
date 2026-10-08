@@ -8,7 +8,6 @@ const PersonalSchema = z.object({
   }),
   location: z.string().min(1),
   name: z.string().min(1),
-  phone: z.string().min(1).optional(),
   title: z.string().min(1),
   website: z.string().url().optional(),
 });
