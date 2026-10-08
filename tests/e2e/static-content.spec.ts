@@ -60,9 +60,9 @@ const PAGE_CASES: PageCase[] = [
     jsonLdTypes: ["Blog", "BlogPosting"],
     canonical: `${SITE_URL}/writing`,
   },
-  ...WRITING_META.map<PageCase>(({ slug, title }) => ({
+  ...WRITING_META.map<PageCase>(({ slug, title, seoTitle }) => ({
     path: `/writing/${slug}`,
-    title: new RegExp(escapeRegex(title)),
+    title: new RegExp(escapeRegex(seoTitle ?? title)),
     h1: new RegExp(`^${escapeRegex(title)}$`),
     jsonLdTypes: ["BlogPosting", "BreadcrumbList"],
     canonical: `${SITE_URL}/writing/${slug}`,

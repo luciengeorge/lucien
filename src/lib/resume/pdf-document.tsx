@@ -268,7 +268,7 @@ function ExperienceBlock({
 
 export function ResumeDocument({ baseUrl, resume }: { baseUrl: string; resume: Resume }) {
   const { education, experiences, personal, skills } = resume;
-  const contactLine = [personal.phone, personal.email, personal.location].filter(Boolean).join(" · ");
+  const contactLine = [personal.email, personal.location].join(" · ");
 
   return (
     <Document author={personal.name} subject="Resume" title={`${personal.name} - Resume`}>

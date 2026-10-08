@@ -28,6 +28,19 @@ describe("buildMarkdownPage", () => {
     );
   });
 
+  it("uses heading for the H1 when given, keeping title in the frontmatter", () => {
+    const page = buildMarkdownPage({
+      title: "Short title | Lucien George",
+      heading: "The full article headline",
+      description: "What it covers.",
+      path: "/writing/x",
+      body: "Body.",
+    });
+    expect(page).toContain("title: Short title | Lucien George\n");
+    expect(page).toContain("\n# The full article headline\n");
+    expect(page).not.toContain("# Short title");
+  });
+
   it("resolves the url from SITE_URL + path", () => {
     const page = buildMarkdownPage({ title: "T", description: "D", path: "/skills", body: "B" });
     expect(page).toContain(`url: ${SITE_URL}/skills`);

@@ -3,6 +3,7 @@ import { ResumeDocument } from "#/lib/resume/pdf-document";
 import { CACHE_HEADER, SITE_URL } from "#/lib/site-config";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { createFileRoute } from "@tanstack/react-router";
+import { format } from "date-fns";
 
 const RESUME_FILENAME = "lucien-george-resume.pdf";
 
@@ -30,7 +31,9 @@ export const Route = createFileRoute("/api/resume/pdf")({
     handlers: {
       GET: async ({ request }) => {
         const resume = loadResume();
-        const etag = await hashEtag(JSON.stringify(resume));
+        // Ongoing roles show a duration counted to today, so the rendered PDF
+        // changes every month even when resume.json does not.
+        const etag = await hashEtag(`${format(new Date(), "yyyy-MM")}:${JSON.stringify(resume)}`);
 
         if (request.headers.get("if-none-match") === etag) {
           return new Response(null, {

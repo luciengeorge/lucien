@@ -16,6 +16,7 @@ export const Route = createFileRoute("/writing/{$slug}.md")({
         const meta = buildWritingEntryMeta(entry);
         const markdown = buildMarkdownPage({
           title: meta.title,
+          heading: entry.title,
           description: meta.description,
           path: `/writing/${entry.slug}`,
           body: entry.source,
