@@ -9,127 +9,46 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as WritingDotmdRouteImport } from './routes/writing[.]md'
-import { Route as WorkDotmdRouteImport } from './routes/work[.]md'
-import { Route as SkillsDotmdRouteImport } from './routes/skills[.]md'
-import { Route as SkillsRouteImport } from './routes/skills'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-import { Route as ResumeDotmdRouteImport } from './routes/resume[.]md'
-import { Route as ResumeRouteImport } from './routes/resume'
-import { Route as PrivacyDotmdRouteImport } from './routes/privacy[.]md'
-import { Route as PrivacyRouteImport } from './routes/privacy'
-import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
-import { Route as LlmsFullDottxtRouteImport } from './routes/llms-full[.]txt'
-import { Route as IndexDotmdRouteImport } from './routes/index[.]md'
-import { Route as EducationDotmdRouteImport } from './routes/education[.]md'
-import { Route as EducationRouteImport } from './routes/education'
-import { Route as ContactDotmdRouteImport } from './routes/contact[.]md'
-import { Route as ContactRouteImport } from './routes/contact'
-import { Route as AgentsDotmdRouteImport } from './routes/agents[.]md'
-import { Route as AboutDotmdRouteImport } from './routes/about[.]md'
-import { Route as AboutRouteImport } from './routes/about'
-import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as WritingIndexRouteImport } from './routes/writing/index'
-import { Route as WorkIndexRouteImport } from './routes/work/index'
-import { Route as WritingChar123slugChar125DotmdRouteImport } from './routes/writing/{$slug}[.]md'
-import { Route as WritingSlugRouteImport } from './routes/writing/$slug'
-import { Route as WorkChar123slugChar125DotmdRouteImport } from './routes/work/{$slug}[.]md'
-import { Route as WorkSlugRouteImport } from './routes/work/$slug'
-import { Route as AuthSignupRouteImport } from './routes/_auth/signup'
+import { Route as AuthRouteImport } from './routes/_auth'
+import { Route as AboutRouteImport } from './routes/about'
+import { Route as AboutDotmdRouteImport } from './routes/about[.]md'
+import { Route as AgentsDotmdRouteImport } from './routes/agents[.]md'
+import { Route as ContactRouteImport } from './routes/contact'
+import { Route as ContactDotmdRouteImport } from './routes/contact[.]md'
+import { Route as EducationRouteImport } from './routes/education'
+import { Route as EducationDotmdRouteImport } from './routes/education[.]md'
+import { Route as IndexDotmdRouteImport } from './routes/index[.]md'
+import { Route as LlmsFullDottxtRouteImport } from './routes/llms-full[.]txt'
+import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as PrivacyDotmdRouteImport } from './routes/privacy[.]md'
+import { Route as ResumeRouteImport } from './routes/resume'
+import { Route as ResumeDotmdRouteImport } from './routes/resume[.]md'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as SkillsRouteImport } from './routes/skills'
+import { Route as SkillsDotmdRouteImport } from './routes/skills[.]md'
+import { Route as WorkDotmdRouteImport } from './routes/work[.]md'
+import { Route as WritingDotmdRouteImport } from './routes/writing[.]md'
 import { Route as AuthLoginRouteImport } from './routes/_auth/login'
+import { Route as AuthSignupRouteImport } from './routes/_auth/signup'
+import { Route as WorkIndexRouteImport } from './routes/work/index'
+import { Route as WorkSlugRouteImport } from './routes/work/$slug'
+import { Route as WorkChar123slugChar125DotmdRouteImport } from './routes/work/{$slug}[.]md'
+import { Route as WritingIndexRouteImport } from './routes/writing/index'
+import { Route as WritingSlugRouteImport } from './routes/writing/$slug'
+import { Route as WritingChar123slugChar125DotmdRouteImport } from './routes/writing/{$slug}[.]md'
+import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiChatIndexRouteImport } from './routes/api/chat/index'
 import { Route as ApiResumePdfRouteImport } from './routes/api/resume/pdf'
-import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
-const WritingDotmdRoute = WritingDotmdRouteImport.update({
-  id: '/writing.md',
-  path: '/writing.md',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const WorkDotmdRoute = WorkDotmdRouteImport.update({
-  id: '/work.md',
-  path: '/work.md',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SkillsDotmdRoute = SkillsDotmdRouteImport.update({
-  id: '/skills.md',
-  path: '/skills.md',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SkillsRoute = SkillsRouteImport.update({
-  id: '/skills',
-  path: '/skills',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResumeDotmdRoute = ResumeDotmdRouteImport.update({
-  id: '/resume.md',
-  path: '/resume.md',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResumeRoute = ResumeRouteImport.update({
-  id: '/resume',
-  path: '/resume',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PrivacyDotmdRoute = PrivacyDotmdRouteImport.update({
-  id: '/privacy.md',
-  path: '/privacy.md',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PrivacyRoute = PrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LlmsDottxtRoute = LlmsDottxtRouteImport.update({
-  id: '/llms.txt',
-  path: '/llms.txt',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LlmsFullDottxtRoute = LlmsFullDottxtRouteImport.update({
-  id: '/llms-full.txt',
-  path: '/llms-full.txt',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IndexDotmdRoute = IndexDotmdRouteImport.update({
-  id: '/index.md',
-  path: '/index.md',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const EducationDotmdRoute = EducationDotmdRouteImport.update({
-  id: '/education.md',
-  path: '/education.md',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const EducationRoute = EducationRouteImport.update({
-  id: '/education',
-  path: '/education',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ContactDotmdRoute = ContactDotmdRouteImport.update({
-  id: '/contact.md',
-  path: '/contact.md',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ContactRoute = ContactRouteImport.update({
-  id: '/contact',
-  path: '/contact',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AgentsDotmdRoute = AgentsDotmdRouteImport.update({
-  id: '/agents.md',
-  path: '/agents.md',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AboutDotmdRoute = AboutDotmdRouteImport.update({
-  id: '/about.md',
-  path: '/about.md',
+const AuthRoute = AuthRouteImport.update({
+  id: '/_auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutRoute = AboutRouteImport.update({
@@ -137,34 +56,114 @@ const AboutRoute = AboutRouteImport.update({
   path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthRoute = AuthRouteImport.update({
-  id: '/_auth',
+const AboutDotmdRoute = AboutDotmdRouteImport.update({
+  id: '/about.md',
+  path: '/about.md',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const AgentsDotmdRoute = AgentsDotmdRouteImport.update({
+  id: '/agents.md',
+  path: '/agents.md',
   getParentRoute: () => rootRouteImport,
 } as any)
-const WritingIndexRoute = WritingIndexRouteImport.update({
-  id: '/writing/',
-  path: '/writing/',
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ContactDotmdRoute = ContactDotmdRouteImport.update({
+  id: '/contact.md',
+  path: '/contact.md',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EducationRoute = EducationRouteImport.update({
+  id: '/education',
+  path: '/education',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EducationDotmdRoute = EducationDotmdRouteImport.update({
+  id: '/education.md',
+  path: '/education.md',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IndexDotmdRoute = IndexDotmdRouteImport.update({
+  id: '/index.md',
+  path: '/index.md',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LlmsFullDottxtRoute = LlmsFullDottxtRouteImport.update({
+  id: '/llms-full.txt',
+  path: '/llms-full.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LlmsDottxtRoute = LlmsDottxtRouteImport.update({
+  id: '/llms.txt',
+  path: '/llms.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyDotmdRoute = PrivacyDotmdRouteImport.update({
+  id: '/privacy.md',
+  path: '/privacy.md',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResumeRoute = ResumeRouteImport.update({
+  id: '/resume',
+  path: '/resume',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResumeDotmdRoute = ResumeDotmdRouteImport.update({
+  id: '/resume.md',
+  path: '/resume.md',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SkillsRoute = SkillsRouteImport.update({
+  id: '/skills',
+  path: '/skills',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SkillsDotmdRoute = SkillsDotmdRouteImport.update({
+  id: '/skills.md',
+  path: '/skills.md',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkDotmdRoute = WorkDotmdRouteImport.update({
+  id: '/work.md',
+  path: '/work.md',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WritingDotmdRoute = WritingDotmdRouteImport.update({
+  id: '/writing.md',
+  path: '/writing.md',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthLoginRoute = AuthLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthSignupRoute = AuthSignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => AuthRoute,
 } as any)
 const WorkIndexRoute = WorkIndexRouteImport.update({
   id: '/work/',
   path: '/work/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const WritingChar123slugChar125DotmdRoute =
-  WritingChar123slugChar125DotmdRouteImport.update({
-    id: '/writing/{$slug}.md',
-    path: '/writing/{$slug}.md',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const WritingSlugRoute = WritingSlugRouteImport.update({
-  id: '/writing/$slug',
-  path: '/writing/$slug',
+const WorkSlugRoute = WorkSlugRouteImport.update({
+  id: '/work/$slug',
+  path: '/work/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WorkChar123slugChar125DotmdRoute =
@@ -173,20 +172,26 @@ const WorkChar123slugChar125DotmdRoute =
     path: '/work/{$slug}.md',
     getParentRoute: () => rootRouteImport,
   } as any)
-const WorkSlugRoute = WorkSlugRouteImport.update({
-  id: '/work/$slug',
-  path: '/work/$slug',
+const WritingIndexRoute = WritingIndexRouteImport.update({
+  id: '/writing/',
+  path: '/writing/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthSignupRoute = AuthSignupRouteImport.update({
-  id: '/signup',
-  path: '/signup',
-  getParentRoute: () => AuthRoute,
+const WritingSlugRoute = WritingSlugRouteImport.update({
+  id: '/writing/$slug',
+  path: '/writing/$slug',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AuthLoginRoute = AuthLoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => AuthRoute,
+const WritingChar123slugChar125DotmdRoute =
+  WritingChar123slugChar125DotmdRouteImport.update({
+    id: '/writing/{$slug}.md',
+    path: '/writing/{$slug}.md',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
+  id: '/api/auth/$',
+  path: '/api/auth/$',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiChatIndexRoute = ApiChatIndexRouteImport.update({
   id: '/api/chat/',
@@ -196,11 +201,6 @@ const ApiChatIndexRoute = ApiChatIndexRouteImport.update({
 const ApiResumePdfRoute = ApiResumePdfRouteImport.update({
   id: '/api/resume/pdf',
   path: '/api/resume/pdf',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
-  id: '/api/auth/$',
-  path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -443,137 +443,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/writing.md': {
-      id: '/writing.md'
-      path: '/writing.md'
-      fullPath: '/writing.md'
-      preLoaderRoute: typeof WritingDotmdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/work.md': {
-      id: '/work.md'
-      path: '/work.md'
-      fullPath: '/work.md'
-      preLoaderRoute: typeof WorkDotmdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/skills.md': {
-      id: '/skills.md'
-      path: '/skills.md'
-      fullPath: '/skills.md'
-      preLoaderRoute: typeof SkillsDotmdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/skills': {
-      id: '/skills'
-      path: '/skills'
-      fullPath: '/skills'
-      preLoaderRoute: typeof SkillsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/resume.md': {
-      id: '/resume.md'
-      path: '/resume.md'
-      fullPath: '/resume.md'
-      preLoaderRoute: typeof ResumeDotmdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/resume': {
-      id: '/resume'
-      path: '/resume'
-      fullPath: '/resume'
-      preLoaderRoute: typeof ResumeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/privacy.md': {
-      id: '/privacy.md'
-      path: '/privacy.md'
-      fullPath: '/privacy.md'
-      preLoaderRoute: typeof PrivacyDotmdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/privacy': {
-      id: '/privacy'
-      path: '/privacy'
-      fullPath: '/privacy'
-      preLoaderRoute: typeof PrivacyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/llms.txt': {
-      id: '/llms.txt'
-      path: '/llms.txt'
-      fullPath: '/llms.txt'
-      preLoaderRoute: typeof LlmsDottxtRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/llms-full.txt': {
-      id: '/llms-full.txt'
-      path: '/llms-full.txt'
-      fullPath: '/llms-full.txt'
-      preLoaderRoute: typeof LlmsFullDottxtRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/index.md': {
-      id: '/index.md'
-      path: '/index.md'
-      fullPath: '/index.md'
-      preLoaderRoute: typeof IndexDotmdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/education.md': {
-      id: '/education.md'
-      path: '/education.md'
-      fullPath: '/education.md'
-      preLoaderRoute: typeof EducationDotmdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/education': {
-      id: '/education'
-      path: '/education'
-      fullPath: '/education'
-      preLoaderRoute: typeof EducationRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/contact.md': {
-      id: '/contact.md'
-      path: '/contact.md'
-      fullPath: '/contact.md'
-      preLoaderRoute: typeof ContactDotmdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/contact': {
-      id: '/contact'
-      path: '/contact'
-      fullPath: '/contact'
-      preLoaderRoute: typeof ContactRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/agents.md': {
-      id: '/agents.md'
-      path: '/agents.md'
-      fullPath: '/agents.md'
-      preLoaderRoute: typeof AgentsDotmdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/about.md': {
-      id: '/about.md'
-      path: '/about.md'
-      fullPath: '/about.md'
-      preLoaderRoute: typeof AboutDotmdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/about': {
-      id: '/about'
-      path: '/about'
-      fullPath: '/about'
-      preLoaderRoute: typeof AboutRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_auth': {
@@ -583,46 +457,158 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/writing/': {
-      id: '/writing/'
-      path: '/writing'
-      fullPath: '/writing/'
-      preLoaderRoute: typeof WritingIndexRouteImport
+    '/about.md': {
+      id: '/about.md'
+      path: '/about.md'
+      fullPath: '/about.md'
+      preLoaderRoute: typeof AboutDotmdRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/agents.md': {
+      id: '/agents.md'
+      path: '/agents.md'
+      fullPath: '/agents.md'
+      preLoaderRoute: typeof AgentsDotmdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact.md': {
+      id: '/contact.md'
+      path: '/contact.md'
+      fullPath: '/contact.md'
+      preLoaderRoute: typeof ContactDotmdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/education': {
+      id: '/education'
+      path: '/education'
+      fullPath: '/education'
+      preLoaderRoute: typeof EducationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/education.md': {
+      id: '/education.md'
+      path: '/education.md'
+      fullPath: '/education.md'
+      preLoaderRoute: typeof EducationDotmdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/index.md': {
+      id: '/index.md'
+      path: '/index.md'
+      fullPath: '/index.md'
+      preLoaderRoute: typeof IndexDotmdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/llms-full.txt': {
+      id: '/llms-full.txt'
+      path: '/llms-full.txt'
+      fullPath: '/llms-full.txt'
+      preLoaderRoute: typeof LlmsFullDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/llms.txt': {
+      id: '/llms.txt'
+      path: '/llms.txt'
+      fullPath: '/llms.txt'
+      preLoaderRoute: typeof LlmsDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy.md': {
+      id: '/privacy.md'
+      path: '/privacy.md'
+      fullPath: '/privacy.md'
+      preLoaderRoute: typeof PrivacyDotmdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/resume': {
+      id: '/resume'
+      path: '/resume'
+      fullPath: '/resume'
+      preLoaderRoute: typeof ResumeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/resume.md': {
+      id: '/resume.md'
+      path: '/resume.md'
+      fullPath: '/resume.md'
+      preLoaderRoute: typeof ResumeDotmdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/skills': {
+      id: '/skills'
+      path: '/skills'
+      fullPath: '/skills'
+      preLoaderRoute: typeof SkillsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/skills.md': {
+      id: '/skills.md'
+      path: '/skills.md'
+      fullPath: '/skills.md'
+      preLoaderRoute: typeof SkillsDotmdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/work.md': {
+      id: '/work.md'
+      path: '/work.md'
+      fullPath: '/work.md'
+      preLoaderRoute: typeof WorkDotmdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/writing.md': {
+      id: '/writing.md'
+      path: '/writing.md'
+      fullPath: '/writing.md'
+      preLoaderRoute: typeof WritingDotmdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_auth/login': {
+      id: '/_auth/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof AuthLoginRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/signup': {
+      id: '/_auth/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof AuthSignupRouteImport
+      parentRoute: typeof AuthRoute
     }
     '/work/': {
       id: '/work/'
       path: '/work'
       fullPath: '/work/'
       preLoaderRoute: typeof WorkIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/writing/{$slug}.md': {
-      id: '/writing/{$slug}.md'
-      path: '/writing/{$slug}.md'
-      fullPath: '/writing/{$slug}.md'
-      preLoaderRoute: typeof WritingChar123slugChar125DotmdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/writing/$slug': {
-      id: '/writing/$slug'
-      path: '/writing/$slug'
-      fullPath: '/writing/$slug'
-      preLoaderRoute: typeof WritingSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/work/{$slug}.md': {
-      id: '/work/{$slug}.md'
-      path: '/work/{$slug}.md'
-      fullPath: '/work/{$slug}.md'
-      preLoaderRoute: typeof WorkChar123slugChar125DotmdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/work/$slug': {
@@ -632,19 +618,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_auth/signup': {
-      id: '/_auth/signup'
-      path: '/signup'
-      fullPath: '/signup'
-      preLoaderRoute: typeof AuthSignupRouteImport
-      parentRoute: typeof AuthRoute
+    '/work/{$slug}.md': {
+      id: '/work/{$slug}.md'
+      path: '/work/{$slug}.md'
+      fullPath: '/work/{$slug}.md'
+      preLoaderRoute: typeof WorkChar123slugChar125DotmdRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_auth/login': {
-      id: '/_auth/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof AuthLoginRouteImport
-      parentRoute: typeof AuthRoute
+    '/writing/': {
+      id: '/writing/'
+      path: '/writing'
+      fullPath: '/writing/'
+      preLoaderRoute: typeof WritingIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/writing/$slug': {
+      id: '/writing/$slug'
+      path: '/writing/$slug'
+      fullPath: '/writing/$slug'
+      preLoaderRoute: typeof WritingSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/writing/{$slug}.md': {
+      id: '/writing/{$slug}.md'
+      path: '/writing/{$slug}.md'
+      fullPath: '/writing/{$slug}.md'
+      preLoaderRoute: typeof WritingChar123slugChar125DotmdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/$': {
+      id: '/api/auth/$'
+      path: '/api/auth/$'
+      fullPath: '/api/auth/$'
+      preLoaderRoute: typeof ApiAuthSplatRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/chat/': {
       id: '/api/chat/'
@@ -658,13 +665,6 @@ declare module '@tanstack/react-router' {
       path: '/api/resume/pdf'
       fullPath: '/api/resume/pdf'
       preLoaderRoute: typeof ApiResumePdfRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/auth/$': {
-      id: '/api/auth/$'
-      path: '/api/auth/$'
-      fullPath: '/api/auth/$'
-      preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
   }

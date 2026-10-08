@@ -10,7 +10,7 @@ const FADE_MS = 400;
 
 export function GlobalLoading() {
   const busy = useRouterState({
-    select: (state) => state.isLoading || state.isTransitioning,
+    select: (state) => state.isLoading,
   });
   const pending = useSpinDelay(busy, { delay: 200, minDuration: 500 });
 
