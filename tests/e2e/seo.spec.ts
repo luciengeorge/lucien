@@ -150,7 +150,7 @@ test.describe("route <head> metadata", () => {
       path: "/education",
       title: "Lucien George | Education",
       description:
-        "Lucien George studied software engineering at McGill University, did an exchange at UNSW Sydney, attended Le Wagon London, and completed Harvard Business School's Families in Business program.",
+        "Lucien George holds a BEng in Software Engineering from McGill, with a UNSW Sydney exchange, and studied at Le Wagon London and Harvard Business School.",
       ogType: "profile",
       canonical: "https://www.luciengeorge.com/education",
       jsonLdType: "ProfilePage",
@@ -159,9 +159,9 @@ test.describe("route <head> metadata", () => {
     },
     {
       path: "/resume",
-      title: "Lucien George | Resume",
+      title: "Lucien George Resume | Senior Product Engineer, London",
       description:
-        "Resume of Lucien George, Senior Product Engineer at Fyxer. Past: Shopify, Le Wagon, and startups. McGill BEng in Software Engineering.",
+        "Resume of Lucien George, Senior Product Engineer at Fyxer in London. Previously at Shopify and Le Wagon; co-founded Localista and Skyla. PDF download.",
       ogType: "profile",
       canonical: "https://www.luciengeorge.com/resume",
       jsonLdType: "ProfilePage",
@@ -194,7 +194,45 @@ test.describe("route <head> metadata", () => {
       expectedOgImageCount: 1,
       markdownUrl: "https://www.luciengeorge.com/work/fyxer.md",
     },
+    {
+      path: "/writing",
+      title: "Lucien George | Writing on product engineering",
+      description:
+        "Writing by Lucien George on product engineering: AI apps and retrieval, desktop and native apps, testing, and the parts that turned out to be wrong.",
+      ogType: "website",
+      canonical: "https://www.luciengeorge.com/writing",
+      jsonLdType: "Blog",
+      expectedOgImageCount: 1,
+      markdownUrl: "https://www.luciengeorge.com/writing.md",
+    },
+    {
+      path: "/writing/rag-portfolio-with-a-blocking-eval-gate",
+      title: "RAG portfolio with a blocking eval gate | Lucien George",
+      description:
+        "How this site's AI assistant works: one markdown source for the pages and the RAG index, and an eval harness that blocks pull requests on regressions.",
+      ogType: "article",
+      canonical: "https://www.luciengeorge.com/writing/rag-portfolio-with-a-blocking-eval-gate",
+      jsonLdType: "BlogPosting",
+      expectedOgImageCount: 1,
+      markdownUrl: "https://www.luciengeorge.com/writing/rag-portfolio-with-a-blocking-eval-gate.md",
+    },
   ];
+
+  test("/ names him in the title and description", async ({ page }) => {
+    await page.goto("/");
+    const title = "Lucien George, Senior Product Engineer in London";
+    const description =
+      "Lucien George is a Senior Product Engineer at Fyxer in London, ex-Shopify. He builds AI products and desktop apps, like a meeting recorder with no bot.";
+    await expect(page).toHaveTitle(title);
+    await expect(page.locator('meta[name="description"]')).toHaveAttribute("content", description);
+    await expect(page.locator('meta[property="og:title"]')).toHaveAttribute("content", title);
+    await expect(page.locator('meta[name="twitter:title"]')).toHaveAttribute("content", title);
+  });
+
+  test("an article keeps its full headline as the H1 while the title tag uses the SEO title", async ({ page }) => {
+    await page.goto("/writing/rag-portfolio-with-a-blocking-eval-gate");
+    await expect(page.locator("h1")).toHaveText("A portfolio that answers questions about me, gated by an LLM judge");
+  });
 
   for (const c of cases) {
     test(`${c.path} emits stable head tags`, async ({ page }) => {

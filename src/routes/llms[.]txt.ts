@@ -1,3 +1,4 @@
+import { PERSON_SUMMARY } from "#/lib/content/page-meta";
 import { WORK_ENTRIES, WRITING_ENTRIES } from "#/lib/content/registry";
 import { WHEN_TO_USE_LINES } from "#/lib/content/site-index";
 import { CACHE_HEADER, SITE_URL } from "#/lib/site-config";
@@ -7,7 +8,7 @@ function buildLlmsIndex(): string {
   const sections = [
     `# Lucien George`,
     ``,
-    `> Senior Product Engineer at Fyxer. Builds products end-to-end, teaches, races karts, and runs ultras in London. Originally from Beirut, Lebanon.`,
+    `> ${PERSON_SUMMARY}`,
     ``,
     `Lucien's personal portfolio is structured as an AI chat ("Poof") backed by a RAG index of these markdown sources. The static pages below are the same content rendered as crawlable HTML.`,
     ``,

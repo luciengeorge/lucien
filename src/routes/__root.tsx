@@ -7,6 +7,7 @@ import { NotFound } from "#/components/not-found";
 import { SiteNav } from "#/components/site-nav";
 import { Toaster } from "#/components/ui/sonner";
 import { useToast } from "#/hooks/use-toast";
+import { HOME_META } from "#/lib/content/page-meta";
 import { getToast } from "#/lib/functions/get-toast";
 import { OG_IMAGE_URL, SITE_URL } from "#/lib/site-config";
 import { structuredData } from "#/lib/structured-data";
@@ -27,9 +28,7 @@ interface MyRouterContext {
   queryClient: QueryClient;
 }
 
-const TITLE = "Lucien George | Senior Product Engineer at Fyxer";
-const DESCRIPTION =
-  "Senior Product Engineer at Fyxer. Explore Lucien George's work, projects, and interests via Poof, his AI portfolio assistant.";
+const { title: TITLE, description: DESCRIPTION } = HOME_META;
 const TWITTER_HANDLE = "@luciengeorge16";
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({

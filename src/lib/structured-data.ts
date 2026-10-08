@@ -1,11 +1,10 @@
+import { HOME_META, PERSON_SUMMARY } from "#/lib/content/page-meta";
 import { CANONICAL_NAME } from "#/lib/name-misspellings";
 import { SOCIAL_LINKS } from "#/lib/social-links";
 
 const SITE_URL = "https://www.luciengeorge.com";
 const OG_IMAGE_URL = `${SITE_URL}/cover.png`;
 const CONTACT_EMAIL = "lucienkgeorge@gmail.com";
-const DESCRIPTION =
-  "Senior Product Engineer at Fyxer. Explore Lucien George's work, projects, and interests via Poof, his AI portfolio assistant.";
 
 export const structuredData = {
   "@context": "https://schema.org",
@@ -51,8 +50,7 @@ export const structuredData = {
       givenName: "Lucien",
       familyName: "George",
       jobTitle: "Senior Product Engineer",
-      description:
-        "Senior Product Engineer at Fyxer. Builds products end-to-end, teaches, races karts, and runs ultras in London. Originally from Beirut, Lebanon.",
+      description: PERSON_SUMMARY,
       image: OG_IMAGE_URL,
       url: SITE_URL,
       email: CONTACT_EMAIL,
@@ -95,7 +93,7 @@ export const structuredData = {
     {
       "@type": "WebSite",
       "@id": `${SITE_URL}/#website`,
-      description: DESCRIPTION,
+      description: HOME_META.description,
       image: OG_IMAGE_URL,
       name: "Lucien George",
       url: SITE_URL,
@@ -127,7 +125,7 @@ export const structuredData = {
           name: "What does Lucien do at Fyxer?",
           acceptedAnswer: {
             "@type": "Answer",
-            text: "Lucien is a Senior Product Engineer leading development of Fyxer's notetaker product - a native macOS and Windows desktop app (Electron) that records meetings in the background without a bot. The product reached 1,000 weekly active users within months of launch.",
+            text: "Lucien is a Senior Product Engineer at Fyxer. He founded Fyxer's notetaker, a native macOS and Windows desktop app (Electron) that records meetings without sending a bot into the call, now at ~35,000 recordings a month from ~2,000 monthly active users. Since April 2026 he has worked on Fyxer's enterprise product, from SCIM provisioning to Microsoft Marketplace billing.",
           },
         },
         {
