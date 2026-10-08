@@ -8,6 +8,8 @@ export interface PageMeta {
   description: string;
 }
 
+export const TITLE_SUFFIX = " | Lucien George";
+
 export const ABOUT_META: PageMeta = {
   title: "About Lucien George",
   description:
@@ -56,10 +58,14 @@ export const WRITING_INDEX_META: PageMeta = {
     "Writing by Lucien George on product engineering: AI applications and retrieval, desktop and native app work, testing, and the parts that turned out to be wrong.",
 };
 
-/** Per-article title/description for a `/writing/$slug` page. */
-export function buildWritingEntryMeta(entry: { title: string; description: string }): PageMeta {
+/**
+ * Per-article title/description for a `/writing/$slug` page. The `<title>` uses
+ * the short `seoTitle` when the article has one, because a long headline plus
+ * the suffix gets cut off in search results; the page's H1 is always `title`.
+ */
+export function buildWritingEntryMeta(entry: { title: string; seoTitle?: string; description: string }): PageMeta {
   return {
-    title: `${entry.title} | Lucien George`,
+    title: `${entry.seoTitle ?? entry.title}${TITLE_SUFFIX}`,
     description: entry.description,
   };
 }
@@ -67,7 +73,7 @@ export function buildWritingEntryMeta(entry: { title: string; description: strin
 /** Per-entry title/description for a `/work/$slug` page, derived from its WorkEntry. */
 export function buildWorkEntryMeta(entry: { company: string; role: string; summary: string }): PageMeta {
   return {
-    title: `${entry.role} at ${entry.company} | Lucien George`,
+    title: `${entry.role} at ${entry.company}${TITLE_SUFFIX}`,
     description: entry.summary,
   };
 }

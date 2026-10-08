@@ -52,6 +52,16 @@ describe("GET /writing/{$slug}.md", () => {
     expect(body).toContain(`title: ${meta.title}`);
   });
 
+  it("keeps the article headline as the H1, as the HTML page does", async () => {
+    const entry = firstEntry();
+    const res = await getHandler()({
+      request: new Request(`http://localhost/writing/${entry.slug}.md`),
+      params: { slug: entry.slug },
+    });
+    const body = await res.text();
+    expect(body).toContain(`\n# ${entry.title}\n`);
+  });
+
   it("exposes the publish date as frontmatter and includes the article body", async () => {
     const entry = firstEntry();
     const res = await getHandler()({

@@ -2,6 +2,8 @@ import { SITE_URL } from "#/lib/site-config";
 
 interface BuildMarkdownPageInput {
   title: string;
+  /** The `# ` heading, when the page's H1 differs from its `<title>` (articles with an SEO title). Defaults to `title`. */
+  heading?: string;
   description: string;
   /** Site-relative path, e.g. "/about" - resolved against SITE_URL for the frontmatter `url` key. */
   path: string;
@@ -26,6 +28,7 @@ function yamlSafeValue(value: string): string {
 
 export function buildMarkdownPage({
   title,
+  heading = title,
   description,
   path,
   body,
@@ -39,5 +42,5 @@ export function buildMarkdownPage({
   ];
   const frontmatter = frontmatterEntries.map(([key, value]) => `${key}: ${yamlSafeValue(value)}`).join("\n");
 
-  return `---\n${frontmatter}\n---\n\n# ${title}\n\n${body.trim()}\n`;
+  return `---\n${frontmatter}\n---\n\n# ${heading}\n\n${body.trim()}\n`;
 }
