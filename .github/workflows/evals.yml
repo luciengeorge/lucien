@@ -53,8 +53,11 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
 
+      # No `--` before the path: pnpm forwards it to vitest, which then ignores
+      # the filter and runs the whole suite. That suite needs full git history
+      # (sitemap dates) and runs in ci.yml; this shallow checkout does not have it.
       - name: Validate eval datasets
-        run: pnpm test -- evals/datasets.test.ts
+        run: pnpm test evals/datasets.test.ts
 
       - name: Run evals
         env:
