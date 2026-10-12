@@ -8,6 +8,7 @@ import {
   MAX_HISTORY_MESSAGES,
   parseSerializedMessages,
 } from "#/lib/chat-types";
+import { renderSystemPrompt } from "#/lib/chat/system-prompt";
 import { buildChatTools } from "#/lib/chat/tools";
 import { getConversationSession } from "#/lib/conversation-session.server";
 import { createLogger } from "#/lib/logger";
@@ -144,7 +145,7 @@ export const Route = createFileRoute("/api/chat/")({
         // Fired off the critical path; real error handling happens when it's awaited in onFinish.
         userMessageWrite.catch(() => {});
 
-        const prompt = systemPrompt.replace("{retrieved_context}", context);
+        const prompt = renderSystemPrompt(systemPrompt, { context, today: new Date() });
         const modelMessages = messages.slice(-MAX_HISTORY_MESSAGES);
 
         const result = streamText({

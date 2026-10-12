@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 
 import type { ActorResult, JudgeVerdict } from "./types";
 
+import { evalToday } from "./today";
 import { JudgeVerdictSchema } from "./types";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -103,6 +104,9 @@ export async function judge({
     "```json",
     JSON.stringify(caseInfo, null, 2),
     "```",
+    "",
+    `TODAY - the assistant was told today is ${evalToday(actor.case).toISOString().slice(0, 10)}. Arithmetic from`,
+    "this date and dates in the context (durations, ages, past vs upcoming) is grounded.",
     "",
     "RETRIEVED CONTEXT - the exact source material the assistant was given (RAG).",
     "Judge groundedness/fabrication AGAINST THIS CONTEXT, not against the short",

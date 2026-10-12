@@ -78,7 +78,7 @@ tests/e2e/                Playwright specs
 3. It loads the conversation from Convex (`getConversationById`).
 4. The last user message is expanded into a richer search query with `gpt-5.6-luna`.
 5. Convex RAG search runs in namespace `portfolio` (`limit 8`, `vectorScoreThreshold 0.4`).
-6. Retrieved context is injected into `content/system-prompt.md` (`{retrieved_context}`).
+6. Retrieved context and today's date fill `content/system-prompt.md` (`{retrieved_context}`, `{today}`) via `renderSystemPrompt` (`src/lib/chat/system-prompt.ts`), shared with the eval harness.
 7. The user message is persisted; `gpt-5.6-luna` streams the answer (with the `download_resume`, `link_work_entry` and `contact_lucien` tools).
 8. `onFinish` persists the assistant message.
 
