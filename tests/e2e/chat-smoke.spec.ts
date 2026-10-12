@@ -189,6 +189,28 @@ test.describe("composer before the conversation exists", () => {
   });
 });
 
+test.describe("when the conversation cannot be created", () => {
+  test("shows the retry instead of a reply that will never come", async ({ page }) => {
+    let fail = () => {};
+    const gate = new Promise<void>((resolve) => {
+      fail = resolve;
+    });
+    await page.route("**/_serverFn/**", async (route) => {
+      await gate;
+      await route.fulfill({ status: 500, body: "boom" });
+    });
+    await page.goto("/");
+    const composer = page.getByRole("textbox").first();
+    await composer.fill("What does he build?");
+    await composer.press("Enter");
+    await expect(page.getByText("Thinking…")).toBeVisible();
+
+    fail();
+    await expect(page.getByRole("button", { name: /try again/i })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("Thinking…")).toBeHidden();
+  });
+});
+
 test.describe("typing anywhere on the page", () => {
   test("focuses the composer and puts the keystrokes in it", async ({ page }) => {
     await page.goto("/");

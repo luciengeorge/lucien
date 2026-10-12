@@ -57,6 +57,12 @@ export function ChatComposer({
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   useTypeAnywhereToFocus(textareaRef);
+
+  // Not `autoFocus`: the server cannot see the pointer, so the attribute would
+  // reach touch devices in the HTML and raise their keyboard before hydration.
+  useEffect(() => {
+    if (!isCoarsePointer()) textareaRef.current?.focus();
+  }, []);
   const canSend = !isStreaming && !isSubmitting && canSubmit && message.length > 0;
 
   return (
@@ -64,7 +70,6 @@ export function ChatComposer({
       <InputGroup className="rounded-3xl border-transparent bg-neutral-950/3 ring-1 ring-neutral-950/10 has-[[data-slot=input-group-control]:focus-visible]:border-transparent has-[[data-slot=input-group-control]:focus-visible]:ring-2 has-[[data-slot=input-group-control]:focus-visible]:ring-neutral-950/15">
         <InputGroupTextarea
           aria-label="Ask Poof about Lucien"
-          autoFocus={!isCoarsePointer()}
           className="max-h-40 min-h-0 resize-none overflow-y-auto py-3 pl-4 text-base placeholder:text-neutral-500 sm:py-3.5 sm:pl-5 sm:text-base"
           name="message"
           onBlur={onBlur}

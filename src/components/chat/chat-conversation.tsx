@@ -212,8 +212,8 @@ export function ChatConversation({
                     />
                   </MessageScrollerItem>
                 )}
-                {showPendingReply || queuedMessage !== null ? (
-                  <ChatPendingReply isFirst={visibleMessages.length === 0} />
+                {showPendingReply || (queuedMessage !== null && !hasConversationStartFailed) ? (
+                  <ChatPendingReply isFirst={false} />
                 ) : null}
                 {hasConversationStartFailed && !isReady ? (
                   <ChatSendFailed onRetry={() => startConversation({})} />
