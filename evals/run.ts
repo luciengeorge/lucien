@@ -10,9 +10,11 @@ import { fileURLToPath } from "node:url";
 import type { ActorResult, CategorySummary, EvalCase, EvalCategory, EvalReport, EvalResult } from "./types";
 
 import { api } from "../convex/_generated/api";
+import { renderSystemPrompt } from "../src/lib/chat/system-prompt";
 import { buildChatTools } from "../src/lib/chat/tools";
 import { judge } from "./judge";
 import { DEFAULT_ACTOR_MODEL, DEFAULT_EXPANSION_MODEL, DEFAULT_JUDGE_MODEL } from "./models";
+import { evalToday } from "./today";
 import { EvalCaseSchema } from "./types";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -96,7 +98,7 @@ async function actorRun({
     context = `[rag failed: ${error instanceof Error ? error.message : String(error)}]`;
   }
 
-  const system = systemPromptTemplate.replace("{retrieved_context}", context);
+  const system = renderSystemPrompt(systemPromptTemplate, { context, today: evalToday(evalCase) });
   const { text } = await generateText({
     model: openai(ACTOR_MODEL),
     system,

@@ -31,3 +31,6 @@
 {"id":"socials-002","category":"factual","subcategory":"socials","question":"How can I find Lucien on LinkedIn?","expected_facts":["linkedin.com/in/luciengeorge"]}
 {"id":"synthesis-001","category":"factual","subcategory":"synthesis","question":"Which projects best show how Lucien thinks?","expected_facts":["Shopify","Fyxer"]}
 {"id":"synthesis-002","category":"factual","subcategory":"synthesis","question":"What is Lucien's most impactful work?","expected_facts":["Impact Lebanon"]}
+{"id":"temporal-001","category":"factual","subcategory":"temporal","question":"Is Lucien still involved with Impact Lebanon?","today":"2026-10-12","expected_facts":["co-founder","April 2026"]}
+{"id":"temporal-002","category":"factual","subcategory":"temporal","question":"How long has Lucien been at Fyxer?","today":"2026-10-12","expected_facts":["September 2025","about a year"]}
+{"id":"temporal-003","category":"factual","subcategory":"temporal","question":"How many years has Lucien lived in London?","today":"2026-10-12","expected_facts":["2018","8 years"]}

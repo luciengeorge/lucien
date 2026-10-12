@@ -11,6 +11,8 @@ export const EvalCaseSchema = z.object({
   expected_facts: z.array(z.string()).optional(),
   forbidden_patterns: z.array(z.string()).optional(),
   required_behavior: z.string().optional(),
+  /** ISO date the case pretends is today, so answers that depend on the date repeat. */
+  today: z.iso.date().optional(),
 });
 export type EvalCase = z.infer<typeof EvalCaseSchema>;
 
