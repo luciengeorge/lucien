@@ -21,13 +21,7 @@ export function ChatPage({ initialChatState }: { initialChatState: ChatConversat
     capture(AnalyticsEvent.portfolioViewed, {
       entrypoint: "homepage",
     });
-
-    if (initialChatState.conversation && initialChatState.serializedMessages.length > 0) {
-      capture(AnalyticsEvent.conversationResumed, {
-        message_count: initialChatState.serializedMessages.length,
-      });
-    }
-  }, [capture, initialChatState.conversation, initialChatState.serializedMessages.length]);
+  }, [capture]);
 
   return <ChatConversation key={mountKey} chatState={chatState} onConversationChange={handleConversationChange} />;
 }

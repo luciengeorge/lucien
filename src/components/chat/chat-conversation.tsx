@@ -43,7 +43,12 @@ export function ChatConversation({
   );
   const startConversationMutation = useMutation({
     mutationFn: ({ fresh }: { fresh: boolean }) => (fresh ? startNewConversation() : resumeOrStartConversation()),
-    onSuccess(nextConversation) {
+    onSuccess(nextConversation, { fresh }) {
+      // Every new conversation already holds the intro, so only a visitor turn means they are coming back.
+      const resumedMessages = fresh ? [] : parseSerializedMessages(nextConversation.serializedMessages);
+      if (resumedMessages.some((message) => message.role === "user")) {
+        capture(AnalyticsEvent.conversationResumed, { message_count: resumedMessages.length });
+      }
       startTransition(() => {
         onConversationChange(nextConversation);
       });

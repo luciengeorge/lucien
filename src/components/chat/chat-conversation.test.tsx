@@ -1,7 +1,7 @@
 import type { UIMessage } from "ai";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ChatConversation } from "./chat-conversation";
@@ -21,7 +21,9 @@ vi.mock("@ai-sdk/react", () => ({
   useChat: () => ({ ...chat, clearError: vi.fn(), regenerate: vi.fn(), sendMessage: vi.fn() }),
 }));
 
+const resumeOrStartConversation = vi.fn();
 vi.mock("#/lib/functions/start-new-conversation", () => ({
+  resumeOrStartConversation: () => resumeOrStartConversation(),
   startNewConversation: vi.fn(),
 }));
 
@@ -90,5 +92,40 @@ describe("ChatConversation reply analytics", () => {
     rerender();
 
     expect(capture).toHaveBeenCalledWith("chat_response_stopped", { response_length: 0, visible_message_count: 1 });
+  });
+});
+
+describe("ChatConversation resume analytics", () => {
+  const intro: UIMessage = { id: "intro", parts: [{ text: "Hi, I'm Poof", type: "text" }], role: "assistant" };
+  const conversation = { createdAt: 0, id: "conv-9", sessionId: "s", updatedAt: 0 };
+
+  function renderWithoutConversation() {
+    chat.messages = [];
+    chat.status = "ready";
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <ChatConversation chatState={{ conversation: null, serializedMessages: [] }} onConversationChange={vi.fn()} />
+      </QueryClientProvider>,
+    );
+  }
+
+  it("records a conversation the visitor comes back to", async () => {
+    resumeOrStartConversation.mockResolvedValue({
+      conversation,
+      serializedMessages: [intro, user].map((message) => JSON.stringify(message)),
+    });
+    renderWithoutConversation();
+
+    await waitFor(() => expect(capture).toHaveBeenCalledWith("conversation_resumed", { message_count: 2 }));
+  });
+
+  /* Every new conversation already holds the intro, so "has messages" is not "resumed". */
+  it("does not count a brand new conversation as resumed", async () => {
+    resumeOrStartConversation.mockResolvedValue({ conversation, serializedMessages: [JSON.stringify(intro)] });
+    renderWithoutConversation();
+
+    await waitFor(() => expect(resumeOrStartConversation).toHaveBeenCalled());
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(capturedEvents()).not.toContain("conversation_resumed");
   });
 });
