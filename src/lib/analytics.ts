@@ -8,6 +8,7 @@ export const AnalyticsEvent = {
   chatResponseCompleted: "chat_response_completed",
   chatResponseEmptyRendered: "chat_response_empty_rendered",
   chatResponseFailed: "chat_response_failed",
+  chatResponseStopped: "chat_response_stopped",
   chatToolInvoked: "chat_tool_invoked",
   contactSubmitted: "contact_submitted",
   conversationResumed: "conversation_resumed",

@@ -2,9 +2,10 @@ import { Button } from "#/components/ui/button";
 import { InputGroup, InputGroupAddon, InputGroupTextarea } from "#/components/ui/input-group";
 import { Spinner } from "#/components/ui/spinner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "#/components/ui/tooltip";
+import { StopIcon } from "@hugeicons-pro/core-solid-rounded";
 import { File01Icon, Navigation03Icon } from "@hugeicons-pro/core-stroke-rounded";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useEffect, useRef } from "react";
+import { useEffect, useEffectEvent, useRef } from "react";
 
 /** Touch-primary devices, where autofocus would raise the keyboard over the page. */
 function isCoarsePointer(): boolean {
@@ -44,6 +45,7 @@ export function ChatComposer({
   onBlur,
   onChange,
   onResumeRequest,
+  onStop,
   onSubmit,
 }: {
   canSubmit: boolean;
@@ -53,6 +55,7 @@ export function ChatComposer({
   onBlur: React.FocusEventHandler<HTMLTextAreaElement>;
   onChange: (value: string) => void;
   onResumeRequest: () => void;
+  onStop: () => void;
   onSubmit: React.SubmitEventHandler<HTMLFormElement>;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -63,6 +66,28 @@ export function ChatComposer({
   useEffect(() => {
     if (!isCoarsePointer()) textareaRef.current?.focus();
   }, []);
+
+  const stopOnEscape = useEffectEvent((event: KeyboardEvent) => {
+    // A dialog, menu, IME composition or Streamdown's link modal owns Escape: they
+    // close on it without preventDefault, and the modal has no dialog role.
+    if (
+      event.key !== "Escape" ||
+      event.isComposing ||
+      document.activeElement?.closest("[role=dialog], [role=menu]") ||
+      document.querySelector("[data-streamdown=link-safety-modal]")
+    )
+      return;
+    onStop();
+  });
+
+  // One capture-phase listener per stream, so it runs before any bubble-phase
+  // listener that closes a modal, whichever was added first.
+  useEffect(() => {
+    if (!isStreaming) return;
+    const onKeyDown = (event: KeyboardEvent) => stopOnEscape(event);
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => document.removeEventListener("keydown", onKeyDown, true);
+  }, [isStreaming]);
   const canSend = !isStreaming && !isSubmitting && canSubmit && message.length > 0;
 
   return (
@@ -109,10 +134,17 @@ export function ChatComposer({
               <TooltipContent>Get Lucien's resume</TooltipContent>
             </Tooltip>
           </TooltipProvider>
-          <Button className="size-9 shrink-0 rounded-full sm:size-10" disabled={!canSend} size="icon" type="submit">
-            {isSubmitting ? <Spinner /> : <HugeiconsIcon icon={Navigation03Icon} />}
-            <span className="sr-only">Send</span>
-          </Button>
+          {isStreaming ? (
+            <Button className="size-9 shrink-0 rounded-full sm:size-10" onClick={onStop} size="icon" type="button">
+              <HugeiconsIcon icon={StopIcon} size={16} />
+              <span className="sr-only">Stop</span>
+            </Button>
+          ) : (
+            <Button className="size-9 shrink-0 rounded-full sm:size-10" disabled={!canSend} size="icon" type="submit">
+              {isSubmitting ? <Spinner /> : <HugeiconsIcon icon={Navigation03Icon} />}
+              <span className="sr-only">Send</span>
+            </Button>
+          )}
         </InputGroupAddon>
       </InputGroup>
     </form>

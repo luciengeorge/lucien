@@ -64,7 +64,9 @@ const BasicUIMessageSchema = z
     }
   });
 
-const ConversationIdSchema = z.custom<Id<"conversations">>((value) => typeof value === "string" && value.length > 0);
+export const ConversationIdSchema = z.custom<Id<"conversations">>(
+  (value) => typeof value === "string" && value.length > 0,
+);
 
 export const ChatRequestSchema = z.object({
   id: ConversationIdSchema,

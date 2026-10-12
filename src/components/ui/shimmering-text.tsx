@@ -2,7 +2,7 @@ import type { UseInViewOptions } from "motion/react";
 import type { CSSProperties } from "react";
 
 import { cn } from "#/lib/utils";
-import { motion, useInView } from "motion/react";
+import { motion, useInView, useReducedMotion } from "motion/react";
 import { useMemo, useRef } from "react";
 
 interface ShimmeringTextProps {
@@ -51,6 +51,7 @@ function ShimmeringText({
 
   const dynamicSpread = useMemo(() => text.length * spread, [text, spread]);
   const shouldAnimate = !startOnView || isInView;
+  const prefersReducedMotion = useReducedMotion();
 
   const style: CSSProperties & Record<`--${string}`, string> = {
     "--spread": `${dynamicSpread}px`,
@@ -78,7 +79,7 @@ function ShimmeringText({
       animate={
         shouldAnimate
           ? {
-              backgroundPosition: "0% center",
+              backgroundPosition: prefersReducedMotion ? "100% center" : "0% center",
               opacity: 1,
             }
           : {}

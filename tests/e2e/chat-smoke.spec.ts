@@ -1,5 +1,14 @@
 import { expect, test } from "@playwright/test";
 
+/*
+ * Without a forwarded IP every local and CI run lands in one "unknown" bucket
+ * of the chat route's 60-a-day per-IP limit, on the shared dev deployment, and
+ * the suite starts failing with 429s. A random one per worker keeps runs apart.
+ */
+test.use({
+  extraHTTPHeaders: { "x-forwarded-for": `10.${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}.1` },
+});
+
 test.describe("chat homepage smoke", () => {
   test("homepage renders without runtime errors and exposes the composer", async ({ page }) => {
     const errors: string[] = [];
@@ -136,14 +145,21 @@ test.describe("composer with an empty message", () => {
   });
 });
 
-/** Holds every server function call (the homepage creates its conversation through one) until released. */
+/** The homepage creates or resumes its conversation with a POST server function, after an unrelated GET one. */
+const isConversationCall = (url: string, method: string) => url.includes("/_serverFn/") && method === "POST";
+
+function waitForConversation(page: import("@playwright/test").Page) {
+  return page.waitForResponse((r) => isConversationCall(r.url(), r.request().method()));
+}
+
+/** Holds the conversation server function call until released. */
 async function holdConversationCreation(page: import("@playwright/test").Page) {
   let release = () => {};
   const gate = new Promise<void>((resolve) => {
     release = resolve;
   });
   await page.route("**/_serverFn/**", async (route) => {
-    await gate;
+    if (isConversationCall(route.request().url(), route.request().method())) await gate;
     await route.continue();
   });
   return release;
@@ -159,8 +175,11 @@ test.describe("composer before the conversation exists", () => {
     await expect(composer).toBeFocused({ timeout: 5_000 });
     await composer.fill("hello");
 
+    const created = waitForConversation(page);
     release();
-    await expect(page.getByText("Preparing Lucien's introduction")).toBeHidden({ timeout: 30_000 });
+    await created;
+    // The old code remounted the chat as the conversation landed; give it the chance to.
+    await page.waitForTimeout(500);
     await expect(composer).toHaveValue("hello");
   });
 
@@ -189,6 +208,22 @@ test.describe("composer before the conversation exists", () => {
   });
 });
 
+test.describe("starter prompts before the conversation exists", () => {
+  test("queue like a typed message instead of failing", async ({ page }) => {
+    const release = await holdConversationCreation(page);
+    await page.goto("/");
+    const prompt = page.getByRole("button", { name: "Can I see Lucien's resume?" });
+    await expect(prompt).toBeVisible({ timeout: 10_000 });
+
+    await prompt.click();
+    const sent = page.waitForRequest((r) => r.url().includes("/api/chat") && r.method() === "POST");
+    release();
+    const body = (await sent).postDataJSON();
+    expect(body.id).not.toBe("new-conversation");
+    expect(body.message.parts[0].text).toBe("Can I see Lucien's resume?");
+  });
+});
+
 test.describe("when the conversation cannot be created", () => {
   test("shows the retry instead of a reply that will never come", async ({ page }) => {
     let fail = () => {};
@@ -196,6 +231,7 @@ test.describe("when the conversation cannot be created", () => {
       fail = resolve;
     });
     await page.route("**/_serverFn/**", async (route) => {
+      if (!isConversationCall(route.request().url(), route.request().method())) return route.continue();
       await gate;
       await route.fulfill({ status: 500, body: "boom" });
     });
@@ -236,5 +272,180 @@ test.describe("typing anywhere on the page", () => {
 
     await expect(composer).not.toBeFocused();
     await expect(composer).toHaveValue("");
+  });
+});
+
+test.describe("stopping a reply", () => {
+  /** A reply that never arrives, so the test controls when the stream ends. */
+  async function hangChat(page: import("@playwright/test").Page) {
+    await page.route("**/api/chat", () => new Promise(() => {}));
+  }
+
+  test("swaps Send for Stop while a reply is pending, and Stop ends it", async ({ page }) => {
+    const created = waitForConversation(page);
+    await page.goto("/");
+    const composer = page.getByRole("textbox").first();
+    await created;
+    await hangChat(page);
+
+    await composer.fill("What does he build?");
+    await composer.press("Enter");
+
+    const stop = page.getByRole("button", { name: "Stop" });
+    await expect(stop).toBeVisible();
+    await expect(page.getByRole("button", { name: "Send" })).toBeHidden();
+
+    await stop.click();
+    await expect(page.getByRole("button", { name: "Send" })).toBeVisible();
+    await expect(page.getByText("Thinking…")).toBeHidden();
+  });
+
+  test("Escape stops it too", async ({ page }) => {
+    const created = waitForConversation(page);
+    await page.goto("/");
+    const composer = page.getByRole("textbox").first();
+    await created;
+    await hangChat(page);
+
+    await composer.fill("What does he build?");
+    await composer.press("Enter");
+    await expect(page.getByRole("button", { name: "Stop" })).toBeVisible();
+
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("button", { name: "Send" })).toBeVisible();
+  });
+});
+
+test.describe("with reduced motion", () => {
+  test("status text does not shimmer", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await holdConversationCreation(page);
+    await page.goto("/");
+    const composer = page.getByRole("textbox").first();
+    await composer.fill("What does he build?");
+    await composer.press("Enter");
+    const label = page.getByText("Thinking…");
+    await expect(label).toBeVisible({ timeout: 10_000 });
+
+    const position = () => label.evaluate((node) => window.getComputedStyle(node).backgroundPosition);
+    const before = await position();
+    await page.waitForTimeout(600);
+    expect(await position()).toBe(before);
+  });
+});
+
+test.describe("Escape while a reply streams", () => {
+  /*
+   * Stands in for /api/chat in the page: the first reply carries a link to an
+   * unknown host and finishes; later replies stream a word every 200ms until
+   * aborted, so the chat re-renders while the link's confirm step is open.
+   */
+  function streamingChatStub() {
+    const realFetch = window.fetch;
+    let calls = 0;
+    window.fetch = async (input, init) => {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+      if (!url.includes("/api/chat")) return realFetch(input, init);
+      calls += 1;
+      const isFirst = calls === 1;
+      const encoder = new TextEncoder();
+      const event = (chunk: object) => encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`);
+      const body = new ReadableStream({
+        start(controller) {
+          controller.enqueue(event({ type: "start" }));
+          controller.enqueue(event({ id: "t", type: "text-start" }));
+          if (isFirst) {
+            controller.enqueue(
+              event({ delta: "See [the reading list](https://evil.example/x).", id: "t", type: "text-delta" }),
+            );
+            controller.enqueue(event({ id: "t", type: "text-end" }));
+            controller.enqueue(event({ type: "finish" }));
+            controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+            controller.close();
+            return;
+          }
+          const timer = setInterval(
+            () => controller.enqueue(event({ delta: "word ", id: "t", type: "text-delta" })),
+            200,
+          );
+          init?.signal?.addEventListener("abort", () => {
+            clearInterval(timer);
+            controller.error(new DOMException("Aborted", "AbortError"));
+          });
+        },
+      });
+      return new Response(body, {
+        headers: { "content-type": "text/event-stream", "x-vercel-ai-ui-message-stream": "v1" },
+      });
+    };
+  }
+
+  test("closing a link's confirm step does not stop the reply", async ({ page }) => {
+    await page.addInitScript(streamingChatStub);
+    const created = waitForConversation(page);
+    await page.goto("/");
+    await created;
+    const composer = page.getByRole("textbox").first();
+
+    await composer.fill("Where can I read more?");
+    await composer.press("Enter");
+    const link = page.getByRole("button", { name: "the reading list" });
+    await expect(link).toBeVisible();
+
+    await composer.fill("And then?");
+    await composer.press("Enter");
+    await expect(page.getByText("word word")).toBeVisible();
+
+    await link.click();
+    await expect(page.getByText("Open external link?")).toBeVisible();
+    // Let a few chunks re-render the chat while the confirm step is open.
+    await page.waitForTimeout(600);
+    await page.keyboard.press("Escape");
+
+    await expect(page.getByText("Open external link?")).toBeHidden();
+    await expect(page.getByRole("button", { name: "Stop" })).toBeVisible();
+  });
+});
+
+test.describe("coming back to the chat", () => {
+  test("a reload keeps the conversation", async ({ page }) => {
+    // Waits for a real reply to finish: the server saves both turns off the critical path.
+    test.setTimeout(90_000);
+    const created = waitForConversation(page);
+    await page.goto("/");
+    await created;
+    const composer = page.getByRole("textbox").first();
+
+    const sent = page.waitForRequest((r) => r.url().includes("/api/chat") && r.method() === "POST");
+    await composer.fill("Where is Lucien based?");
+    await composer.press("Enter");
+    await sent;
+    // Send is still on screen for a moment after Enter; wait for Stop, then for Send to return when the reply ends.
+    await expect(page.getByRole("button", { name: "Stop" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Send" })).toBeVisible({ timeout: 60_000 });
+
+    await page.reload();
+    await expect(page.getByText("Where is Lucien based?")).toBeVisible({ timeout: 15_000 });
+  });
+
+  test("a second tab starting over does not break the first", async ({ context }) => {
+    const first = await context.newPage();
+    const created = waitForConversation(first);
+    await first.goto("/");
+    await created;
+
+    const second = await context.newPage();
+    const secondCreated = waitForConversation(second);
+    await second.goto("/");
+    await secondCreated;
+    const startedOver = waitForConversation(second);
+    await second.getByRole("button", { exact: true, name: "New" }).click();
+    await startedOver;
+
+    const sent = first.waitForResponse((r) => r.url().includes("/api/chat") && r.request().method() === "POST");
+    const composer = first.getByRole("textbox").first();
+    await composer.fill("What does he build?");
+    await composer.press("Enter");
+    expect((await sent).status()).toBe(200);
   });
 });

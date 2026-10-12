@@ -10,7 +10,7 @@ import {
 } from "#/components/ui/message-scroller";
 import { AnalyticsEvent, useAnalytics } from "#/lib/analytics";
 import { parseSerializedMessages } from "#/lib/chat-types";
-import { startNewConversation } from "#/lib/functions/start-new-conversation";
+import { resumeOrStartConversation, startNewConversation } from "#/lib/functions/start-new-conversation";
 import { useChat } from "@ai-sdk/react";
 import { useMutation } from "@tanstack/react-query";
 import { DefaultChatTransport } from "ai";
@@ -35,13 +35,20 @@ export function ChatConversation({
 }) {
   const { capture } = useAnalytics();
   const lastCompletedMessageIdRef = useRef<string | null>(null);
+  // A stopped reply settles to "ready" like a finished one; this keeps it out of the completion metrics.
+  const stopRequestedRef = useRef(false);
   const initialMessages = useMemo(
     () => parseSerializedMessages(chatState.serializedMessages),
     [chatState.serializedMessages],
   );
   const startConversationMutation = useMutation({
-    mutationFn: startNewConversation,
-    onSuccess(nextConversation) {
+    mutationFn: ({ fresh }: { fresh: boolean }) => (fresh ? startNewConversation() : resumeOrStartConversation()),
+    onSuccess(nextConversation, { fresh }) {
+      // Every new conversation already holds the intro, so only a visitor turn means they are coming back.
+      const resumedMessages = fresh ? [] : parseSerializedMessages(nextConversation.serializedMessages);
+      if (resumedMessages.some((message) => message.role === "user")) {
+        capture(AnalyticsEvent.conversationResumed, { message_count: resumedMessages.length });
+      }
       startTransition(() => {
         onConversationChange(nextConversation);
       });
@@ -54,17 +61,17 @@ export function ChatConversation({
   } = startConversationMutation;
 
   // The homepage renders a static, edge-cached shell with no conversation.
-  // Create one (which sets the session cookie on its own request) as soon as we
-  // mount without one, so a conversation exists before the first send without
-  // making the document itself per-session / uncacheable.
+  // Resume the visitor's own (or create one, which sets the session cookie on
+  // its own request) as soon as we mount without one, so a conversation exists
+  // before the first send without making the document per-session / uncacheable.
   const conversationCreationStartedRef = useRef(false);
   useEffect(() => {
     if (chatState.conversation || conversationCreationStartedRef.current) return;
     conversationCreationStartedRef.current = true;
-    startConversation({});
+    startConversation({ fresh: false });
   }, [chatState.conversation, startConversation]);
 
-  const { clearError, messages, regenerate, sendMessage, status } = useChat({
+  const { clearError, messages, regenerate, sendMessage, status, stop } = useChat({
     id: chatState.conversation?.id ?? "new-conversation",
     messages: initialMessages,
     transport: new DefaultChatTransport({
@@ -97,21 +104,33 @@ export function ChatConversation({
     if (status !== "ready") return;
 
     const lastAssistantMessage = [...visibleMessages].reverse().find((message) => message.role === "assistant");
-    if (!lastAssistantMessage || lastAssistantMessage.id === lastCompletedMessageIdRef.current) return;
+    // The intro or an earlier reply, when this turn produced no assistant message yet.
+    const newReply = lastAssistantMessage?.id === lastCompletedMessageIdRef.current ? undefined : lastAssistantMessage;
+    if (newReply) lastCompletedMessageIdRef.current = newReply.id;
 
-    lastCompletedMessageIdRef.current = lastAssistantMessage.id;
-
-    const responseTextLength = lastAssistantMessage.parts.reduce((total, part) => {
+    const responseTextLength = (newReply?.parts ?? []).reduce((total, part) => {
       if (part.type !== "text") return total;
       return total + part.text.length;
     }, 0);
+
+    // Checked before the "nothing new" return: a stop while "Thinking…" shows has no reply at all.
+    if (stopRequestedRef.current) {
+      stopRequestedRef.current = false;
+      capture(AnalyticsEvent.chatResponseStopped, {
+        response_length: responseTextLength,
+        visible_message_count: visibleMessages.length,
+      });
+      return;
+    }
+
+    if (!newReply) return;
 
     capture(AnalyticsEvent.chatResponseCompleted, {
       response_length: responseTextLength,
       visible_message_count: visibleMessages.length,
     });
 
-    for (const { event, properties } of getSettledAssistantAnalyticsEvents(lastAssistantMessage.parts)) {
+    for (const { event, properties } of getSettledAssistantAnalyticsEvents(newReply.parts)) {
       capture(event, properties);
     }
   }, [capture, status, visibleMessages]);
@@ -130,11 +149,21 @@ export function ChatConversation({
   }, [isReady, queuedMessage, sendMessage]);
 
   const sendOrQueue = async (text: string) => {
+    stopRequestedRef.current = false;
     if (!isReady) {
       setQueuedMessage(text);
       return;
     }
     await sendMessage({ text });
+  };
+
+  const handleStop = () => {
+    if (queuedMessage !== null) {
+      setQueuedMessage(null);
+      return;
+    }
+    stopRequestedRef.current = true;
+    void stop();
   };
 
   const handleSend = async (message: string) => {
@@ -173,7 +202,7 @@ export function ChatConversation({
       source: "cta",
     });
 
-    startConversation({});
+    startConversation({ fresh: true });
   };
 
   return (
@@ -216,7 +245,7 @@ export function ChatConversation({
                   <ChatPendingReply isFirst={false} />
                 ) : null}
                 {hasConversationStartFailed && !isReady ? (
-                  <ChatSendFailed onRetry={() => startConversation({})} />
+                  <ChatSendFailed onRetry={() => startConversation({ fresh: false })} />
                 ) : null}
                 {status === "error" ? (
                   <ChatSendFailed
@@ -241,7 +270,12 @@ export function ChatConversation({
         <div className="sticky bottom-0 z-10">
           <div className="relative mx-auto w-full max-w-3xl px-4 sm:px-6">
             <div className="bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/75">
-              <ChatComposerBlock isStreaming={isBusy} onResumeRequest={handleResumeRequest} onSend={handleSend} />
+              <ChatComposerBlock
+                isStreaming={isBusy}
+                onResumeRequest={handleResumeRequest}
+                onSend={handleSend}
+                onStop={handleStop}
+              />
             </div>
           </div>
         </div>
