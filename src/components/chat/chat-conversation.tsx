@@ -14,7 +14,7 @@ import { startNewConversation } from "#/lib/functions/start-new-conversation";
 import { useChat } from "@ai-sdk/react";
 import { useMutation } from "@tanstack/react-query";
 import { DefaultChatTransport } from "ai";
-import { startTransition, useEffect, useMemo, useRef } from "react";
+import { startTransition, useEffect, useMemo, useRef, useState } from "react";
 
 import { ChatComposerBlock } from "./chat-composer-block";
 import { ChatIntroPlaceholder } from "./chat-intro-placeholder";
@@ -47,7 +47,11 @@ export function ChatConversation({
       });
     },
   });
-  const { isPending: isStartingNewConversation, mutateAsync: startConversation } = startConversationMutation;
+  const {
+    isError: hasConversationStartFailed,
+    isPending: isStartingNewConversation,
+    mutate: startConversation,
+  } = startConversationMutation;
 
   // The homepage renders a static, edge-cached shell with no conversation.
   // Create one (which sets the session cookie on its own request) as soon as we
@@ -57,7 +61,7 @@ export function ChatConversation({
   useEffect(() => {
     if (chatState.conversation || conversationCreationStartedRef.current) return;
     conversationCreationStartedRef.current = true;
-    void startConversation({});
+    startConversation({});
   }, [chatState.conversation, startConversation]);
 
   const { clearError, messages, regenerate, sendMessage, status } = useChat({
@@ -112,17 +116,33 @@ export function ChatConversation({
     }
   }, [capture, status, visibleMessages]);
 
-  // Disabling the input while streaming would blur it, so the two reasons stay apart.
   const isReady = Boolean(chatState.conversation);
   const isStreaming = status === "submitted" || status === "streaming";
-  const isBusy = isStreaming || !isReady;
+  // A message sent before the conversation exists waits here, shown as sent,
+  // and goes out once `useChat` is bound to the real conversation id.
+  const [queuedMessage, setQueuedMessage] = useState<string | null>(null);
+  const isBusy = isStreaming || queuedMessage !== null;
+
+  useEffect(() => {
+    if (!isReady || queuedMessage === null) return;
+    setQueuedMessage(null);
+    void sendMessage({ text: queuedMessage });
+  }, [isReady, queuedMessage, sendMessage]);
+
+  const sendOrQueue = async (text: string) => {
+    if (!isReady) {
+      setQueuedMessage(text);
+      return;
+    }
+    await sendMessage({ text });
+  };
 
   const handleSend = async (message: string) => {
     capture(AnalyticsEvent.chatMessageSubmitted, {
       message_length: message.length,
       source: "composer",
     });
-    await sendMessage({ text: message });
+    await sendOrQueue(message);
   };
 
   const handleStarterPrompt = async (prompt: string) => {
@@ -133,7 +153,7 @@ export function ChatConversation({
       message_length: prompt.length,
       source: "starter_prompt",
     });
-    await sendMessage({ text: prompt });
+    await sendOrQueue(prompt);
   };
 
   const handleResumeRequest = () => {
@@ -144,22 +164,22 @@ export function ChatConversation({
       message_length: prompt.length,
       source: "resume_chip",
     });
-    void sendMessage({ text: prompt });
+    void sendOrQueue(prompt);
   };
 
-  const handleNewConversation = async () => {
+  const handleNewConversation = () => {
     if (isStartingNewConversation) return;
     capture(AnalyticsEvent.newConversationClicked, {
       source: "cta",
     });
 
-    await startConversation({});
+    startConversation({});
   };
 
   return (
     <section aria-label="Conversation with Poof" className="flex min-h-0 grow overflow-hidden bg-background">
       <div className="flex min-h-0 w-full grow flex-col gap-2 sm:gap-5">
-        <ChatNewConversationBar isDisabled={isStartingNewConversation} onClick={() => void handleNewConversation()} />
+        <ChatNewConversationBar isDisabled={isStartingNewConversation} onClick={handleNewConversation} />
 
         <MessageScrollerProvider
           key={chatState.conversation?.id ?? "new-conversation"}
@@ -183,7 +203,21 @@ export function ChatConversation({
                     />
                   </MessageScrollerItem>
                 ))}
-                {showPendingReply ? <ChatPendingReply isFirst={visibleMessages.length === 0} /> : null}
+                {queuedMessage === null ? null : (
+                  <MessageScrollerItem messageId="queued-message" scrollAnchor className={entryItemClassName(false)}>
+                    <ChatTimelineMessage
+                      isActive
+                      message={{ id: "queued-message", parts: [{ text: queuedMessage, type: "text" }], role: "user" }}
+                      status="submitted"
+                    />
+                  </MessageScrollerItem>
+                )}
+                {showPendingReply || queuedMessage !== null ? (
+                  <ChatPendingReply isFirst={visibleMessages.length === 0} />
+                ) : null}
+                {hasConversationStartFailed && !isReady ? (
+                  <ChatSendFailed onRetry={() => startConversation({})} />
+                ) : null}
                 {status === "error" ? (
                   <ChatSendFailed
                     onRetry={() => {
@@ -207,12 +241,7 @@ export function ChatConversation({
         <div className="sticky bottom-0 z-10">
           <div className="relative mx-auto w-full max-w-3xl px-4 sm:px-6">
             <div className="bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/75">
-              <ChatComposerBlock
-                isReady={isReady}
-                isStreaming={isStreaming}
-                onResumeRequest={handleResumeRequest}
-                onSend={handleSend}
-              />
+              <ChatComposerBlock isStreaming={isBusy} onResumeRequest={handleResumeRequest} onSend={handleSend} />
             </div>
           </div>
         </div>

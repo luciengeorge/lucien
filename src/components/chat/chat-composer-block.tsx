@@ -8,12 +8,10 @@ const FormSchema = z.object({
 });
 
 export function ChatComposerBlock({
-  isReady,
   isStreaming,
   onResumeRequest,
   onSend,
 }: {
-  isReady: boolean;
   isStreaming: boolean;
   onResumeRequest: () => void;
   onSend: (message: string) => Promise<void>;
@@ -51,7 +49,6 @@ export function ChatComposerBlock({
           {(field) => (
             <ChatComposer
               canSubmit={canSubmit}
-              isReady={isReady}
               isStreaming={isStreaming}
               isSubmitting={isSubmitting}
               message={String(message)}
