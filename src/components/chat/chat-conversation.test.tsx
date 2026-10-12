@@ -30,6 +30,7 @@ vi.mock("#/lib/functions/start-new-conversation", () => ({
 afterEach(() => {
   cleanup();
   capture.mockClear();
+  resumeOrStartConversation.mockReset();
 });
 
 const user: UIMessage = { id: "u1", parts: [{ text: "What does he build?", type: "text" }], role: "user" };
@@ -102,11 +103,16 @@ describe("ChatConversation resume analytics", () => {
   function renderWithoutConversation() {
     chat.messages = [];
     chat.status = "ready";
+    const onConversationChange = vi.fn();
     render(
       <QueryClientProvider client={new QueryClient()}>
-        <ChatConversation chatState={{ conversation: null, serializedMessages: [] }} onConversationChange={vi.fn()} />
+        <ChatConversation
+          chatState={{ conversation: null, serializedMessages: [] }}
+          onConversationChange={onConversationChange}
+        />
       </QueryClientProvider>,
     );
+    return { onConversationChange };
   }
 
   it("records a conversation the visitor comes back to", async () => {
@@ -122,10 +128,10 @@ describe("ChatConversation resume analytics", () => {
   /* Every new conversation already holds the intro, so "has messages" is not "resumed". */
   it("does not count a brand new conversation as resumed", async () => {
     resumeOrStartConversation.mockResolvedValue({ conversation, serializedMessages: [JSON.stringify(intro)] });
-    renderWithoutConversation();
+    const { onConversationChange } = renderWithoutConversation();
 
-    await waitFor(() => expect(resumeOrStartConversation).toHaveBeenCalled());
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    // onSuccess decides on the event before it hands the conversation over.
+    await waitFor(() => expect(onConversationChange).toHaveBeenCalled());
     expect(capturedEvents()).not.toContain("conversation_resumed");
   });
 });

@@ -74,7 +74,7 @@ tests/e2e/                Playwright specs
 ## How chat works
 
 1. The frontend posts `{ id, message }` to `/api/chat`.
-2. The handler checks the conversation-session cookie (`sessionId` must match the conversation `id`).
+2. The handler requires the conversation-session cookie's `sessionId`. Ownership is enforced by `getConversationById`, which filters by `sessionId` (404 when not owned); the cookie's `conversationId` only names the newest conversation and is not compared.
 3. It loads the conversation from Convex (`getConversationById`).
 4. The last user message is expanded into a richer search query with `gpt-5.6-luna`.
 5. Convex RAG search runs in namespace `portfolio` (`limit 8`, `vectorScoreThreshold 0.4`).
