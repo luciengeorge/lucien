@@ -7,7 +7,15 @@ import { ChatConversation } from "./chat-conversation";
 
 export function ChatPage({ initialChatState }: { initialChatState: ChatConversationState }) {
   const [chatState, setChatState] = useState(initialChatState);
+  // Remount only to start over. The first conversation is created under a live
+  // composer, and remounting then would throw away what the visitor typed.
+  const [mountKey, setMountKey] = useState(initialChatState.conversation?.id ?? "new-conversation");
   const { capture } = useAnalytics();
+
+  const handleConversationChange = (nextChatState: ChatConversationState) => {
+    if (chatState.conversation) setMountKey(nextChatState.conversation?.id ?? "new-conversation");
+    setChatState(nextChatState);
+  };
 
   useEffect(() => {
     capture(AnalyticsEvent.portfolioViewed, {
@@ -21,11 +29,5 @@ export function ChatPage({ initialChatState }: { initialChatState: ChatConversat
     }
   }, [capture, initialChatState.conversation, initialChatState.serializedMessages.length]);
 
-  return (
-    <ChatConversation
-      key={chatState.conversation?.id ?? "new-conversation"}
-      chatState={chatState}
-      onConversationChange={setChatState}
-    />
-  );
+  return <ChatConversation key={mountKey} chatState={chatState} onConversationChange={handleConversationChange} />;
 }

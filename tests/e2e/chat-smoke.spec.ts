@@ -22,9 +22,6 @@ test.describe("composer focus on landing", () => {
     await page.goto("/");
     const composer = page.getByRole("textbox").first();
     await expect(composer).toBeVisible({ timeout: 10_000 });
-    // The composer is disabled on first paint (the conversation is created
-    // client-side), so focus has to arrive once it is enabled.
-    await expect(composer).toBeEnabled({ timeout: 10_000 });
     await expect(composer).toBeFocused({ timeout: 5_000 });
   });
 });
@@ -48,7 +45,6 @@ test.describe("composer after sending", () => {
   test("clears and refocuses immediately, and actually sends", async ({ page }) => {
     await page.goto("/");
     const composer = page.getByRole("textbox").first();
-    // Disabled until the conversation exists, so this also waits for readiness.
     await expect(composer).toBeEnabled({ timeout: 15_000 });
 
     const sent = page.waitForRequest((r) => r.url().includes("/api/chat") && r.method() === "POST");
@@ -137,5 +133,108 @@ test.describe("composer with an empty message", () => {
     await composer.fill("hello");
     await expect(send).toBeEnabled();
     expect(await opacityOf(group)).toBe("1");
+  });
+});
+
+/** Holds every server function call (the homepage creates its conversation through one) until released. */
+async function holdConversationCreation(page: import("@playwright/test").Page) {
+  let release = () => {};
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route("**/_serverFn/**", async (route) => {
+    await gate;
+    await route.continue();
+  });
+  return release;
+}
+
+test.describe("composer before the conversation exists", () => {
+  test("is typable on first paint, and keeps the draft once the conversation arrives", async ({ page }) => {
+    const release = await holdConversationCreation(page);
+    await page.goto("/");
+    const composer = page.getByRole("textbox").first();
+
+    await expect(composer).toBeEnabled({ timeout: 10_000 });
+    await expect(composer).toBeFocused({ timeout: 5_000 });
+    await composer.fill("hello");
+
+    release();
+    await expect(page.getByText("Preparing Lucien's introduction")).toBeHidden({ timeout: 30_000 });
+    await expect(composer).toHaveValue("hello");
+  });
+
+  test("shows a message sent early at once, and sends it when the conversation is ready", async ({ page }) => {
+    const release = await holdConversationCreation(page);
+    let chatPosts = 0;
+    page.on("request", (r) => {
+      if (r.url().includes("/api/chat") && r.method() === "POST") chatPosts += 1;
+    });
+
+    await page.goto("/");
+    const composer = page.getByRole("textbox").first();
+    await expect(composer).toBeEnabled({ timeout: 10_000 });
+    await composer.fill("What does he build?");
+    await composer.press("Enter");
+
+    await expect(page.getByText("What does he build?")).toBeVisible({ timeout: 2_000 });
+    await expect(composer).toHaveValue("");
+    expect(chatPosts).toBe(0);
+
+    const sent = page.waitForRequest((r) => r.url().includes("/api/chat") && r.method() === "POST");
+    release();
+    const body = (await sent).postDataJSON();
+    expect(body.id).not.toBe("new-conversation");
+    expect(body.message.parts[0].text).toBe("What does he build?");
+  });
+});
+
+test.describe("when the conversation cannot be created", () => {
+  test("shows the retry instead of a reply that will never come", async ({ page }) => {
+    let fail = () => {};
+    const gate = new Promise<void>((resolve) => {
+      fail = resolve;
+    });
+    await page.route("**/_serverFn/**", async (route) => {
+      await gate;
+      await route.fulfill({ status: 500, body: "boom" });
+    });
+    await page.goto("/");
+    const composer = page.getByRole("textbox").first();
+    await composer.fill("What does he build?");
+    await composer.press("Enter");
+    await expect(page.getByText("Thinking…")).toBeVisible();
+
+    fail();
+    await expect(page.getByRole("button", { name: /try again/i })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("Thinking…")).toBeHidden();
+  });
+});
+
+test.describe("typing anywhere on the page", () => {
+  test("focuses the composer and puts the keystrokes in it", async ({ page }) => {
+    await page.goto("/");
+    const composer = page.getByRole("textbox").first();
+    await expect(composer).toBeEnabled({ timeout: 10_000 });
+    await composer.evaluate((node) => node.blur());
+    await expect(composer).not.toBeFocused();
+
+    await page.keyboard.type("hi");
+
+    await expect(composer).toBeFocused();
+    await expect(composer).toHaveValue("hi");
+  });
+
+  test("leaves shortcuts and space alone", async ({ page }) => {
+    await page.goto("/");
+    const composer = page.getByRole("textbox").first();
+    await expect(composer).toBeEnabled({ timeout: 10_000 });
+    await composer.evaluate((node) => node.blur());
+
+    await page.keyboard.press("ControlOrMeta+c");
+    await page.keyboard.press("Space");
+
+    await expect(composer).not.toBeFocused();
+    await expect(composer).toHaveValue("");
   });
 });
