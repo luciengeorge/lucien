@@ -5,7 +5,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "#/comp
 import { StopIcon } from "@hugeicons-pro/core-solid-rounded";
 import { File01Icon, Navigation03Icon } from "@hugeicons-pro/core-stroke-rounded";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useEffect, useRef } from "react";
+import { useEffect, useEffectEvent, useRef } from "react";
 
 /** Touch-primary devices, where autofocus would raise the keyboard over the page. */
 function isCoarsePointer(): boolean {
@@ -67,24 +67,27 @@ export function ChatComposer({
     if (!isCoarsePointer()) textareaRef.current?.focus();
   }, []);
 
+  const stopOnEscape = useEffectEvent((event: KeyboardEvent) => {
+    // A dialog, menu, IME composition or Streamdown's link modal owns Escape: they
+    // close on it without preventDefault, and the modal has no dialog role.
+    if (
+      event.key !== "Escape" ||
+      event.isComposing ||
+      document.activeElement?.closest("[role=dialog], [role=menu]") ||
+      document.querySelector("[data-streamdown=link-safety-modal]")
+    )
+      return;
+    onStop();
+  });
+
+  // One capture-phase listener per stream, so it runs before any bubble-phase
+  // listener that closes a modal, whichever was added first.
   useEffect(() => {
     if (!isStreaming) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      // A dialog, menu, IME composition or Streamdown's link modal owns Escape: they
-      // close on it without preventDefault, and the modal has no dialog role.
-      if (
-        event.key !== "Escape" ||
-        event.defaultPrevented ||
-        event.isComposing ||
-        document.activeElement?.closest("[role=dialog], [role=menu]") ||
-        document.querySelector("[data-streamdown=link-safety-modal]")
-      )
-        return;
-      onStop();
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [isStreaming, onStop]);
+    const onKeyDown = (event: KeyboardEvent) => stopOnEscape(event);
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => document.removeEventListener("keydown", onKeyDown, true);
+  }, [isStreaming]);
   const canSend = !isStreaming && !isSubmitting && canSubmit && message.length > 0;
 
   return (

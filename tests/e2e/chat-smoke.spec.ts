@@ -316,3 +316,76 @@ test.describe("with reduced motion", () => {
     expect(await position()).toBe(before);
   });
 });
+
+test.describe("Escape while a reply streams", () => {
+  /*
+   * Stands in for /api/chat in the page: the first reply carries a link to an
+   * unknown host and finishes; later replies stream a word every 200ms until
+   * aborted, so the chat re-renders while the link's confirm step is open.
+   */
+  function streamingChatStub() {
+    const realFetch = window.fetch;
+    let calls = 0;
+    window.fetch = async (input, init) => {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+      if (!url.includes("/api/chat")) return realFetch(input, init);
+      calls += 1;
+      const isFirst = calls === 1;
+      const encoder = new TextEncoder();
+      const event = (chunk: object) => encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`);
+      const body = new ReadableStream({
+        start(controller) {
+          controller.enqueue(event({ type: "start" }));
+          controller.enqueue(event({ id: "t", type: "text-start" }));
+          if (isFirst) {
+            controller.enqueue(
+              event({ delta: "See [the reading list](https://evil.example/x).", id: "t", type: "text-delta" }),
+            );
+            controller.enqueue(event({ id: "t", type: "text-end" }));
+            controller.enqueue(event({ type: "finish" }));
+            controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+            controller.close();
+            return;
+          }
+          const timer = setInterval(
+            () => controller.enqueue(event({ delta: "word ", id: "t", type: "text-delta" })),
+            200,
+          );
+          init?.signal?.addEventListener("abort", () => {
+            clearInterval(timer);
+            controller.error(new DOMException("Aborted", "AbortError"));
+          });
+        },
+      });
+      return new Response(body, {
+        headers: { "content-type": "text/event-stream", "x-vercel-ai-ui-message-stream": "v1" },
+      });
+    };
+  }
+
+  test("closing a link's confirm step does not stop the reply", async ({ page }) => {
+    await page.addInitScript(streamingChatStub);
+    const created = page.waitForResponse((r) => r.url().includes("/_serverFn/") && r.request().method() === "POST");
+    await page.goto("/");
+    await created;
+    const composer = page.getByRole("textbox").first();
+
+    await composer.fill("Where can I read more?");
+    await composer.press("Enter");
+    const link = page.getByRole("button", { name: "the reading list" });
+    await expect(link).toBeVisible();
+
+    await composer.fill("And then?");
+    await composer.press("Enter");
+    await expect(page.getByText("word word")).toBeVisible();
+
+    await link.click();
+    await expect(page.getByText("Open external link?")).toBeVisible();
+    // Let a few chunks re-render the chat while the confirm step is open.
+    await page.waitForTimeout(600);
+    await page.keyboard.press("Escape");
+
+    await expect(page.getByText("Open external link?")).toBeHidden();
+    await expect(page.getByRole("button", { name: "Stop" })).toBeVisible();
+  });
+});

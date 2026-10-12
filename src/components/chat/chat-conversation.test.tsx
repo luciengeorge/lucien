@@ -14,7 +14,7 @@ vi.mock("#/lib/analytics", async (importOriginal) => ({
 
 const chat: {
   messages: UIMessage[];
-  status: "ready" | "streaming";
+  status: "ready" | "streaming" | "submitted";
   stop: ReturnType<typeof vi.fn>;
 } = { messages: [], status: "ready", stop: vi.fn() };
 vi.mock("@ai-sdk/react", () => ({
@@ -77,5 +77,18 @@ describe("ChatConversation reply analytics", () => {
     expect(chat.stop).toHaveBeenCalled();
     expect(capturedEvents()).toContain("chat_response_stopped");
     expect(capturedEvents()).not.toContain("chat_response_completed");
+  });
+
+  /* The common case: the visitor stops while "Thinking…" shows, before any text. */
+  it("records a stop before the first word, with nothing received", () => {
+    chat.messages = [user];
+    chat.status = "submitted";
+    const { rerender } = renderConversation();
+
+    fireEvent.click(screen.getByRole("button", { name: "Stop" }));
+    chat.status = "ready";
+    rerender();
+
+    expect(capture).toHaveBeenCalledWith("chat_response_stopped", { response_length: 0, visible_message_count: 1 });
   });
 });

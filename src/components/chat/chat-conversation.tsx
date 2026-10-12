@@ -99,15 +99,16 @@ export function ChatConversation({
     if (status !== "ready") return;
 
     const lastAssistantMessage = [...visibleMessages].reverse().find((message) => message.role === "assistant");
-    if (!lastAssistantMessage || lastAssistantMessage.id === lastCompletedMessageIdRef.current) return;
+    // The intro or an earlier reply, when this turn produced no assistant message yet.
+    const newReply = lastAssistantMessage?.id === lastCompletedMessageIdRef.current ? undefined : lastAssistantMessage;
+    if (newReply) lastCompletedMessageIdRef.current = newReply.id;
 
-    lastCompletedMessageIdRef.current = lastAssistantMessage.id;
-
-    const responseTextLength = lastAssistantMessage.parts.reduce((total, part) => {
+    const responseTextLength = (newReply?.parts ?? []).reduce((total, part) => {
       if (part.type !== "text") return total;
       return total + part.text.length;
     }, 0);
 
+    // Checked before the "nothing new" return: a stop while "Thinking…" shows has no reply at all.
     if (stopRequestedRef.current) {
       stopRequestedRef.current = false;
       capture(AnalyticsEvent.chatResponseStopped, {
@@ -117,12 +118,14 @@ export function ChatConversation({
       return;
     }
 
+    if (!newReply) return;
+
     capture(AnalyticsEvent.chatResponseCompleted, {
       response_length: responseTextLength,
       visible_message_count: visibleMessages.length,
     });
 
-    for (const { event, properties } of getSettledAssistantAnalyticsEvents(lastAssistantMessage.parts)) {
+    for (const { event, properties } of getSettledAssistantAnalyticsEvents(newReply.parts)) {
       capture(event, properties);
     }
   }, [capture, status, visibleMessages]);
