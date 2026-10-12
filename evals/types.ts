@@ -13,6 +13,8 @@ export const EvalCaseSchema = z.object({
   required_behavior: z.string().optional(),
   /** ISO date the case pretends is today, so answers that depend on the date repeat. */
   today: z.iso.date().optional(),
+  /** Earlier turns, for follow-ups that only make sense in a conversation. */
+  history: z.array(z.object({ role: z.enum(["user", "assistant"]), text: z.string() })).optional(),
 });
 export type EvalCase = z.infer<typeof EvalCaseSchema>;
 
@@ -21,7 +23,6 @@ export interface ActorResult {
   answer: string;
   retrievedContext: string;
   contextLength: number;
-  expandedQuery: string;
   durationMs: number;
 }
 

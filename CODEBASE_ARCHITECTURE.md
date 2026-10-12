@@ -33,7 +33,7 @@ tests/e2e/  Playwright specs
 ```
 Browser ──► TanStack Start (Nitro / Vercel)
               ├─ SSR pages (router + loaders)
-              ├─ /api/chat   ─► OpenAI (expand) ─► Convex RAG ─► OpenAI (stream) ─► Convex (persist)
+              ├─ /api/chat   ─► OpenAI (stream, whole corpus in prompt) ─► Convex (persist)
               ├─ /api/auth/$ ─► Better Auth ─► Convex betterAuth component
               └─ /api/resume/pdf ─► @react-pdf/renderer
             Convex
@@ -94,7 +94,7 @@ UI messages are stored as JSON parts with extracted columns for queryability. Be
 ### Functions
 
 - `conversations.ts` - `createConversation`, `getConversationById` (ownership-checked, hydrates parts), `upsertConversationMessage` (zod-validated, derives title)
-- `search.ts` - `searchContext(query)` → RAG search text
+- `search.ts` - `searchContext(query)` → RAG search text (no longer used by chat or evals; the cached intro uses `rag` directly)
 - `intro.ts` - `generateIntro` (internal) + `getCachedIntro`, wrapped in action-cache (30-day TTL)
 - `rag.ts` - RAG instance (`text-embedding-3-small`, 1536-d, namespace `portfolio`)
 - `seed.ts` - `resetNamespace` + `addContent`
@@ -102,7 +102,7 @@ UI messages are stored as JSON parts with extracted columns for queryability. Be
 
 ## Content (`content/`)
 
-Markdown is the single source of truth for both the chat RAG index and the rendered HTML pages + `/llms-full.txt`. Files: bio, personal, education, tech-stack, socials, contact, privacy, signature-work, one per work entry (fyxer, localista, skyla, shopify, le-wagon, impact-lebanon, early-career), and `writing/` for articles. `socials.md` and `signature-work.md` are seeded for RAG but never rendered as pages. `system-prompt.md` holds Poof's prompt (`{retrieved_context}` and `{today}` slots, filled only via `renderSystemPrompt` in `src/lib/chat/system-prompt.ts`; skipped by seeding). `resume.json` is structured and validated by `src/lib/resume/schema.ts`. `scripts/seed.ts` (`pnpm seed`) embeds the markdown into Convex RAG.
+Markdown is the single source of truth for both the chat RAG index and the rendered HTML pages + `/llms-full.txt`. Files: bio, personal, education, tech-stack, socials, contact, privacy, signature-work, one per work entry (fyxer, localista, skyla, shopify, le-wagon, impact-lebanon, early-career), and `writing/` for articles. `socials.md` and `signature-work.md` are seeded for RAG but never rendered as pages. `system-prompt.md` holds Poof's prompt (`{context}` and `{today}` slots, filled only via `renderSystemPrompt` in `src/lib/chat/system-prompt.ts`; skipped by seeding). `resume.json` is structured and validated by `src/lib/resume/schema.ts`. `scripts/seed.ts` (`pnpm seed`) embeds the markdown into Convex RAG.
 
 ## Sessions (three, independent)
 
@@ -114,10 +114,9 @@ Markdown is the single source of truth for both the chat RAG index and the rende
 
 1. Validate body (`ChatRequestSchema`) and the conversation-session cookie.
 2. Load the conversation from Convex; validate UI messages.
-3. Expand the query (`gpt-5.6-luna`).
-4. RAG search (`searchContext`) → inject into `system-prompt.md`.
-5. Persist the user message; stream the answer (`gpt-5.6-luna`, `stepCountIs(3)`) with the `download_resume`, `link_work_entry` and `contact_lucien` tools.
-6. `onFinish` persists the assistant message.
+3. Fill `system-prompt.md` with the whole `content/` corpus (bundled at build via `import.meta.glob`, rendered by `src/lib/chat/corpus.ts`) and today's date. No query rewrite or vector search: the corpus is ~9k tokens.
+4. Persist the user message; stream the answer (`gpt-5.6-luna`, `stepCountIs(3)`) with the `download_resume`, `link_work_entry` and `contact_lucien` tools.
+5. `onFinish` persists the assistant message.
 
 The homepage's first message is a cached LLM intro (`convex/intro.ts`) read cookie-free and baked into first paint.
 

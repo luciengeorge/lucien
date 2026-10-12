@@ -1,13 +1,13 @@
 import type { TextStreamPart, ToolSet, UIMessage } from "ai";
 
-import { fetchAuthAction, fetchAuthMutation, fetchAuthQuery } from "#/lib/auth-server";
+import { fetchAuthMutation, fetchAuthQuery } from "#/lib/auth-server";
 import {
   ChatRequestSchema,
-  getTextFromMessage,
   hasRenderableMessageContent,
   MAX_HISTORY_MESSAGES,
   parseSerializedMessages,
 } from "#/lib/chat-types";
+import { renderCorpus } from "#/lib/chat/corpus";
 import { renderSystemPrompt } from "#/lib/chat/system-prompt";
 import { buildChatTools } from "#/lib/chat/tools";
 import { getConversationSession } from "#/lib/conversation-session.server";
@@ -16,23 +16,20 @@ import { postContactToSlack } from "#/lib/notify-slack";
 import { stripDashes } from "#/lib/strip-dashes";
 import { openai } from "@ai-sdk/openai";
 import { createFileRoute, notFound } from "@tanstack/react-router";
-import { convertToModelMessages, generateId, generateText, stepCountIs, streamText, validateUIMessages } from "ai";
+import { convertToModelMessages, generateId, stepCountIs, streamText, validateUIMessages } from "ai";
 
 import systemPrompt from "../../../../content/system-prompt.md?raw";
 import { api } from "../../../../convex/_generated/api";
 
 const logger = createLogger("chat.api");
 
-const QUERY_EXPANSION_PROMPT = `Rewrite the user's question into a better search query for finding relevant information about Lucien George's portfolio, career, projects, and personal life. Add context and relevant keywords. Return ONLY the rewritten query, nothing else.
-
-Examples:
-- "what do you do?" → "Lucien George current role job position software engineer work"
-- "where does he work now?" → "Lucien George current company current role Fyxer Senior Product Engineer notetaker product"
-- "what's his github?" → "Lucien George GitHub LinkedIn Twitter X Instagram social links profiles"
-- "tell me about yourself" → "Lucien George bio background personal story origin education career"
-- "what's your stack?" → "Lucien George tech stack programming languages frameworks tools TypeScript React"
-- "any side projects?" → "Lucien George side projects startups co-founder Localista Skyla open source"
-- "where did you study?" → "Lucien George education university McGill Le Wagon Harvard degree"`;
+// The whole corpus is ~9k tokens, small enough to send every time: retrieval
+// only added ways to miss (follow-ups, chunks embedded without their title).
+const corpus = renderCorpus(
+  Object.entries(
+    import.meta.glob<string>("../../../../content/**/*.md", { eager: true, import: "default", query: "?raw" }),
+  ).map(([path, text]) => ({ path: path.replace(/^.*\/content\//, ""), text })),
+);
 
 /**
  * Rewrites streamed text-delta chunks through stripDashes so the client never sees
@@ -51,20 +48,6 @@ function sanitizeMessageForPersistence(message: UIMessage): UIMessage {
     ...message,
     parts: message.parts.map((part) => (part.type === "text" ? { ...part, text: stripDashes(part.text) } : part)),
   };
-}
-
-async function expandQuery(query: string): Promise<string> {
-  try {
-    const { text } = await generateText({
-      model: openai("gpt-5.6-luna"),
-      system: QUERY_EXPANSION_PROMPT,
-      prompt: query,
-    });
-    return text;
-  } catch (error) {
-    logger.warn("query expansion failed", { error, queryLength: query.length });
-    return query;
-  }
 }
 
 export const Route = createFileRoute("/api/chat/")({
@@ -106,11 +89,10 @@ export const Route = createFileRoute("/api/chat/")({
           });
         }
 
-        const query = getTextFromMessage(message);
-        const [conversation, expandedQuery] = await Promise.all([
-          fetchAuthQuery(api.conversations.getConversationById, { conversationId: id, sessionId }),
-          expandQuery(query),
-        ]);
+        const conversation = await fetchAuthQuery(api.conversations.getConversationById, {
+          conversationId: id,
+          sessionId,
+        });
         if (!conversation) {
           logger.warn("conversation not found", { conversationId: id, requestId });
           return new Response("Conversation not found", { status: 404 });
@@ -124,19 +106,6 @@ export const Route = createFileRoute("/api/chat/")({
           messageCount: messages.length,
           requestId,
         });
-        logger.info("chat query expanded", {
-          expandedQueryLength: expandedQuery.length,
-          queryLength: query.length,
-          requestId,
-        });
-
-        let context = "";
-        try {
-          context = await fetchAuthAction(api.search.searchContext, { query: expandedQuery });
-        } catch (e) {
-          logger.error("rag search failed", { error: e, requestId });
-        }
-
         const userMessageWrite = fetchAuthMutation(api.conversations.upsertConversationMessage, {
           conversationId: id,
           messageJson: JSON.stringify(message),
@@ -145,7 +114,7 @@ export const Route = createFileRoute("/api/chat/")({
         // Fired off the critical path; real error handling happens when it's awaited in onFinish.
         userMessageWrite.catch(() => {});
 
-        const prompt = renderSystemPrompt(systemPrompt, { context, today: new Date() });
+        const prompt = renderSystemPrompt(systemPrompt, { context: corpus, today: new Date() });
         const modelMessages = messages.slice(-MAX_HISTORY_MESSAGES);
 
         const result = streamText({
@@ -181,7 +150,6 @@ export const Route = createFileRoute("/api/chat/")({
 
         logger.info("chat stream started", {
           conversationId: id,
-          contextLength: context.length,
           requestId,
         });
 

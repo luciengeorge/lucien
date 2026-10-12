@@ -23,6 +23,6 @@ describe("renderSystemPrompt", () => {
 
   it("leaves no slot unfilled", () => {
     const prompt = renderSystemPrompt(template, { context: "ctx", today: new Date() });
-    expect(prompt).not.toMatch(/\{(today|retrieved_context)\}/);
+    expect(prompt).not.toMatch(/\{(today|context)\}/);
   });
 });

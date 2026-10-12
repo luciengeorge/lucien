@@ -3,7 +3,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-import { DEFAULT_ACTOR_MODEL, DEFAULT_EXPANSION_MODEL, DEFAULT_JUDGE_MODEL } from "./models";
+import { DEFAULT_ACTOR_MODEL, DEFAULT_JUDGE_MODEL } from "./models";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -49,14 +49,5 @@ describe("eval model defaults", () => {
     const workflow = await loadWorkflow();
     expect(dispatchInputDefault(workflow, "actor_model")).toBe(DEFAULT_ACTOR_MODEL);
     expect(stepEnvFallback(workflow, "EVAL_ACTOR_MODEL")).toBe(DEFAULT_ACTOR_MODEL);
-  });
-
-  /*
-   * Query expansion has no workflow input: it is only ever the code default,
-   * and it must track the actor because the actor's retrieval quality in an
-   * eval run depends on the same expansion the production route performs.
-   */
-  it("expands queries with the actor model", () => {
-    expect(DEFAULT_EXPANSION_MODEL).toBe(DEFAULT_ACTOR_MODEL);
   });
 });

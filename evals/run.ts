@@ -1,6 +1,5 @@
 import { openai } from "@ai-sdk/openai";
 import { generateText, stepCountIs } from "ai";
-import { ConvexHttpClient } from "convex/browser";
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
@@ -9,11 +8,11 @@ import { fileURLToPath } from "node:url";
 
 import type { ActorResult, CategorySummary, EvalCase, EvalCategory, EvalReport, EvalResult } from "./types";
 
-import { api } from "../convex/_generated/api";
 import { renderSystemPrompt } from "../src/lib/chat/system-prompt";
 import { buildChatTools } from "../src/lib/chat/tools";
+import { readCorpusFromDisk } from "./corpus";
 import { judge } from "./judge";
-import { DEFAULT_ACTOR_MODEL, DEFAULT_EXPANSION_MODEL, DEFAULT_JUDGE_MODEL } from "./models";
+import { DEFAULT_ACTOR_MODEL, DEFAULT_JUDGE_MODEL } from "./models";
 import { evalToday } from "./today";
 import { EvalCaseSchema } from "./types";
 
@@ -21,23 +20,10 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const ACTOR_MODEL = process.env.EVAL_ACTOR_MODEL ?? DEFAULT_ACTOR_MODEL;
 const JUDGE_MODEL = process.env.EVAL_JUDGE_MODEL ?? DEFAULT_JUDGE_MODEL;
-const EXPANSION_MODEL = process.env.EVAL_EXPANSION_MODEL ?? DEFAULT_EXPANSION_MODEL;
 // Fixed seed + temperature 0 for reproducible actor/expansion output. These are
 // best-effort on reasoning models (which ignore temperature) but make the run
 // fully deterministic on non-reasoning models. Override via EVAL_SEED.
 const EVAL_SEED = Math.trunc(Number(process.env.EVAL_SEED ?? "1234")) || 1234;
-
-// Inlined from src/routes/api/chat/index.ts - same prompt used in production.
-const QUERY_EXPANSION_PROMPT = `Rewrite the user's question into a better search query for finding relevant information about Lucien George's portfolio, career, projects, and personal life. Add context and relevant keywords. Return ONLY the rewritten query, nothing else.
-
-Examples:
-- "what do you do?" → "Lucien George current role job position software engineer work"
-- "where does he work now?" → "Lucien George current company current role Fyxer Senior Product Engineer notetaker product"
-- "what's his github?" → "Lucien George GitHub LinkedIn Twitter X Instagram social links profiles"
-- "tell me about yourself" → "Lucien George bio background personal story origin education career"
-- "what's your stack?" → "Lucien George tech stack programming languages frameworks tools TypeScript React"
-- "any side projects?" → "Lucien George side projects startups co-founder Localista Skyla open source"
-- "where did you study?" → "Lucien George education university McGill Le Wagon Harvard degree"`;
 
 async function loadCases(file: string): Promise<EvalCase[]> {
   const text = await readFile(join(__dirname, "datasets", file), "utf-8");
@@ -64,45 +50,25 @@ async function loadSystemPrompt(): Promise<string> {
   return await readFile(join(__dirname, "..", "content", "system-prompt.md"), "utf-8");
 }
 
-async function expandQuery(query: string): Promise<string> {
-  try {
-    const { text } = await generateText({
-      model: openai(EXPANSION_MODEL),
-      system: QUERY_EXPANSION_PROMPT,
-      prompt: query,
-      temperature: 0,
-      seed: EVAL_SEED,
-    });
-    return text.trim();
-  } catch {
-    return query;
-  }
-}
-
 async function actorRun({
   systemPromptTemplate,
-  convex,
+  corpus,
   evalCase,
 }: {
   systemPromptTemplate: string;
-  convex: ConvexHttpClient;
+  corpus: string;
   evalCase: EvalCase;
 }): Promise<ActorResult> {
   const start = performance.now();
-  const expandedQuery = await expandQuery(evalCase.question);
 
-  let context = "";
-  try {
-    context = await convex.action(api.search.searchContext, { query: expandedQuery });
-  } catch (error) {
-    context = `[rag failed: ${error instanceof Error ? error.message : String(error)}]`;
-  }
-
-  const system = renderSystemPrompt(systemPromptTemplate, { context, today: evalToday(evalCase) });
+  const system = renderSystemPrompt(systemPromptTemplate, { context: corpus, today: evalToday(evalCase) });
   const { text } = await generateText({
     model: openai(ACTOR_MODEL),
     system,
-    prompt: evalCase.question,
+    messages: [
+      ...(evalCase.history ?? []).map((turn) => ({ role: turn.role, content: turn.text })),
+      { role: "user" as const, content: evalCase.question },
+    ],
     temperature: 0,
     seed: EVAL_SEED,
     stopWhen: stepCountIs(3),
@@ -116,9 +82,8 @@ async function actorRun({
   return {
     case: evalCase,
     answer: text,
-    retrievedContext: context,
-    contextLength: context.length,
-    expandedQuery,
+    retrievedContext: corpus,
+    contextLength: corpus.length,
     durationMs: performance.now() - start,
   };
 }
@@ -197,11 +162,6 @@ async function main() {
     console.error("OPENAI_API_KEY is required");
     process.exit(1);
   }
-  const convexUrl = process.env.VITE_CONVEX_URL;
-  if (!convexUrl) {
-    console.error("VITE_CONVEX_URL is required");
-    process.exit(1);
-  }
 
   const startedAt = new Date().toISOString();
   console.log(`[evals] starting at ${startedAt}, actor=${ACTOR_MODEL}, judge=${JUDGE_MODEL}`);
@@ -219,12 +179,12 @@ async function main() {
     `[evals] loaded ${allCases.length} cases (factual=${factual.length}, adversarial=${adversarial.length}, edge=${edge.length})`,
   );
 
-  const convex = new ConvexHttpClient(convexUrl);
+  const corpus = readCorpusFromDisk(join(__dirname, "..", "content"));
 
   const results: EvalResult[] = [];
   for (const evalCase of allCases) {
     process.stdout.write(`[evals] ${evalCase.id} … `);
-    const actor = await actorRun({ systemPromptTemplate, convex, evalCase });
+    const actor = await actorRun({ systemPromptTemplate, corpus, evalCase });
     const verdict = await judge({ actor, model: JUDGE_MODEL });
     const passed = "score" in verdict ? verdict.score >= 0.85 : false;
     results.push({ case: evalCase, actor, judge: verdict, passed });
