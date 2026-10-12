@@ -6,10 +6,28 @@ const Streamdown = lazy(async () => {
   return { default: module.Streamdown };
 });
 
+/** Every host the content links to. Anything else Poof writes still gets Streamdown's confirm step. */
+const TRUSTED_HOSTS = new Set(["github.com", "linkedin.com", "instagram.com", "x.com", "ico.org.uk"]);
+
+export function isTrustedLink(href: string): boolean {
+  let url: URL;
+  try {
+    url = new URL(href, window.location.origin);
+  } catch {
+    return false;
+  }
+  if (url.origin === window.location.origin) return true;
+  return url.protocol === "https:" && TRUSTED_HOSTS.has(url.hostname.replace(/^www\./, ""));
+}
+
+const linkSafety = { enabled: true, onLinkCheck: isTrustedLink };
+
 export function ChatMarkdown({ isAnimating, text }: { isAnimating: boolean; text: string }) {
   return (
     <Suspense fallback={<MarkdownFallback text={text} />}>
-      <Streamdown isAnimating={isAnimating}>{text}</Streamdown>
+      <Streamdown isAnimating={isAnimating} linkSafety={linkSafety}>
+        {text}
+      </Streamdown>
     </Suspense>
   );
 }

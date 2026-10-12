@@ -153,6 +153,7 @@ export const Route = createFileRoute("/api/chat/")({
           system: prompt,
           messages: await convertToModelMessages(modelMessages),
           stopWhen: stepCountIs(3),
+          abortSignal: request.signal,
           experimental_transform: stripDashesFromStream,
           onFinish: ({ finishReason, steps, text, toolCalls, usage }) => {
             const hadText = text.length > 0;

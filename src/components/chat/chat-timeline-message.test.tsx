@@ -201,3 +201,20 @@ describe("ChatTimelineMessage reasoning", () => {
     expect(screen.getByText("Checking which role is most recent.")).not.toBeNull();
   });
 });
+
+describe("ChatTimelineMessage user text", () => {
+  /* Visitors type plain text: markdown would eat `*`, `#` and Shift+Enter line breaks. */
+  it("shows exactly what the visitor typed, line breaks included", () => {
+    const { container } = render(
+      <ChatTimelineMessage
+        message={{ id: "msg-u", parts: [textPart("*not bold*\n# not a heading")], role: "user" }}
+        status="ready"
+      />,
+    );
+
+    const text = screen.getByText(/\*not bold\*/);
+    expect(text.textContent).toBe("*not bold*\n# not a heading");
+    expect(text.className).toContain("whitespace-pre-wrap");
+    expect(container.querySelector("em, h1")).toBeNull();
+  });
+});

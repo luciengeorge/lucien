@@ -11,10 +11,12 @@ export function ChatComposerBlock({
   isStreaming,
   onResumeRequest,
   onSend,
+  onStop,
 }: {
   isStreaming: boolean;
   onResumeRequest: () => void;
   onSend: (message: string) => Promise<void>;
+  onStop: () => void;
 }) {
   const form = useForm({
     defaultValues: {
@@ -55,6 +57,7 @@ export function ChatComposerBlock({
               onBlur={() => field.handleBlur()}
               onChange={field.handleChange}
               onResumeRequest={onResumeRequest}
+              onStop={onStop}
               onSubmit={onSubmit}
             />
           )}

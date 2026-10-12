@@ -159,8 +159,11 @@ test.describe("composer before the conversation exists", () => {
     await expect(composer).toBeFocused({ timeout: 5_000 });
     await composer.fill("hello");
 
+    const created = page.waitForResponse((r) => r.url().includes("/_serverFn/"));
     release();
-    await expect(page.getByText("Preparing Lucien's introduction")).toBeHidden({ timeout: 30_000 });
+    await created;
+    // The old code remounted the chat as the conversation landed; give it the chance to.
+    await page.waitForTimeout(500);
     await expect(composer).toHaveValue("hello");
   });
 
@@ -186,6 +189,22 @@ test.describe("composer before the conversation exists", () => {
     const body = (await sent).postDataJSON();
     expect(body.id).not.toBe("new-conversation");
     expect(body.message.parts[0].text).toBe("What does he build?");
+  });
+});
+
+test.describe("starter prompts before the conversation exists", () => {
+  test("queue like a typed message instead of failing", async ({ page }) => {
+    const release = await holdConversationCreation(page);
+    await page.goto("/");
+    const prompt = page.getByRole("button", { name: "Can I see Lucien's resume?" });
+    await expect(prompt).toBeVisible({ timeout: 10_000 });
+
+    await prompt.click();
+    const sent = page.waitForRequest((r) => r.url().includes("/api/chat") && r.method() === "POST");
+    release();
+    const body = (await sent).postDataJSON();
+    expect(body.id).not.toBe("new-conversation");
+    expect(body.message.parts[0].text).toBe("Can I see Lucien's resume?");
   });
 });
 
@@ -236,5 +255,64 @@ test.describe("typing anywhere on the page", () => {
 
     await expect(composer).not.toBeFocused();
     await expect(composer).toHaveValue("");
+  });
+});
+
+test.describe("stopping a reply", () => {
+  /** A reply that never arrives, so the test controls when the stream ends. */
+  async function hangChat(page: import("@playwright/test").Page) {
+    await page.route("**/api/chat", () => new Promise(() => {}));
+  }
+
+  test("swaps Send for Stop while a reply is pending, and Stop ends it", async ({ page }) => {
+    const created = page.waitForResponse((r) => r.url().includes("/_serverFn/"));
+    await page.goto("/");
+    const composer = page.getByRole("textbox").first();
+    await created;
+    await hangChat(page);
+
+    await composer.fill("What does he build?");
+    await composer.press("Enter");
+
+    const stop = page.getByRole("button", { name: "Stop" });
+    await expect(stop).toBeVisible();
+    await expect(page.getByRole("button", { name: "Send" })).toBeHidden();
+
+    await stop.click();
+    await expect(page.getByRole("button", { name: "Send" })).toBeVisible();
+    await expect(page.getByText("Thinking…")).toBeHidden();
+  });
+
+  test("Escape stops it too", async ({ page }) => {
+    const created = page.waitForResponse((r) => r.url().includes("/_serverFn/"));
+    await page.goto("/");
+    const composer = page.getByRole("textbox").first();
+    await created;
+    await hangChat(page);
+
+    await composer.fill("What does he build?");
+    await composer.press("Enter");
+    await expect(page.getByRole("button", { name: "Stop" })).toBeVisible();
+
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("button", { name: "Send" })).toBeVisible();
+  });
+});
+
+test.describe("with reduced motion", () => {
+  test("status text does not shimmer", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await holdConversationCreation(page);
+    await page.goto("/");
+    const composer = page.getByRole("textbox").first();
+    await composer.fill("What does he build?");
+    await composer.press("Enter");
+    const label = page.getByText("Thinking…");
+    await expect(label).toBeVisible({ timeout: 10_000 });
+
+    const position = () => label.evaluate((node) => window.getComputedStyle(node).backgroundPosition);
+    const before = await position();
+    await page.waitForTimeout(600);
+    expect(await position()).toBe(before);
   });
 });

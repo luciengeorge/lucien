@@ -134,6 +134,12 @@ describe("POST /api/chat", () => {
       expect(vi.mocked(streamText)).toHaveBeenCalled();
     });
 
+    it("stops generating when the visitor stops the reply", async () => {
+      const request = postRequest(validBody);
+      await invokePost(request);
+      expect(vi.mocked(streamText).mock.calls[0]?.[0].abortSignal).toBe(request.signal);
+    });
+
     it("persists the user message before streaming starts", async () => {
       await invokePost(postRequest(validBody));
       // Call 1 is the rate-limit check (runs before conversation lookup); call 2 persists the user message.

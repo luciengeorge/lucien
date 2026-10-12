@@ -184,19 +184,12 @@ export function ChatTimelineMessage({
         <AnimatePresence>
           {isLiveAssistantTurn ? <PoofMark key="poof" entrance={false} state={markState} /> : null}
         </AnimatePresence>
-        <p
-          className={cn(
-            "font-mono text-sm tracking-wide uppercase",
-            role === "assistant" ? "text-neutral-500" : "text-neutral-400",
-          )}
-        >
-          {role === "user" ? "You" : "Poof"}
-        </p>
+        <p className="font-mono text-sm tracking-wide text-neutral-500 uppercase">{role === "user" ? "You" : "Poof"}</p>
       </div>
 
       {reasoningParts.length > 0 ? (
         <div className="space-y-2 border-l border-neutral-950/8 pl-4">
-          <p className="font-mono text-sm tracking-wide text-neutral-400 uppercase">Thinking</p>
+          <p className="font-mono text-sm tracking-wide text-neutral-500 uppercase">Thinking</p>
           {reasoningParts.map((part) => (
             <p key={part.key} className="max-w-[62ch] text-sm text-pretty text-neutral-500 italic">
               {part.text}
@@ -214,14 +207,20 @@ export function ChatTimelineMessage({
               : "text-base font-medium text-neutral-950 sm:text-[1.02rem]",
           )}
         >
-          {textParts.map((part) => (
-            <ChatMarkdown key={part.key} isAnimating={status === "streaming"} text={part.text} />
-          ))}
+          {textParts.map((part) =>
+            role === "user" ? (
+              <p key={part.key} className="whitespace-pre-wrap">
+                {part.text}
+              </p>
+            ) : (
+              <ChatMarkdown key={part.key} isAnimating={status === "streaming"} text={part.text} />
+            ),
+          )}
         </div>
       ) : role === "assistant" && status === "streaming" && !hasToolActivity ? (
         <ChatStatusMarker label="Generating response…" />
       ) : role === "assistant" && isSettled && !messageHasRenderableContent ? (
-        <p className="max-w-[62ch] text-sm text-pretty text-neutral-400 italic">
+        <p className="max-w-[62ch] text-sm text-pretty text-neutral-500 italic">
           Sorry, I didn't catch that. Mind rephrasing?
         </p>
       ) : null}

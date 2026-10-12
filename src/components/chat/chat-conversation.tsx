@@ -64,7 +64,7 @@ export function ChatConversation({
     startConversation({});
   }, [chatState.conversation, startConversation]);
 
-  const { clearError, messages, regenerate, sendMessage, status } = useChat({
+  const { clearError, messages, regenerate, sendMessage, status, stop } = useChat({
     id: chatState.conversation?.id ?? "new-conversation",
     messages: initialMessages,
     transport: new DefaultChatTransport({
@@ -135,6 +135,14 @@ export function ChatConversation({
       return;
     }
     await sendMessage({ text });
+  };
+
+  const handleStop = () => {
+    if (queuedMessage !== null) {
+      setQueuedMessage(null);
+      return;
+    }
+    void stop();
   };
 
   const handleSend = async (message: string) => {
@@ -241,7 +249,12 @@ export function ChatConversation({
         <div className="sticky bottom-0 z-10">
           <div className="relative mx-auto w-full max-w-3xl px-4 sm:px-6">
             <div className="bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/75">
-              <ChatComposerBlock isStreaming={isBusy} onResumeRequest={handleResumeRequest} onSend={handleSend} />
+              <ChatComposerBlock
+                isStreaming={isBusy}
+                onResumeRequest={handleResumeRequest}
+                onSend={handleSend}
+                onStop={handleStop}
+              />
             </div>
           </div>
         </div>
