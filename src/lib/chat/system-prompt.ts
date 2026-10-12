@@ -7,5 +7,5 @@ export function renderSystemPrompt(template: string, { context, today }: { conte
     weekday: "long",
     year: "numeric",
   });
-  return template.replace("{today}", date).replace("{context}", context);
+  return template.replace("{today}", date).replace("{context}", () => context);
 }

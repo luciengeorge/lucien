@@ -21,6 +21,13 @@ describe("renderSystemPrompt", () => {
     expect(prompt).toContain("Lucien ran a marathon.");
   });
 
+  /* String.replace expands $' and $& in a string replacement; a code fence in a post could carry them. */
+  it("inserts the context verbatim, $ patterns included", () => {
+    const context = "echo $'tab\\t' and $& and $$";
+    const prompt = renderSystemPrompt(template, { context, today: new Date() });
+    expect(prompt).toContain(context);
+  });
+
   it("leaves no slot unfilled", () => {
     const prompt = renderSystemPrompt(template, { context: "ctx", today: new Date() });
     expect(prompt).not.toMatch(/\{(today|context)\}/);

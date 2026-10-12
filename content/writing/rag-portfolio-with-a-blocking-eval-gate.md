@@ -1,3 +1,5 @@
+> **Update, October 2026:** the chat no longer retrieves. The whole content folder is about 9,000 tokens, small enough to send with every question, so the query rewrite and vector search described below are gone. The single markdown source and the blocking eval gate still work as described.
+
 Most portfolios are a list of jobs. This one is a chat box. You ask it something about me and it answers from my own writing, and if the answers get worse, my pull requests stop merging.
 
 That second part is the interesting half.
