@@ -129,18 +129,14 @@ describe("POST /api/chat", () => {
     });
   });
 
-  describe("query expansion, RAG, and persistence", () => {
-    it("falls back to the raw query when query expansion fails", async () => {
-      vi.mocked(generateText).mockRejectedValue(new Error("boom"));
+  describe("context and persistence", () => {
+    it("sends the whole content corpus, with no query rewrite or vector search first", async () => {
       await invokePost(postRequest(validBody));
-      expect(vi.mocked(fetchAuthAction)).toHaveBeenCalledWith(expect.anything(), { query: "hello" });
-    });
-
-    it("swallows RAG search failures and still streams a 200", async () => {
-      vi.mocked(fetchAuthAction).mockRejectedValue(new Error("rag down"));
-      const res = await invokePost(postRequest(validBody));
-      expect(res.status).toBe(200);
-      expect(vi.mocked(streamText)).toHaveBeenCalled();
+      const system = vi.mocked(streamText).mock.calls[0]?.[0].system;
+      expect(system).toContain('<document source="bio.md">');
+      expect(system).toContain('<document source="shopify.md">');
+      expect(vi.mocked(generateText)).not.toHaveBeenCalled();
+      expect(vi.mocked(fetchAuthAction)).not.toHaveBeenCalled();
     });
 
     it("stops generating when the visitor stops the reply", async () => {

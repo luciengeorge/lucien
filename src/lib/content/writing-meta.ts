@@ -34,6 +34,7 @@ export const WRITING_META: readonly WritingMeta[] = [
     description:
       "How this site's AI assistant works: one markdown source for the pages and the RAG index, and an eval harness that blocks pull requests on regressions.",
     published: "2026-08-13",
+    updated: "2026-10-12",
     summary:
       "The same markdown renders the pages and grounds the chat, and a 57-case eval suite runs the real retrieval pipeline on every pull request. Including the run where the gate finally failed, and what it caught was the harness rather than the assistant.",
   },

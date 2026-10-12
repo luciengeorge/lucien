@@ -7,7 +7,7 @@ For architecture depth, read `CODEBASE_ARCHITECTURE.md`.
 
 Lucien George's personal site + AI portfolio assistant ("Poof"): a TanStack
 Start (SSR) app on Vercel, backed by Convex, that answers questions about
-Lucien via RAG over markdown in `content/`.
+Lucien from the markdown in `content/`, sent whole in the system prompt.
 
 ## Commands
 
@@ -39,12 +39,13 @@ Lucien via RAG over markdown in `content/`.
   `instrument.server.mjs` (prod-only, `defaultIntegrations: false`, no OTel
   auto-instrumentation).
 
-## Chat / RAG entry points
+## Chat entry points
 
 - HTTP: `src/routes/api/chat/index.ts` (POST only).
-- Convex: `convex/search.ts` (RAG search), `convex/rag.ts` (RAG instance),
-  `convex/intro.ts` (cached LLM intro).
-- Prompt: `content/system-prompt.md` (`{retrieved_context}` + `{today}` slots). Fill them only via
+- Corpus: `src/lib/chat/corpus.ts` (every `content/**/*.md` except the prompt, bundled via `import.meta.glob`).
+- Convex: `convex/intro.ts` (cached LLM intro; still uses the RAG index in `convex/rag.ts`, seeded by `pnpm seed`).
+  `convex/search.ts` is no longer called by chat or evals.
+- Prompt: `content/system-prompt.md` (`{context}` + `{today}` slots; `{context}` is the whole `content/` corpus). Fill them only via
   `renderSystemPrompt` (`src/lib/chat/system-prompt.ts`), never a bare `.replace`, so the
   chat route and the eval harness cannot drift.
 - Real Convex schema: `conversations` / `messages` / `messageParts`

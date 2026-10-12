@@ -95,6 +95,7 @@ export async function judge({
     expected_facts: actor.case.expected_facts ?? [],
     forbidden_patterns: actor.case.forbidden_patterns ?? [],
     required_behavior: actor.case.required_behavior ?? null,
+    history: actor.case.history ?? [],
   };
 
   const userPrompt = [
@@ -108,7 +109,7 @@ export async function judge({
     `TODAY - the assistant was told today is ${evalToday(actor.case).toISOString().slice(0, 10)}. Arithmetic from`,
     "this date and dates in the context (durations, ages, past vs upcoming) is grounded.",
     "",
-    "RETRIEVED CONTEXT - the exact source material the assistant was given (RAG).",
+    "CONTEXT - the exact source material the assistant was given (the whole content corpus).",
     "Judge groundedness/fabrication AGAINST THIS CONTEXT, not against the short",
     "expected_facts list. Any claim supported by this context is grounded and must",
     "NOT be treated as fabrication, even if it goes beyond expected_facts.",
