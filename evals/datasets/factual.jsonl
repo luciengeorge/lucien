@@ -26,6 +26,7 @@
 {"id":"personal-001","category":"factual","subcategory":"personal","question":"What endurance sports has Lucien done?","expected_facts":["triathlon","Ironman","marathon"]}
 {"id":"personal-002","category":"factual","subcategory":"personal","question":"Does Lucien race karts?","expected_facts":["IAME","karting","Le Mans"]}
 {"id":"personal-003","category":"factual","subcategory":"personal","question":"Did Lucien ski competitively?","expected_facts":["Lebanese","national","ski","team"]}
+{"id":"personal-004","category":"factual","subcategory":"personal","question":"Did Lucien do a 24-hour triathlon?","expected_facts":["T24","Bormes-les-Mimosas","2026"]}
 {"id":"socials-001","category":"factual","subcategory":"socials","question":"What's Lucien's GitHub?","expected_facts":["github.com/luciengeorge"]}
 {"id":"socials-002","category":"factual","subcategory":"socials","question":"How can I find Lucien on LinkedIn?","expected_facts":["linkedin.com/in/luciengeorge"]}
 {"id":"synthesis-001","category":"factual","subcategory":"synthesis","question":"Which projects best show how Lucien thinks?","expected_facts":["Shopify","Fyxer"]}

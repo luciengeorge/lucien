@@ -1,6 +1,6 @@
 Lucien is a very outdoorsy and active person. He is passionate about endurance sports and motorsport.
 
-In endurance sports, he completed the Alpe d'Huez triathlon, a half Ironman in Nice, and a marathon in Florence, Italy. He has recently gotten into cycling and signed up for a 24-hour triathlon in France in October 2026.
+In endurance sports, he completed the Alpe d'Huez triathlon, a half Ironman in Nice, and a marathon in Florence, Italy. He has recently gotten into cycling. On October 10 and 11, 2026, he finished the T24 Bormes-les-Mimosas, a 24-hour triathlon in the south of France.
 
 He grew up skiing in Lebanon and competed on the Lebanese national ski teams.
 
