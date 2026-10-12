@@ -70,8 +70,16 @@ export function ChatComposer({
   useEffect(() => {
     if (!isStreaming) return;
     const onKeyDown = (event: KeyboardEvent) => {
-      // An open dialog owns Escape.
-      if (event.key !== "Escape" || event.defaultPrevented || document.activeElement?.closest("[role=dialog]")) return;
+      // A dialog, menu, IME composition or Streamdown's link modal owns Escape: they
+      // close on it without preventDefault, and the modal has no dialog role.
+      if (
+        event.key !== "Escape" ||
+        event.defaultPrevented ||
+        event.isComposing ||
+        document.activeElement?.closest("[role=dialog], [role=menu]") ||
+        document.querySelector("[data-streamdown=link-safety-modal]")
+      )
+        return;
       onStop();
     };
     document.addEventListener("keydown", onKeyDown);

@@ -35,6 +35,8 @@ export function ChatConversation({
 }) {
   const { capture } = useAnalytics();
   const lastCompletedMessageIdRef = useRef<string | null>(null);
+  // A stopped reply settles to "ready" like a finished one; this keeps it out of the completion metrics.
+  const stopRequestedRef = useRef(false);
   const initialMessages = useMemo(
     () => parseSerializedMessages(chatState.serializedMessages),
     [chatState.serializedMessages],
@@ -106,6 +108,15 @@ export function ChatConversation({
       return total + part.text.length;
     }, 0);
 
+    if (stopRequestedRef.current) {
+      stopRequestedRef.current = false;
+      capture(AnalyticsEvent.chatResponseStopped, {
+        response_length: responseTextLength,
+        visible_message_count: visibleMessages.length,
+      });
+      return;
+    }
+
     capture(AnalyticsEvent.chatResponseCompleted, {
       response_length: responseTextLength,
       visible_message_count: visibleMessages.length,
@@ -130,6 +141,7 @@ export function ChatConversation({
   }, [isReady, queuedMessage, sendMessage]);
 
   const sendOrQueue = async (text: string) => {
+    stopRequestedRef.current = false;
     if (!isReady) {
       setQueuedMessage(text);
       return;
@@ -142,6 +154,7 @@ export function ChatConversation({
       setQueuedMessage(null);
       return;
     }
+    stopRequestedRef.current = true;
     void stop();
   };
 
