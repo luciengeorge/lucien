@@ -93,12 +93,21 @@ describe("POST /api/chat", () => {
       expect(res.status).toBe(401);
     });
 
-    it("returns 401 when conversationId mismatches the session", async () => {
+    /*
+     * The cookie holds the newest conversation, so "New conversation" in a
+     * second tab used to lock the first tab out with a 401 it could never
+     * recover from. Ownership is the session's, checked by the query.
+     */
+    it("serves an older conversation the session still owns", async () => {
       vi.mocked(getConversationSession, { partial: true }).mockResolvedValue({
-        data: { conversationId: "other", sessionId: "sess-1" },
+        data: { conversationId: "newer-conversation", sessionId: "sess-1" },
       });
       const res = await invokePost(postRequest(validBody));
-      expect(res.status).toBe(401);
+      expect(res.status).toBe(200);
+      expect(vi.mocked(fetchAuthQuery)).toHaveBeenCalledWith(expect.anything(), {
+        conversationId: "conv-123",
+        sessionId: "sess-1",
+      });
     });
 
     it("returns 404 when the conversation is not found", async () => {

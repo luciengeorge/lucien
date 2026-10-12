@@ -85,7 +85,9 @@ export const Route = createFileRoute("/api/chat/")({
         const { id, message } = parsedBody.data;
         const conversationSession = await getConversationSession();
         const sessionId = conversationSession.data.sessionId;
-        if (!sessionId || conversationSession.data.conversationId !== id) {
+        // Ownership is checked by getConversationById's sessionId filter below, not
+        // against the cookie, which only names the newest conversation.
+        if (!sessionId) {
           logger.warn("chat request rejected", { requestId });
           return new Response("Unauthorized", { status: 401 });
         }

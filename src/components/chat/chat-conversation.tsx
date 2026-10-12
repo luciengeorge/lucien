@@ -10,7 +10,7 @@ import {
 } from "#/components/ui/message-scroller";
 import { AnalyticsEvent, useAnalytics } from "#/lib/analytics";
 import { parseSerializedMessages } from "#/lib/chat-types";
-import { startNewConversation } from "#/lib/functions/start-new-conversation";
+import { resumeOrStartConversation, startNewConversation } from "#/lib/functions/start-new-conversation";
 import { useChat } from "@ai-sdk/react";
 import { useMutation } from "@tanstack/react-query";
 import { DefaultChatTransport } from "ai";
@@ -42,7 +42,7 @@ export function ChatConversation({
     [chatState.serializedMessages],
   );
   const startConversationMutation = useMutation({
-    mutationFn: startNewConversation,
+    mutationFn: ({ fresh }: { fresh: boolean }) => (fresh ? startNewConversation() : resumeOrStartConversation()),
     onSuccess(nextConversation) {
       startTransition(() => {
         onConversationChange(nextConversation);
@@ -56,14 +56,14 @@ export function ChatConversation({
   } = startConversationMutation;
 
   // The homepage renders a static, edge-cached shell with no conversation.
-  // Create one (which sets the session cookie on its own request) as soon as we
-  // mount without one, so a conversation exists before the first send without
-  // making the document itself per-session / uncacheable.
+  // Resume the visitor's own (or create one, which sets the session cookie on
+  // its own request) as soon as we mount without one, so a conversation exists
+  // before the first send without making the document per-session / uncacheable.
   const conversationCreationStartedRef = useRef(false);
   useEffect(() => {
     if (chatState.conversation || conversationCreationStartedRef.current) return;
     conversationCreationStartedRef.current = true;
-    startConversation({});
+    startConversation({ fresh: false });
   }, [chatState.conversation, startConversation]);
 
   const { clearError, messages, regenerate, sendMessage, status, stop } = useChat({
@@ -197,7 +197,7 @@ export function ChatConversation({
       source: "cta",
     });
 
-    startConversation({});
+    startConversation({ fresh: true });
   };
 
   return (
@@ -240,7 +240,7 @@ export function ChatConversation({
                   <ChatPendingReply isFirst={false} />
                 ) : null}
                 {hasConversationStartFailed && !isReady ? (
-                  <ChatSendFailed onRetry={() => startConversation({})} />
+                  <ChatSendFailed onRetry={() => startConversation({ fresh: false })} />
                 ) : null}
                 {status === "error" ? (
                   <ChatSendFailed
