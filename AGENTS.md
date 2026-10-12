@@ -44,7 +44,9 @@ Lucien via RAG over markdown in `content/`.
 - HTTP: `src/routes/api/chat/index.ts` (POST only).
 - Convex: `convex/search.ts` (RAG search), `convex/rag.ts` (RAG instance),
   `convex/intro.ts` (cached LLM intro).
-- Prompt: `content/system-prompt.md` (`{retrieved_context}` slot).
+- Prompt: `content/system-prompt.md` (`{retrieved_context}` + `{today}` slots). Fill them only via
+  `renderSystemPrompt` (`src/lib/chat/system-prompt.ts`), never a bare `.replace`, so the
+  chat route and the eval harness cannot drift.
 - Real Convex schema: `conversations` / `messages` / `messageParts`
   (`convex/schema.ts`).
 

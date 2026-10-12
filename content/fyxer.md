@@ -6,7 +6,7 @@ He then founded the desktop notetaker and took it from zero to one. He wrote the
 
 As of August 2026 it records around 8,000 meetings a week, roughly 35,000 a month, from a stable base of about 2,000 monthly active users, which is 9 to 10% of all recordings on the platform. Recording initiation success went from about 44% to about 97%. Roughly a third of desktop recordings are meetings a bot could never have joined.
 
-Early in 2026 he ran a multi-week analysis of desktop reliability and retention. It disproved a headline "0% retention by week 7" figure that turned out to be a measurement artifact, and produced the reliability roadmap he then shipped: capture rate went from 33% to 48% and sits near 55% today, week-8 retention went from a projected 3% to about 34% actual, and users stuck with broken auth went from 529 to under 10. The analysis turned an internal "kill it" call into "keep and invest".
+Early in 2026 he ran a multi-week analysis of desktop reliability and retention. It disproved a headline "0% retention by week 7" figure that turned out to be a measurement artifact, and produced the reliability roadmap he then shipped: capture rate went from 33% to 48% and sat near 55% in August 2026, week-8 retention went from a projected 3% to about 34% actual, and users stuck with broken auth went from 529 to under 10. The analysis turned an internal "kill it" call into "keep and invest".
 
 Off the back of his own audit he ran a hardening sprint on the desktop app: the first tests for a 32,000-line codebase that had none, about 1,288 of them by August 2026, plus crash-safe persistence, a memory watchdog, audio-silence detection to catch dead recordings, and a round of security fixes that took runtime vulnerabilities to zero.
 

@@ -102,7 +102,7 @@ UI messages are stored as JSON parts with extracted columns for queryability. Be
 
 ## Content (`content/`)
 
-Markdown is the single source of truth for both the chat RAG index and the rendered HTML pages + `/llms-full.txt`. Files: bio, personal, education, tech-stack, socials, contact, privacy, signature-work, one per work entry (fyxer, localista, skyla, shopify, le-wagon, impact-lebanon, early-career), and `writing/` for articles. `socials.md` and `signature-work.md` are seeded for RAG but never rendered as pages. `system-prompt.md` holds Poof's prompt (`{retrieved_context}` slot; skipped by seeding). `resume.json` is structured and validated by `src/lib/resume/schema.ts`. `scripts/seed.ts` (`pnpm seed`) embeds the markdown into Convex RAG.
+Markdown is the single source of truth for both the chat RAG index and the rendered HTML pages + `/llms-full.txt`. Files: bio, personal, education, tech-stack, socials, contact, privacy, signature-work, one per work entry (fyxer, localista, skyla, shopify, le-wagon, impact-lebanon, early-career), and `writing/` for articles. `socials.md` and `signature-work.md` are seeded for RAG but never rendered as pages. `system-prompt.md` holds Poof's prompt (`{retrieved_context}` and `{today}` slots, filled only via `renderSystemPrompt` in `src/lib/chat/system-prompt.ts`; skipped by seeding). `resume.json` is structured and validated by `src/lib/resume/schema.ts`. `scripts/seed.ts` (`pnpm seed`) embeds the markdown into Convex RAG.
 
 ## Sessions (three, independent)
 
