@@ -9,7 +9,7 @@ import { internal } from "./_generated/api";
 import { buildClusteringPrompt, buildDigestBlocks } from "./digest";
 import schema from "./schema";
 
-const modules = import.meta.glob("./**/!(*.test).{ts,js}");
+const modules = import.meta.glob(["./**/*.{ts,js}", "!./**/*.test.ts"]);
 
 async function insertUserMessage(
   t: ReturnType<typeof convexTest>,

@@ -9,7 +9,7 @@ import { useToastSession } from "../toast-session.server";
 const logger = createLogger("toast.set");
 
 export const setToast = createServerFn({ method: "POST" })
-  .inputValidator(ToastSchema)
+  .validator(ToastSchema)
   .handler(async ({ data }) => {
     const correlationId = getOrCreateCorrelationId(getRequestHeader("x-vercel-id"));
     const session = await useToastSession();

@@ -6,7 +6,7 @@ import { describe, expect, test } from "vitest";
 import { api } from "./_generated/api";
 import schema from "./schema";
 
-const modules = import.meta.glob("./**/!(*.test).{ts,js}");
+const modules = import.meta.glob(["./**/*.{ts,js}", "!./**/*.test.ts"]);
 
 const SESSION_A = "session-a";
 const SESSION_B = "session-b";
