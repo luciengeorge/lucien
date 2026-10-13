@@ -1,10 +1,9 @@
-import tsconfigPaths from "vite-tsconfig-paths";
 import { defineConfig } from "vitest/config";
 
 import { contentLastModified } from "./scripts/content-last-modified";
 
 export default defineConfig({
-  plugins: [tsconfigPaths()],
+  resolve: { tsconfigPaths: true },
   define: {
     __CONTENT_LAST_MODIFIED__: JSON.stringify(contentLastModified()),
   },
