@@ -7,6 +7,8 @@ import { File01Icon, Navigation03Icon } from "@hugeicons-pro/core-stroke-rounded
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useEffect, useEffectEvent, useRef } from "react";
 
+import { usePoofSignals } from "./poof-signals";
+
 /** Touch-primary devices, where autofocus would raise the keyboard over the page. */
 function isCoarsePointer(): boolean {
   if (typeof window === "undefined" || typeof window.matchMedia !== "function") return false;
@@ -59,6 +61,7 @@ export function ChatComposer({
   onSubmit: React.SubmitEventHandler<HTMLFormElement>;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const poofSignals = usePoofSignals();
   useTypeAnywhereToFocus(textareaRef);
 
   // Not `autoFocus`: the server cannot see the pointer, so the attribute would
@@ -98,7 +101,10 @@ export function ChatComposer({
           className="max-h-40 min-h-0 resize-none overflow-y-auto py-3 pl-4 text-base placeholder:text-neutral-500 sm:py-3.5 sm:pl-5 sm:text-base"
           name="message"
           onBlur={onBlur}
-          onChange={(event) => onChange(event.target.value)}
+          onChange={(event) => {
+            onChange(event.target.value);
+            poofSignals?.emit("typing");
+          }}
           onKeyDown={(event) => {
             if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing) {
               return;

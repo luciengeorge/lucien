@@ -25,6 +25,7 @@ import { ChatSendFailed } from "./chat-send-failed";
 import { ChatStarterPrompts } from "./chat-starter-prompts";
 import { ChatTimelineMessage } from "./chat-timeline-message";
 import { createRateLimitAwareFetch, entryItemClassName, getSettledAssistantAnalyticsEvents } from "./chat.utils";
+import { createPoofSignals, PoofSignalsContext } from "./poof-signals";
 
 export function ChatConversation({
   chatState,
@@ -34,6 +35,7 @@ export function ChatConversation({
   onConversationChange: (state: ChatConversationState) => void;
 }) {
   const { capture } = useAnalytics();
+  const [poofSignals] = useState(createPoofSignals);
   const lastCompletedMessageIdRef = useRef<string | null>(null);
   // A stopped reply settles to "ready" like a finished one; this keeps it out of the completion metrics.
   const stopRequestedRef = useRef(false);
@@ -206,80 +208,85 @@ export function ChatConversation({
   };
 
   return (
-    <section aria-label="Conversation with Poof" className="flex min-h-0 grow overflow-hidden bg-background">
-      <div className="flex min-h-0 w-full grow flex-col gap-2 sm:gap-5">
-        <ChatNewConversationBar isDisabled={isStartingNewConversation} onClick={handleNewConversation} />
+    <PoofSignalsContext value={poofSignals}>
+      <section aria-label="Conversation with Poof" className="flex min-h-0 grow overflow-hidden bg-background">
+        <div className="flex min-h-0 w-full grow flex-col gap-2 sm:gap-5">
+          <ChatNewConversationBar isDisabled={isStartingNewConversation} onClick={handleNewConversation} />
 
-        <MessageScrollerProvider
-          key={chatState.conversation?.id ?? "new-conversation"}
-          {...transcriptScrollBehaviour(visibleMessages)}
-        >
-          <MessageScroller className="min-h-0 grow">
-            <MessageScrollerViewport>
-              <MessageScrollerContent className="mx-auto w-full max-w-3xl gap-0 px-4 pb-20 sm:px-6 sm:pb-24">
-                {showIntroPlaceholder ? <ChatIntroPlaceholder /> : null}
-                {visibleMessages.map((message, index) => (
-                  <MessageScrollerItem
-                    key={message.id}
-                    messageId={message.id}
-                    scrollAnchor={message.role === "user"}
-                    className={entryItemClassName(index === 0)}
-                  >
-                    <ChatTimelineMessage
-                      isActive={index === visibleMessages.length - 1}
-                      message={message}
-                      status={status}
+          <MessageScrollerProvider
+            key={chatState.conversation?.id ?? "new-conversation"}
+            {...transcriptScrollBehaviour(visibleMessages)}
+          >
+            <MessageScroller className="min-h-0 grow">
+              <MessageScrollerViewport>
+                <MessageScrollerContent className="mx-auto w-full max-w-3xl gap-0 px-4 pb-20 sm:px-6 sm:pb-24">
+                  {showIntroPlaceholder ? (
+                    <ChatIntroPlaceholder withPoof={queuedMessage === null && !hasConversationStartFailed} />
+                  ) : null}
+                  {visibleMessages.map((message, index) => (
+                    <MessageScrollerItem
+                      key={message.id}
+                      messageId={message.id}
+                      scrollAnchor={message.role === "user"}
+                      className={entryItemClassName(index === 0)}
+                    >
+                      <ChatTimelineMessage
+                        isActive={index === visibleMessages.length - 1}
+                        message={message}
+                        status={status}
+                      />
+                    </MessageScrollerItem>
+                  ))}
+                  {queuedMessage === null ? null : (
+                    <MessageScrollerItem messageId="queued-message" scrollAnchor className={entryItemClassName(false)}>
+                      <ChatTimelineMessage
+                        isActive
+                        message={{ id: "queued-message", parts: [{ text: queuedMessage, type: "text" }], role: "user" }}
+                        status="submitted"
+                      />
+                    </MessageScrollerItem>
+                  )}
+                  {showPendingReply || (queuedMessage !== null && !hasConversationStartFailed) ? (
+                    <ChatPendingReply isFirst={false} />
+                  ) : null}
+                  {hasConversationStartFailed && !isReady ? (
+                    <ChatSendFailed withPoof onRetry={() => startConversation({ fresh: false })} />
+                  ) : null}
+                  {status === "error" ? (
+                    <ChatSendFailed
+                      withPoof={visibleMessages.at(-1)?.role !== "assistant"}
+                      onRetry={() => {
+                        clearError();
+                        void regenerate();
+                      }}
                     />
-                  </MessageScrollerItem>
-                ))}
-                {queuedMessage === null ? null : (
-                  <MessageScrollerItem messageId="queued-message" scrollAnchor className={entryItemClassName(false)}>
-                    <ChatTimelineMessage
-                      isActive
-                      message={{ id: "queued-message", parts: [{ text: queuedMessage, type: "text" }], role: "user" }}
-                      status="submitted"
-                    />
-                  </MessageScrollerItem>
-                )}
-                {showPendingReply || (queuedMessage !== null && !hasConversationStartFailed) ? (
-                  <ChatPendingReply isFirst={false} />
-                ) : null}
-                {hasConversationStartFailed && !isReady ? (
-                  <ChatSendFailed onRetry={() => startConversation({ fresh: false })} />
-                ) : null}
-                {status === "error" ? (
-                  <ChatSendFailed
-                    onRetry={() => {
-                      clearError();
-                      void regenerate();
-                    }}
-                  />
-                ) : null}
-              </MessageScrollerContent>
-            </MessageScrollerViewport>
-            <MessageScrollerButton />
-          </MessageScroller>
-        </MessageScrollerProvider>
+                  ) : null}
+                </MessageScrollerContent>
+              </MessageScrollerViewport>
+              <MessageScrollerButton />
+            </MessageScroller>
+          </MessageScrollerProvider>
 
-        {showStarterPrompts ? (
-          <div className="mx-auto w-full max-w-3xl px-4 sm:px-6">
-            <ChatStarterPrompts onStarterPrompt={handleStarterPrompt} />
-          </div>
-        ) : null}
+          {showStarterPrompts ? (
+            <div className="mx-auto w-full max-w-3xl px-4 sm:px-6">
+              <ChatStarterPrompts onStarterPrompt={handleStarterPrompt} />
+            </div>
+          ) : null}
 
-        <div className="sticky bottom-0 z-10">
-          <div className="relative mx-auto w-full max-w-3xl px-4 sm:px-6">
-            <div className="bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/75">
-              <ChatComposerBlock
-                isStreaming={isBusy}
-                onResumeRequest={handleResumeRequest}
-                onSend={handleSend}
-                onStop={handleStop}
-              />
+          <div className="sticky bottom-0 z-10">
+            <div className="relative mx-auto w-full max-w-3xl px-4 sm:px-6">
+              <div className="bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/75">
+                <ChatComposerBlock
+                  isStreaming={isBusy}
+                  onResumeRequest={handleResumeRequest}
+                  onSend={handleSend}
+                  onStop={handleStop}
+                />
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </PoofSignalsContext>
   );
 }

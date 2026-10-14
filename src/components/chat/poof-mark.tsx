@@ -1,104 +1,83 @@
-import type { TargetAndTransition, Transition } from "motion/react";
+import type { Transition } from "motion/react";
 
 import { cn } from "#/lib/utils";
-import { motion, useReducedMotion } from "motion/react";
+import { motion, useReducedMotion, useReducedMotionConfig } from "motion/react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 
-/**
- * What Poof is doing right now. Only states that actually occur are modelled: a
- * settled or failed turn drops the mark entirely rather than resting in place.
- */
-export type PoofMarkState = "thinking" | "working" | "writing";
+import type { PoofEngine, PoofFrame, PoofState } from "./poof-engine";
+
+import { createPoofEngine, restFrame } from "./poof-engine";
+import { eyePath } from "./poof-eyes";
+import { usePoofSignals } from "./poof-signals";
+
+export type PoofMarkState = PoofState;
 
 const EASE_OUT: [number, number, number, number] = [0.22, 1, 0.36, 1];
+const EYE_Y = 24;
+/** Bottom centre of the body: the point Poof sways and squashes around, like feet on the ground. */
+const FOOT = 39;
+const SPARK = "M0 -1Q.18 -.18 1 0Q.18 .18 0 1Q-.18 .18 -1 0Q-.18 -.18 0 -1Z";
+const ZED = "M-.8 -.8H.8L-.8 .8H.8";
+
+/** The first face on a page says hello. The transcript remounts when a conversation is created, and a second hello there reads as a glitch. */
+let greeted = false;
+
+const round = (n: number) => Math.round(n * 100) / 100;
+const eyeX = (index: number) => (index === 0 ? 18.5 : 29.5);
+const eyeD = (frame: PoofFrame, index: number) =>
+  eyePath(frame.eyes[index === 0 ? 0 : 1], eyeX(index), EYE_Y, index === 0 ? "left" : "right");
+const figureTransform = ({ body }: PoofFrame) =>
+  `translate(${round(24 + body.x)} ${round(FOOT + body.y)}) rotate(${round(body.rotate)}) scale(${round(body.scaleX)} ${round(body.scaleY)}) translate(-24 -${FOOT})`;
+const gazeTransform = ({ gaze }: PoofFrame) => `translate(${round(gaze.x)} ${round(gaze.y)})`;
+const particleTransform = (particle: PoofFrame["particles"][number]) =>
+  `translate(${round(particle.x)} ${round(particle.y)}) rotate(${round(particle.rotate)}) scale(${round(Math.max(particle.scale, 0.01))})`;
+
+/** Writes a frame straight to the SVG: a face that moves every frame must not re-render React every frame. */
+function painter(svg: SVGSVGElement) {
+  const all = (slot: string) => [...svg.querySelectorAll(`[data-slot="${slot}"]`)];
+  const [figure] = all("poof-mark-figure");
+  const [gaze] = all("poof-mark-gaze");
+  const eyes = all("poof-mark-eye");
+  const particles = all("poof-mark-particle");
+  let mood = svg.getAttribute("data-mood");
+  const opacities = particles.map(() => "0");
+  return (frame: PoofFrame) => {
+    figure?.setAttribute("transform", figureTransform(frame));
+    gaze?.setAttribute("transform", gazeTransform(frame));
+    eyes.forEach((eye, index) => eye.setAttribute("d", eyeD(frame, index)));
+    frame.particles.forEach((particle, index) => {
+      const element = particles[index];
+      if (!element) return;
+      const opacity = String(round(particle.opacity));
+      if (opacity !== opacities[index]) {
+        element.setAttribute("opacity", opacity);
+        opacities[index] = opacity;
+      }
+      if (particle.opacity > 0) element.setAttribute("transform", particleTransform(particle));
+    });
+    if (frame.mood !== mood) {
+      mood = frame.mood;
+      svg.setAttribute("data-mood", mood);
+    }
+  };
+}
 
 /**
- * One expression per state, split into two layers that never share a transition.
+ * Poof's face: a soft squircle with two eyes, and the state lives entirely in how it moves, the
+ * way the Grok Bot avatars carry status through character rather than badges.
  *
- * `pose` is what the state *holds*: head tilt, squat, where the eyes sit, how open they
- * are. Plain scalars on a non-repeating transition, so a change of state eases from
- * wherever the face is into the new pose instead of cutting. `oscillation` is what the
- * state *does* on top of that: relative keyframe loops that start and end on identity, so
- * each repeat wraps seamlessly and entering a state never cuts. Anything a state *holds*,
- * including the mean of a sweep, lives in `pose`, never in the loop. Under
- * prefers-reduced-motion the oscillation is dropped and the pose is applied instantly,
- * which keeps the three states legible without motion.
+ * A small procedural engine (`poof-engine.ts`) drives it: springs for the body, gaze and lids,
+ * slow overlapping sine waves so idle motion never visibly loops, and random timers for blinks,
+ * glances and expression changes. On top of the app's state it adds its own life: it follows the
+ * cursor, listens while you type, is pleased when an answer lands, dozes off when left alone and
+ * reacts to being poked. Under prefers-reduced-motion it shows each state's still face instead.
  *
- * The three are kept apart on three axes at once so they never blur together: thinking is
- * slow and upward, working is fast and horizontal with narrowed eyes, writing is rhythmic
- * and downward with open eyes.
- */
-type Layer = { moving: TargetAndTransition; rest: TargetAndTransition; timing: Transition };
-type Expression = {
-  pose: { eyes: TargetAndTransition; figure: TargetAndTransition; gaze: TargetAndTransition };
-  oscillation: { eyes: Layer; figure: Layer; gaze: Layer };
-};
-
-// Blink is relative to the pose's openness: hold, snap shut, reopen.
-const BLINK: Layer = {
-  moving: { scaleY: [1, 1, 0.1, 1] },
-  rest: { scaleY: 1 },
-  timing: { duration: 4.2, ease: "easeInOut", times: [0, 0.9, 0.95, 1] },
-};
-
-export const EXPRESSIONS: Record<PoofMarkState, Expression> = {
-  // Head cocked, eyes a little narrowed and looking up, drifting side to side as if
-  // recalling something. Everything here is slow.
-  thinking: {
-    pose: { eyes: { scaleY: 0.85 }, figure: { rotate: 8, scaleX: 1, scaleY: 1, y: 0 }, gaze: { x: 0.25, y: -3.5 } },
-    oscillation: {
-      eyes: BLINK,
-      figure: { moving: { scale: [1, 1.03, 1] }, rest: { scale: 1 }, timing: { duration: 3.2, ease: "easeInOut" } },
-      gaze: { moving: { x: [0, 2.75, -2.75, 0] }, rest: { x: 0 }, timing: { duration: 3.4, ease: "easeInOut" } },
-    },
-  },
-  // Squats and pumps as if straining, eyes narrowed to slits and darting left and
-  // right: scanning. Everything here is fast.
-  working: {
-    pose: { eyes: { scaleY: 0.45 }, figure: { rotate: 0, scaleX: 1.05, scaleY: 0.955, y: 1 }, gaze: { x: 0, y: 0.5 } },
-    oscillation: {
-      eyes: BLINK,
-      figure: {
-        moving: { scaleY: [1, 1.026, 0.975, 1] },
-        rest: { scaleY: 1 },
-        timing: { duration: 0.42, ease: "easeInOut" },
-      },
-      gaze: { moving: { x: [0, 3, -3, 0] }, rest: { x: 0 }, timing: { duration: 0.85, ease: "easeInOut" } },
-    },
-  },
-  // Nods on a typing cadence, eyes open and on the line it is writing, with a glance
-  // up at the reader every few seconds before going back to the page.
-  writing: {
-    pose: { eyes: { scaleY: 1 }, figure: { rotate: 0, scaleX: 1, scaleY: 1, y: 0 }, gaze: { x: 0, y: 2.2 } },
-    oscillation: {
-      eyes: BLINK,
-      figure: {
-        moving: { scaleY: [1, 0.97, 1], y: [0, 1.3, 0] },
-        rest: { scaleY: 1, y: 0 },
-        timing: { duration: 0.7, ease: "easeInOut" },
-      },
-      gaze: {
-        moving: { x: [0, 1, -1, 0, 0], y: [0, 0, -3.4, -3.4, 0] },
-        rest: { x: 0, y: 0 },
-        timing: { duration: 5, ease: "easeInOut", times: [0, 0.78, 0.84, 0.93, 1] },
-      },
-    },
-  },
-};
-
-/**
- * Poof's face. A soft squircle with two pill eyes, and nothing else: the state lives
- * entirely in the expression, the way the Grok Bot avatars carry status through
- * motion rather than badges. Body and eyes deform as one figure so it moves like a
- * creature, with gaze and blink layered on top.
+ * Every frame is a handful of attribute writes on one small SVG, and the loop pauses while the
+ * face is off screen or the tab is hidden. The exit is the one motion-library animation: the face
+ * pops and its box closes up so the header settles onto the label. Mount it inside an
+ * `AnimatePresence` for that to play.
  *
- * Every animation while a reply streams is transform-only, so it never pays for a
- * layout pass. The one exception is the exit: when the turn settles the face grows a
- * touch, shrinks to nothing, and its box closes up so the header settles onto the
- * label instead of jumping. That runs once per turn, after streaming is over. Mount it
- * inside an `AnimatePresence` for the exit to play.
- *
- * Decorative on purpose: the status text beside it already carries the state for
- * assistive tech.
+ * Decorative on purpose: the status text beside it already carries the state for assistive tech.
  */
 export function PoofMark({
   className,
@@ -107,22 +86,130 @@ export function PoofMark({
 }: {
   className?: string;
   /**
-   * Play the mount fade. Off for the timeline mark, which always replaces the pending-reply
-   * mark in the same spot: a second instance fading in from nothing is a visible blink.
+   * Play the mount pop and perk up. Off for the timeline mark, which always replaces the
+   * pending-reply mark in the same spot: a second instance popping in is a visible blink.
    */
   entrance?: boolean;
   state: PoofMarkState;
 }) {
-  const still = useReducedMotion() ?? false;
-  const { oscillation, pose } = EXPRESSIONS[state];
+  // The OS preference, or a `MotionConfig reducedMotion="always"` above: motion's config hook alone
+  // ignores the OS unless the app opts in with `reducedMotion="user"`.
+  const prefersStill = useReducedMotion() ?? false;
+  const forcedStill = useReducedMotionConfig() ?? false;
+  const still = prefersStill || forcedStill;
+  const signals = usePoofSignals();
+  const svgRef = useRef<SVGSVGElement>(null);
+  const live = useRef<{ engine: PoofEngine; paint: (frame: PoofFrame) => void } | null>(null);
+  // While animating, React only ever renders the mount frame: later frames are painted directly,
+  // and rendering a new frame on a state change would fight the engine for one frame.
+  const [mountFrame] = useState(() => restFrame(state));
+  const frame = still ? restFrame(state) : mountFrame;
 
-  // A state change eases into its new pose; under reduced motion it just lands there. A fresh
-  // mount lands in pose too (`initial` below): the pending-reply mark and the timeline mark are
-  // different instances, and without this the face straightened and re-tilted for a beat when
-  // the first assistant part arrived. The root's fade and scale already carry the entrance.
-  const settle: Transition = still ? { duration: 0 } : { duration: 0.35, ease: EASE_OUT };
-  const move = (layer: Layer) => (still ? layer.rest : layer.moving);
-  const loop = (layer: Layer): Transition => (still ? { duration: 0 } : { repeat: Infinity, ...layer.timing });
+  const createEngine = useEffectEvent(() => {
+    const greet = !greeted && state === "idle";
+    if (greet) greeted = true;
+    return createPoofEngine({ entrance, greet, seed: Math.floor(Math.random() * 2 ** 32), state });
+  });
+
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (still || !svg) return;
+    const engine = createEngine();
+    const paint = painter(svg);
+    live.current = { engine, paint };
+
+    let raf = 0;
+    let last = 0;
+    let running = false;
+    let onScreen = true;
+    let pointer: { x: number; y: number } | null = null;
+    let pointerMoved = false;
+
+    let dozing = false;
+    const tick = (now: number) => {
+      // A dozing face barely moves, so it only needs ~20fps: dt keeps accumulating between paints.
+      if (dozing && last && now - last < 50) {
+        raf = requestAnimationFrame(tick);
+        return;
+      }
+      const dt = last ? Math.min((now - last) / 1000, 0.1) : 0;
+      last = now;
+      if (pointerMoved) {
+        // Measured here, before this frame's writes, so the read never forces a second layout.
+        pointerMoved = false;
+        const rect = svg.getBoundingClientRect();
+        const unit = rect.width / 48 || 1;
+        engine.look(pointer && { x: (pointer.x - rect.left) / unit - 24, y: (pointer.y - rect.top) / unit - 24 });
+      }
+      const frame = engine.step(dt);
+      dozing = frame.mood === "sleeping" || frame.mood === "drowsy";
+      paint(frame);
+      raf = requestAnimationFrame(tick);
+    };
+    const start = () => {
+      if (running || !onScreen || document.hidden || typeof requestAnimationFrame !== "function") return;
+      running = true;
+      last = 0;
+      raf = requestAnimationFrame(tick);
+    };
+    const stop = () => {
+      running = false;
+      cancelAnimationFrame(raf);
+    };
+
+    const observer = new IntersectionObserver(([entry]) => {
+      onScreen = entry?.isIntersecting ?? true;
+      if (onScreen) start();
+      else stop();
+    });
+    observer.observe(svg);
+    const onVisibility = () => (document.hidden ? stop() : start());
+    const onPointerMove = (event: PointerEvent) => {
+      pointer = { x: event.clientX, y: event.clientY };
+      pointerMoved = true;
+    };
+    const onPointerLeave = () => {
+      pointer = null;
+      pointerMoved = true;
+    };
+    const onActivity = () => engine.signal("activity");
+    const unsubscribe = signals?.subscribe((signal) => {
+      engine.signal(signal);
+      paint(engine.step(0));
+    });
+
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("pointermove", onPointerMove, { passive: true });
+    document.documentElement.addEventListener("pointerleave", onPointerLeave);
+    window.addEventListener("keydown", onActivity);
+    window.addEventListener("wheel", onActivity, { passive: true });
+    window.addEventListener("touchstart", onActivity, { passive: true });
+    start();
+
+    return () => {
+      stop();
+      observer.disconnect();
+      unsubscribe?.();
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("pointermove", onPointerMove);
+      document.documentElement.removeEventListener("pointerleave", onPointerLeave);
+      window.removeEventListener("keydown", onActivity);
+      window.removeEventListener("wheel", onActivity);
+      window.removeEventListener("touchstart", onActivity);
+      live.current = null;
+      if (engine.owesGreeting()) greeted = false;
+    };
+  }, [signals, still]);
+
+  useEffect(() => {
+    live.current?.engine.setState(state);
+  }, [state]);
+
+  const poke = () => {
+    if (!live.current) return;
+    live.current.engine.signal("poke");
+    live.current.paint(live.current.engine.step(0));
+  };
 
   // The box collapses over the tail of the pop, once the face is already shrinking, so the
   // label glides into place rather than snapping the moment the face is gone. The box owns
@@ -138,41 +225,46 @@ export function PoofMark({
       transition={exitTiming}
     >
       <motion.svg
+        ref={svgRef}
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 48 48"
         className="size-full overflow-visible"
         data-slot="poof-mark"
         data-state={state}
+        data-mood={frame.mood}
         aria-hidden="true"
+        onPointerDown={poke}
         initial={still || !entrance ? false : { opacity: 0, scale: 0.85 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={still ? { opacity: 0 } : { opacity: [1, 1, 0], scale: [1, 1.12, 0] }}
         transition={still ? { duration: 0 } : { duration: 0.44, ease: EASE_OUT, times: [0, 0.32, 1] }}
       >
-        <motion.g initial={pose.figure} animate={pose.figure} transition={settle}>
-          <motion.g animate={move(oscillation.figure)} transition={loop(oscillation.figure)}>
-            <rect className="fill-primary" data-slot="poof-mark-body" x="7" y="9" width="34" height="30" rx="13" />
-            <motion.g initial={pose.gaze} animate={pose.gaze} transition={settle}>
-              <motion.g animate={move(oscillation.gaze)} transition={loop(oscillation.gaze)}>
-                {[16.5, 27.5].map((x) => (
-                  <motion.g key={x} initial={pose.eyes} animate={pose.eyes} transition={settle}>
-                    <motion.rect
-                      className="fill-primary-foreground"
-                      data-slot="poof-mark-eye"
-                      x={x}
-                      y="19"
-                      width="4"
-                      height="10"
-                      rx="2"
-                      animate={move(oscillation.eyes)}
-                      transition={loop(oscillation.eyes)}
-                    />
-                  </motion.g>
-                ))}
-              </motion.g>
-            </motion.g>
-          </motion.g>
-        </motion.g>
+        <g key={still ? "still-figure" : "live-figure"} data-slot="poof-mark-figure" transform={figureTransform(frame)}>
+          <rect className="fill-primary" data-slot="poof-mark-body" x="7" y="9" width="34" height="30" rx="13" />
+          <g data-slot="poof-mark-gaze" transform={gazeTransform(frame)}>
+            {[0, 1].map((index) => (
+              <path key={index} className="fill-primary-foreground" data-slot="poof-mark-eye" d={eyeD(frame, index)} />
+            ))}
+          </g>
+        </g>
+        <g key={still ? "still-particles" : "live-particles"} className="pointer-events-none">
+          {frame.particles.map((particle, index) =>
+            particle.kind === "spark" ? (
+              <path key={index} className="fill-primary" data-slot="poof-mark-particle" d={SPARK} opacity="0" />
+            ) : (
+              <path
+                key={index}
+                className="fill-none stroke-neutral-400"
+                data-slot="poof-mark-particle"
+                d={ZED}
+                opacity="0"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={0.5}
+              />
+            ),
+          )}
+        </g>
       </motion.svg>
     </motion.div>
   );
