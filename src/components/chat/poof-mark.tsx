@@ -82,6 +82,7 @@ function painter(svg: SVGSVGElement) {
 export function PoofMark({
   className,
   entrance = true,
+  interrupted = false,
   state,
 }: {
   className?: string;
@@ -90,6 +91,8 @@ export function PoofMark({
    * pending-reply mark in the same spot: a second instance popping in is a visible blink.
    */
   entrance?: boolean;
+  /** The visitor stopped this reply: when it settles, Poof is startled instead of pleased. */
+  interrupted?: boolean;
   state: PoofMarkState;
 }) {
   // The OS preference, or a `MotionConfig reducedMotion="always"` above: motion's config hook alone
@@ -202,8 +205,10 @@ export function PoofMark({
   }, [signals, still]);
 
   useEffect(() => {
-    live.current?.engine.setState(state);
-  }, [state]);
+    if (!live.current) return;
+    live.current.engine.setState(state, { interrupted });
+    live.current.paint(live.current.engine.step(0));
+  }, [interrupted, state]);
 
   const poke = () => {
     if (!live.current) return;

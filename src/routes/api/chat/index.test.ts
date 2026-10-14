@@ -243,6 +243,55 @@ describe("POST /api/chat", () => {
       });
     });
 
+    it("forgets the question when the visitor stops the reply before any of it arrives", async () => {
+      // Undo send: the client puts the question back in the composer, so the stored copy must go,
+      // or it returns on reload and the model reads an unanswered question in its history.
+      let captured: UIMessageStreamOnFinishCallback<UIMessage> | undefined;
+      vi.mocked(streamText, { partial: true }).mockReturnValue({
+        toUIMessageStreamResponse: (options?: { onFinish?: UIMessageStreamOnFinishCallback<UIMessage> }) => {
+          captured = options?.onFinish;
+          return new Response("stream", { status: 200 });
+        },
+      });
+
+      await invokePost(postRequest(validBody));
+      await captured?.({
+        isAborted: true,
+        isContinuation: false,
+        messages: [],
+        responseMessage: { id: "asst-1", parts: [], role: "assistant" },
+      });
+
+      expect(vi.mocked(fetchAuthMutation)).toHaveBeenCalledWith(expect.anything(), {
+        conversationId: "conv-123",
+        sessionId: "sess-1",
+        uiMessageId: "m1",
+      });
+    });
+
+    it("keeps the question when a stopped reply had already written something", async () => {
+      let captured: UIMessageStreamOnFinishCallback<UIMessage> | undefined;
+      vi.mocked(streamText, { partial: true }).mockReturnValue({
+        toUIMessageStreamResponse: (options?: { onFinish?: UIMessageStreamOnFinishCallback<UIMessage> }) => {
+          captured = options?.onFinish;
+          return new Response("stream", { status: 200 });
+        },
+      });
+
+      await invokePost(postRequest(validBody));
+      await captured?.({
+        isAborted: true,
+        isContinuation: false,
+        messages: [],
+        responseMessage: { id: "asst-1", parts: [{ text: "Lucien is", type: "text" }], role: "assistant" },
+      });
+
+      expect(vi.mocked(fetchAuthMutation)).not.toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ uiMessageId: "m1" }),
+      );
+    });
+
     it("registers a stream transform that strips dashes from streamed text", async () => {
       await invokePost(postRequest(validBody));
       const call = vi.mocked(streamText).mock.calls[0]?.[0];

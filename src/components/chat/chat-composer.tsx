@@ -49,6 +49,7 @@ export function ChatComposer({
   onResumeRequest,
   onStop,
   onSubmit,
+  textareaRef: givenTextareaRef,
 }: {
   canSubmit: boolean;
   isStreaming: boolean;
@@ -59,8 +60,10 @@ export function ChatComposer({
   onResumeRequest: () => void;
   onStop: () => void;
   onSubmit: React.SubmitEventHandler<HTMLFormElement>;
+  textareaRef?: React.RefObject<HTMLTextAreaElement | null>;
 }) {
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const ownTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const textareaRef = givenTextareaRef ?? ownTextareaRef;
   const poofSignals = usePoofSignals();
   useTypeAnywhereToFocus(textareaRef);
 
@@ -68,7 +71,7 @@ export function ChatComposer({
   // reach touch devices in the HTML and raise their keyboard before hydration.
   useEffect(() => {
     if (!isCoarsePointer()) textareaRef.current?.focus();
-  }, []);
+  }, [textareaRef]);
 
   const stopOnEscape = useEffectEvent((event: KeyboardEvent) => {
     // A dialog, menu, IME composition or Streamdown's link modal owns Escape: they
@@ -140,13 +143,26 @@ export function ChatComposer({
               <TooltipContent>Get Lucien's resume</TooltipContent>
             </Tooltip>
           </TooltipProvider>
+          {/* Distinct keys: one reused <button> flipped to type=submit mid-click would send from the Stop click. */}
           {isStreaming ? (
-            <Button className="size-9 shrink-0 rounded-full sm:size-10" onClick={onStop} size="icon" type="button">
+            <Button
+              key="stop"
+              className="size-9 shrink-0 rounded-full sm:size-10"
+              onClick={onStop}
+              size="icon"
+              type="button"
+            >
               <HugeiconsIcon icon={StopIcon} size={16} />
               <span className="sr-only">Stop</span>
             </Button>
           ) : (
-            <Button className="size-9 shrink-0 rounded-full sm:size-10" disabled={!canSend} size="icon" type="submit">
+            <Button
+              key="send"
+              className="size-9 shrink-0 rounded-full sm:size-10"
+              disabled={!canSend}
+              size="icon"
+              type="submit"
+            >
               {isSubmitting ? <Spinner /> : <HugeiconsIcon icon={Navigation03Icon} />}
               <span className="sr-only">Send</span>
             </Button>

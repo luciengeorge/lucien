@@ -158,10 +158,21 @@ export const Route = createFileRoute("/api/chat/")({
 
         return result.toUIMessageStreamResponse({
           generateMessageId: generateId,
-          onFinish: async ({ responseMessage }) => {
+          onFinish: async ({ isAborted, responseMessage }) => {
             try {
               await userMessageWrite;
               if (!hasRenderableMessageContent(responseMessage)) {
+                if (isAborted) {
+                  // Undo send: the visitor stopped before any answer, and their question goes back to
+                  // the composer. Awaiting the write above first means the delete always lands last.
+                  await fetchAuthMutation(api.conversations.deleteConversationMessage, {
+                    conversationId: id,
+                    sessionId,
+                    uiMessageId: message.id,
+                  });
+                  logger.info("chat stopped before reply, question withdrawn", { conversationId: id, requestId });
+                  return;
+                }
                 logger.warn("chat response empty persisted-skip", { conversationId: id, requestId });
                 return;
               }

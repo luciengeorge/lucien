@@ -14,9 +14,10 @@ vi.mock("#/lib/analytics", async (importOriginal) => ({
 
 const chat: {
   messages: UIMessage[];
+  setMessages: ReturnType<typeof vi.fn>;
   status: "ready" | "streaming" | "submitted";
   stop: ReturnType<typeof vi.fn>;
-} = { messages: [], status: "ready", stop: vi.fn() };
+} = { messages: [], setMessages: vi.fn(), status: "ready", stop: vi.fn() };
 vi.mock("@ai-sdk/react", () => ({
   useChat: () => ({ ...chat, clearError: vi.fn(), regenerate: vi.fn(), sendMessage: vi.fn() }),
 }));
@@ -30,6 +31,7 @@ vi.mock("#/lib/functions/start-new-conversation", () => ({
 afterEach(() => {
   cleanup();
   capture.mockClear();
+  chat.setMessages.mockReset();
   resumeOrStartConversation.mockReset();
 });
 
@@ -50,7 +52,7 @@ function renderConversation() {
     </QueryClientProvider>
   );
   const result = render(ui());
-  return { rerender: () => result.rerender(ui()) };
+  return { container: result.container, rerender: () => result.rerender(ui()) };
 }
 
 const capturedEvents = () => capture.mock.calls.map(([event]) => event);
@@ -133,5 +135,112 @@ describe("ChatConversation resume analytics", () => {
     // onSuccess decides on the event before it hands the conversation over.
     await waitFor(() => expect(onConversationChange).toHaveBeenCalled());
     expect(capturedEvents()).not.toContain("conversation_resumed");
+  });
+});
+
+describe("ChatConversation and Poof", () => {
+  const poofMood = (container: HTMLElement) =>
+    container.querySelector('[data-slot="poof-mark"]')?.getAttribute("data-mood") ?? null;
+
+  it("celebrates a reply that finishes", () => {
+    chat.messages = [user, partialReply];
+    chat.status = "streaming";
+    const { container, rerender } = renderConversation();
+
+    chat.status = "ready";
+    rerender();
+
+    expect(poofMood(container)).toBe("happy");
+  });
+
+  it("does not celebrate a reply the visitor stopped", () => {
+    chat.messages = [user, partialReply];
+    chat.status = "streaming";
+    const { container, rerender } = renderConversation();
+
+    fireEvent.click(screen.getByRole("button", { name: "Stop" }));
+    chat.status = "ready";
+    rerender();
+
+    expect(poofMood(container)).toBe("surprised");
+  });
+});
+
+describe("ChatConversation stopping a reply", () => {
+  it("shows one reply generating after a stopped one, and marks the stopped one", () => {
+    const emptyReply: UIMessage = { id: "a1", parts: [], role: "assistant" };
+    chat.messages = [user, emptyReply];
+    chat.status = "streaming";
+    const { rerender } = renderConversation();
+
+    fireEvent.click(screen.getByRole("button", { name: "Stop" }));
+    chat.status = "ready";
+    rerender();
+
+    chat.messages = [
+      user,
+      emptyReply,
+      { id: "u2", parts: [{ text: "Can I see Lucien's resume?", type: "text" }], role: "user" },
+      { id: "a2", parts: [], role: "assistant" },
+    ];
+    chat.status = "streaming";
+    rerender();
+
+    expect(screen.getAllByText("Generating response…")).toHaveLength(1);
+    expect(screen.getByText("Stopped")).not.toBeNull();
+  });
+});
+
+describe("ChatConversation undo send", () => {
+  const composer = () => screen.getByLabelText<HTMLTextAreaElement>("Ask Poof about Lucien");
+  const remainingAfter = (call: unknown) => {
+    if (typeof call !== "function") throw new Error("setMessages was not given an updater");
+    return call(chat.messages).map((message: UIMessage) => message.id);
+  };
+
+  it("takes the question back into the composer when stopped before any answer", async () => {
+    const intro: UIMessage = { id: "intro", parts: [{ text: "Hi, I'm Poof.", type: "text" }], role: "assistant" };
+    chat.messages = [intro, user];
+    chat.status = "submitted";
+    renderConversation();
+
+    fireEvent.click(screen.getByRole("button", { name: "Stop" }));
+
+    await waitFor(() => expect(composer().value).toBe("What does he build?"));
+    expect(remainingAfter(chat.setMessages.mock.calls[0]?.[0])).toEqual(["intro"]);
+  });
+
+  it("also drops the empty reply when one had started", async () => {
+    chat.messages = [user, { id: "a1", parts: [], role: "assistant" }];
+    chat.status = "streaming";
+    renderConversation();
+
+    fireEvent.click(screen.getByRole("button", { name: "Stop" }));
+
+    await waitFor(() => expect(composer().value).toBe("What does he build?"));
+    expect(remainingAfter(chat.setMessages.mock.calls[0]?.[0])).toEqual([]);
+  });
+
+  it("keeps a draft typed while the reply ran, after the restored question", async () => {
+    chat.messages = [user];
+    chat.status = "submitted";
+    renderConversation();
+
+    fireEvent.change(composer(), { target: { value: "and his side projects?" } });
+    fireEvent.click(screen.getByRole("button", { name: "Stop" }));
+
+    await waitFor(() => expect(composer().value).toBe("What does he build?\nand his side projects?"));
+  });
+
+  it("keeps a partly written answer and leaves the composer empty", async () => {
+    chat.messages = [user, partialReply];
+    chat.status = "streaming";
+    renderConversation();
+
+    fireEvent.click(screen.getByRole("button", { name: "Stop" }));
+    await Promise.resolve();
+
+    expect(chat.setMessages).not.toHaveBeenCalled();
+    expect(composer().value).toBe("");
   });
 });
