@@ -67,11 +67,14 @@ export function ChatTimelineMessage({
   isActive,
   message,
   status,
+  wasStopped = false,
 }: {
   /** True only for the last/streaming assistant message. Past turns always reveal cards immediately. */
   isActive: boolean;
   message: ChatMessage;
   status: ChatStatus;
+  /** The visitor stopped the latest reply, so it settles without the "answer landed" celebration. */
+  wasStopped?: boolean;
 }) {
   const role = message.role === "user" ? "user" : "assistant";
   // gpt-5.6-luna emits a reasoning part whose text is empty. A "Thinking" header over nothing
@@ -190,7 +193,9 @@ export function ChatTimelineMessage({
     <div className="space-y-4">
       <div className="flex items-center">
         <AnimatePresence>
-          {isLatestAssistantTurn ? <PoofMark key="poof" entrance={false} state={markState} /> : null}
+          {isLatestAssistantTurn ? (
+            <PoofMark key="poof" entrance={false} interrupted={wasStopped} state={markState} />
+          ) : null}
         </AnimatePresence>
         <p className="font-mono text-sm tracking-wide text-neutral-500 uppercase">{role === "user" ? "You" : "Poof"}</p>
       </div>

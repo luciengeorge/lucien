@@ -178,7 +178,8 @@ export type PoofEngine = {
   /** Asked to greet but has not yet: a face torn down now should hand the greeting to the next one. */
   owesGreeting: () => boolean;
   look: (point: PoofPoint | null) => void;
-  setState: (state: PoofState) => void;
+  /** `interrupted`: the visitor stopped the reply, so settling is a startle rather than a celebration. */
+  setState: (state: PoofState, options?: { interrupted?: boolean }) => void;
   signal: (signal: PoofSignal) => void;
   step: (dt: number) => PoofFrame;
 };
@@ -621,7 +622,7 @@ export function createPoofEngine({
       pointerAt = t;
       activity();
     },
-    setState(next) {
+    setState(next, { interrupted = false } = {}) {
       if (next === state) return;
       const previous = state;
       state = next;
@@ -630,7 +631,9 @@ export function createPoofEngine({
       if (next === "idle") {
         ambient = "idle";
         idleFor = 0;
-        if (previous === "writing" || previous === "working" || previous === "thinking") react("happy", HOLD.landed);
+        if (previous === "writing" || previous === "working" || previous === "thinking") {
+          react(interrupted ? "surprised" : "happy", interrupted ? HOLD.surprised : HOLD.landed);
+        }
       } else if (next === "thinking" && previous === "idle") {
         react("surprised", HOLD.surprised);
       }

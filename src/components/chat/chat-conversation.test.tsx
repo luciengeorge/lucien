@@ -50,7 +50,7 @@ function renderConversation() {
     </QueryClientProvider>
   );
   const result = render(ui());
-  return { rerender: () => result.rerender(ui()) };
+  return { container: result.container, rerender: () => result.rerender(ui()) };
 }
 
 const capturedEvents = () => capture.mock.calls.map(([event]) => event);
@@ -133,5 +133,33 @@ describe("ChatConversation resume analytics", () => {
     // onSuccess decides on the event before it hands the conversation over.
     await waitFor(() => expect(onConversationChange).toHaveBeenCalled());
     expect(capturedEvents()).not.toContain("conversation_resumed");
+  });
+});
+
+describe("ChatConversation and Poof", () => {
+  const poofMood = (container: HTMLElement) =>
+    container.querySelector('[data-slot="poof-mark"]')?.getAttribute("data-mood") ?? null;
+
+  it("celebrates a reply that finishes", () => {
+    chat.messages = [user, partialReply];
+    chat.status = "streaming";
+    const { container, rerender } = renderConversation();
+
+    chat.status = "ready";
+    rerender();
+
+    expect(poofMood(container)).toBe("happy");
+  });
+
+  it("does not celebrate a reply the visitor stopped", () => {
+    chat.messages = [user, partialReply];
+    chat.status = "streaming";
+    const { container, rerender } = renderConversation();
+
+    fireEvent.click(screen.getByRole("button", { name: "Stop" }));
+    chat.status = "ready";
+    rerender();
+
+    expect(poofMood(container)).toBe("surprised");
   });
 });

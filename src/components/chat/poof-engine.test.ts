@@ -130,6 +130,20 @@ describe("Poof engine", () => {
     expect(sparkled).toBe(true);
   });
 
+  it("is startled rather than pleased when the visitor stops it mid-answer", () => {
+    const engine = createPoofEngine({ seed: 6, state: "writing" });
+    run(engine, 2);
+    engine.setState("idle", { interrupted: true });
+    let sparkled = false;
+    const seen: PoofMood[] = [];
+    run(engine, 3, (frame) => {
+      if (seen.at(-1) !== frame.mood) seen.push(frame.mood);
+      sparkled ||= frame.particles.some((particle) => particle.kind === "spark" && particle.opacity > 0);
+    });
+    expect(seen).toEqual(["surprised", "idle"]);
+    expect(sparkled).toBe(false);
+  });
+
   it("dozes off when nobody is around, and wakes up on any activity", () => {
     const engine = createPoofEngine({ seed: 8, state: "idle" });
     const asleep = moods(engine, 60);

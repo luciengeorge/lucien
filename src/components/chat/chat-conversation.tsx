@@ -36,6 +36,8 @@ export function ChatConversation({
 }) {
   const { capture } = useAnalytics();
   const [poofSignals] = useState(createPoofSignals);
+  // State, not the ref above: Poof needs a render to learn the reply settled because of a stop.
+  const [replyStopped, setReplyStopped] = useState(false);
   const lastCompletedMessageIdRef = useRef<string | null>(null);
   // A stopped reply settles to "ready" like a finished one; this keeps it out of the completion metrics.
   const stopRequestedRef = useRef(false);
@@ -152,6 +154,7 @@ export function ChatConversation({
 
   const sendOrQueue = async (text: string) => {
     stopRequestedRef.current = false;
+    setReplyStopped(false);
     if (!isReady) {
       setQueuedMessage(text);
       return;
@@ -165,6 +168,7 @@ export function ChatConversation({
       return;
     }
     stopRequestedRef.current = true;
+    setReplyStopped(true);
     void stop();
   };
 
@@ -234,6 +238,7 @@ export function ChatConversation({
                         isActive={index === visibleMessages.length - 1}
                         message={message}
                         status={status}
+                        wasStopped={replyStopped}
                       />
                     </MessageScrollerItem>
                   ))}
@@ -257,6 +262,7 @@ export function ChatConversation({
                       withPoof={visibleMessages.at(-1)?.role !== "assistant"}
                       onRetry={() => {
                         clearError();
+                        setReplyStopped(false);
                         void regenerate();
                       }}
                     />
