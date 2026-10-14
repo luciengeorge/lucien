@@ -16,6 +16,7 @@ import { postContactToSlack } from "#/lib/notify-slack";
 import { stripDashes } from "#/lib/strip-dashes";
 import { openai } from "@ai-sdk/openai";
 import { createFileRoute, notFound } from "@tanstack/react-router";
+import { waitUntil } from "@vercel/functions";
 import { convertToModelMessages, generateId, stepCountIs, streamText, validateUIMessages } from "ai";
 
 import systemPrompt from "../../../../content/system-prompt.md?raw";
@@ -115,6 +116,16 @@ export const Route = createFileRoute("/api/chat/")({
         });
         // Fired off the critical path; real error handling happens when it's awaited in onFinish.
         userMessageWrite.catch(() => {});
+        // `/api/chat` opts into Vercel request cancellation (nitro.config.ts), so a visitor's Stop
+        // terminates this function and only work handed to waitUntil survives. Registered before the
+        // stream starts, resolved once the turn is saved (onFinish, not onError: errors inside a stream, like a
+        // tool given bad input, don't end it). The cap stops a stream that never settles
+        // from holding the function open.
+        let markTurnSaved = () => {};
+        const turnSaved = new Promise<void>((resolve) => {
+          markTurnSaved = resolve;
+        });
+        waitUntil(Promise.race([turnSaved, new Promise<void>((resolve) => setTimeout(resolve, 60_000).unref())]));
 
         const prompt = renderSystemPrompt(systemPrompt, { context: corpus, today: new Date() });
         const modelMessages = messages.slice(-MAX_HISTORY_MESSAGES);
@@ -197,6 +208,8 @@ export const Route = createFileRoute("/api/chat/")({
                 error,
                 requestId,
               });
+            } finally {
+              markTurnSaved();
             }
           },
           onError: (error) => {

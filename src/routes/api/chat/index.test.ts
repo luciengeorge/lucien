@@ -7,6 +7,7 @@ vi.mock("#/lib/auth-server", () => ({
 }));
 vi.mock("#/lib/conversation-session.server", () => ({ getConversationSession: vi.fn() }));
 vi.mock("#/lib/notify-slack", () => ({ postContactToSlack: vi.fn() }));
+vi.mock("@vercel/functions", () => ({ waitUntil: vi.fn() }));
 vi.mock("ai", async (importOriginal) => {
   const actual = await importOriginal<typeof import("ai")>();
   return { ...actual, generateText: vi.fn(), streamText: vi.fn(), validateUIMessages: vi.fn() };
@@ -17,6 +18,7 @@ import type { TextStreamPart, ToolSet, UIMessage, UIMessageStreamOnFinishCallbac
 import { fetchAuthAction, fetchAuthMutation, fetchAuthQuery } from "#/lib/auth-server";
 import { getConversationSession } from "#/lib/conversation-session.server";
 import { postContactToSlack } from "#/lib/notify-slack";
+import { waitUntil } from "@vercel/functions";
 import { generateText, streamText, validateUIMessages } from "ai";
 
 import { Route } from "./index";
@@ -290,6 +292,50 @@ describe("POST /api/chat", () => {
         expect.anything(),
         expect.objectContaining({ uiMessageId: "m1" }),
       );
+    });
+
+    it("keeps the function alive until the turn is saved, since Stop now terminates it on Vercel", async () => {
+      // With supportsCancellation, a visitor's Stop terminates the function; only work handed to
+      // waitUntil survives. So the persistence has to be registered before the stream can end.
+      let captured: UIMessageStreamOnFinishCallback<UIMessage> | undefined;
+      let capturedOnError: ((error: unknown) => string) | undefined;
+      vi.mocked(streamText, { partial: true }).mockReturnValue({
+        toUIMessageStreamResponse: (options?: {
+          onError?: (error: unknown) => string;
+          onFinish?: UIMessageStreamOnFinishCallback<UIMessage>;
+        }) => {
+          captured = options?.onFinish;
+          capturedOnError = options?.onError;
+          return new Response("stream", { status: 200 });
+        },
+      });
+
+      await invokePost(postRequest(validBody));
+      // A tool error mid-stream reaches onError, but the stream carries on and onFinish still runs.
+      capturedOnError?.(new Error("tool input too long"));
+      const kept = vi.mocked(waitUntil).mock.calls[0]?.[0];
+      expect(kept).toBeInstanceOf(Promise);
+      let settled = false;
+      void kept?.then(() => {
+        settled = true;
+      });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(settled).toBe(false);
+
+      await captured?.({
+        isAborted: true,
+        isContinuation: false,
+        messages: [],
+        responseMessage: { id: "asst-1", parts: [], role: "assistant" },
+      });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(settled).toBe(true);
+      expect(vi.mocked(fetchAuthMutation)).toHaveBeenCalledWith(expect.anything(), {
+        conversationId: "conv-123",
+        sessionId: "sess-1",
+        uiMessageId: "m1",
+      });
     });
 
     it("registers a stream transform that strips dashes from streamed text", async () => {
