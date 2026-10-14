@@ -36,7 +36,7 @@ export function ChatConversation({
 }) {
   const { capture } = useAnalytics();
   const [poofSignals] = useState(createPoofSignals);
-  // State, not the ref above: Poof needs a render to learn the reply settled because of a stop.
+  // State, not a ref like `stopRequestedRef` below: Poof needs a render to learn the reply settled because of a stop.
   const [replyStopped, setReplyStopped] = useState(false);
   const lastCompletedMessageIdRef = useRef<string | null>(null);
   // A stopped reply settles to "ready" like a finished one; this keeps it out of the completion metrics.
