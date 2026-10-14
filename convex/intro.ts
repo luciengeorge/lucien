@@ -2,6 +2,8 @@ import { openai } from "@ai-sdk/openai";
 import { generateText } from "ai";
 import { v } from "convex/values";
 
+import type { QueryCtx } from "./_generated/server";
+
 import { internal } from "./_generated/api";
 import { action, internalAction, internalMutation, internalQuery } from "./_generated/server";
 
@@ -60,7 +62,8 @@ export const refreshIntro = internalAction({
   args: { contentHash: v.string(), corpus: v.string() },
   handler: async (ctx, { contentHash, corpus }): Promise<{ generated: boolean; key: string }> => {
     const key = `${INTRO_VERSION}:${contentHash}`;
-    if (await ctx.runQuery(internal.intro.hasIntro, { key })) return { generated: false, key };
+    // Already written for this content (a rerun, or content rolled back): make it current again.
+    if (await ctx.runMutation(internal.intro.promoteIntro, { key })) return { generated: false, key };
 
     const { text } = await generateText({
       model: openai("gpt-5.6-luna"),
@@ -73,30 +76,39 @@ export const refreshIntro = internalAction({
   },
 });
 
-export const hasIntro = internalQuery({
+/** Strictly after the current intro, even within the same millisecond. */
+async function nextPromotedAt(ctx: QueryCtx): Promise<number> {
+  const current = await ctx.db.query("intros").withIndex("by_promoted_at").order("desc").first();
+  return Math.max(Date.now(), (current?.promotedAt ?? 0) + 1);
+}
+
+export const promoteIntro = internalMutation({
   args: { key: v.string() },
   handler: async (ctx, { key }) => {
     const intro = await ctx.db
       .query("intros")
       .withIndex("by_key", (q) => q.eq("key", key))
       .first();
-    return intro !== null;
+    if (!intro) return false;
+    await ctx.db.patch(intro._id, { promotedAt: await nextPromotedAt(ctx) });
+    return true;
   },
 });
 
 export const storeIntro = internalMutation({
   args: { key: v.string(), text: v.string() },
   handler: async (ctx, { key, text }) => {
-    await ctx.db.insert("intros", { key, text });
+    await ctx.db.insert("intros", { key, promotedAt: await nextPromotedAt(ctx), text });
   },
 });
 
 export const latestIntro = internalQuery({
   args: {},
-  handler: async (ctx) => (await ctx.db.query("intros").order("desc").first())?.text ?? null,
+  handler: async (ctx) =>
+    (await ctx.db.query("intros").withIndex("by_promoted_at").order("desc").first())?.text ?? null,
 });
 
-/** The newest intro, or null before the first refresh: callers then show their static fallback. */
+/** The current intro (latest written or re-promoted), or null before the first refresh: callers then show their static fallback. */
 export const getCachedIntro = action({
   args: {},
   handler: async (ctx): Promise<string | null> => await ctx.runQuery(internal.intro.latestIntro, {}),

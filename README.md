@@ -76,7 +76,7 @@ tests/e2e/                Playwright specs
 5. The user message is persisted; `gpt-5.6-luna` streams the answer (with the `download_resume`, `link_work_entry` and `contact_lucien` tools).
 8. `onFinish` persists the assistant message.
 
-The homepage's first message is a separate **cached intro** (`convex/intro.ts`) so a new visit renders an LLM intro without a per-request model call. `refreshIntro` generates it from the same full corpus the chat uses, once per prompt version (`INTRO_VERSION`) and content hash, and stores it in the `intros` table. `getCachedIntro` returns the newest one, or `null` before the first refresh (callers then use the static `HOMEPAGE_INTRO_FALLBACK`). The `Refresh intro` workflow (`.github/workflows/intro.yml`) runs it on pushes to main that touch `content/**`, `scripts/refresh-intro.ts` or `convex/intro.ts`, and on manual dispatch.
+The homepage's first message is a separate **cached intro** (`convex/intro.ts`) so a new visit renders an LLM intro without a per-request model call. `refreshIntro` generates it from the same full corpus the chat uses, once per prompt version (`INTRO_VERSION`) and content hash, and stores it in the `intros` table. `getCachedIntro` returns the current one (the latest written, or re-promoted when content rolls back), or `null` before the first refresh (callers then use the static `HOMEPAGE_INTRO_FALLBACK`). The `Refresh intro` workflow (`.github/workflows/intro.yml`) runs it on pushes to main that touch `content/**`, `scripts/refresh-intro.ts` or `convex/intro.ts`, and on manual dispatch.
 
 Key files:
 
@@ -176,7 +176,7 @@ App schema (`convex/schema.ts`):
 - `messages` - `conversationId`, `role`, `uiMessageId`, `createdAt`, `modelId?`, `provider?`, `metadataJson?`
 - `messageParts` - `messageId`, `order`, `partJson`, `type`, plus tool/text columns
 
-Better Auth tables (`user`, `session`, `account`, `verification`, `jwks`) live in the betterAuth component (`convex/betterAuth/schema.ts`, generated). The `intros` table (`key`, `text`, index `by_key`) holds the cached homepage intro.
+Better Auth tables (`user`, `session`, `account`, `verification`, `jwks`) live in the betterAuth component (`convex/betterAuth/schema.ts`, generated). The `intros` table (`key`, `text`, `promotedAt`; indexes `by_key`, `by_promoted_at`) holds the cached homepage intro.
 
 ## Useful commands
 

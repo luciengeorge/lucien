@@ -2,11 +2,14 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
-  /** Cached homepage intros, one per prompt version + content hash. The newest is served. */
+  /** Cached homepage intros, one per prompt version + content hash. The latest promoted is served. */
   intros: defineTable({
     key: v.string(),
+    promotedAt: v.number(),
     text: v.string(),
-  }).index("by_key", ["key"]),
+  })
+    .index("by_key", ["key"])
+    .index("by_promoted_at", ["promotedAt"]),
   conversations: defineTable({
     createdAt: v.number(),
     sessionId: v.optional(v.string()),

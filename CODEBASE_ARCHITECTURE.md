@@ -9,7 +9,7 @@ Lucien George's personal site + AI portfolio assistant ("Poof"). A single TanSta
 - **Data**: TanStack Query + `@convex-dev/react-query`
 - **Forms**: TanStack Form + Zod
 - **Backend**: Convex (`@convex-dev/better-auth`, `@convex-dev/rate-limiter`)
-- **AI**: Vercel AI SDK (`ai` v6) + OpenAI (`gpt-5.6-luna` for expansion, chat, intro and digest)
+- **AI**: Vercel AI SDK (`ai` v6) + OpenAI (`gpt-5.6-luna` for chat, intro and digest)
 - **Auth**: Better Auth (email/password, verification, owner-only allowlist)
 - **UI**: shadcn-style components on Base UI / Radix + CVA, Tailwind CSS v4, `motion`, `sonner`, hugeicons/lucide
 - **PDF**: `@react-pdf/renderer` (resume)
@@ -94,7 +94,7 @@ UI messages are stored as JSON parts with extracted columns for queryability. Be
 ### Functions
 
 - `conversations.ts` - `createConversation`, `getConversationById` (ownership-checked, hydrates parts), `upsertConversationMessage` (zod-validated, derives title)
-- `intro.ts` - `refreshIntro({ contentHash, corpus })` (internal) generates the intro from the full corpus once per `INTRO_VERSION` + content hash and stores it in `intros` (`key`, `text`, index `by_key`); `getCachedIntro` (public) returns the newest, or `null` before the first refresh (callers use `HOMEPAGE_INTRO_FALLBACK`). No TTL
+- `intro.ts` - `refreshIntro({ contentHash, corpus })` (internal) generates the intro from the full corpus once per `INTRO_VERSION` + content hash and stores it in `intros` (`key`, `text`, `promotedAt`); a rerun or rollback re-promotes the existing row instead; `getCachedIntro` (public) returns the current one, or `null` before the first refresh (callers use `HOMEPAGE_INTRO_FALLBACK`). No TTL
 - `http.ts` - registers Better Auth routes (CORS)
 
 ## Content (`content/`)

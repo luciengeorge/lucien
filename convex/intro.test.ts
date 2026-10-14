@@ -62,4 +62,17 @@ describe("intro", () => {
 
     expect(await t.action(api.intro.getCachedIntro, {})).toBe("New intro.");
   });
+
+  it("serves the right intro when content rolls back to an earlier version", async () => {
+    // A -> B -> back to A: A's intro already exists, so no new call, but it must become current again.
+    const t = convexTest(schema, modules);
+    generateText.mockResolvedValueOnce({ text: "Intro A." }).mockResolvedValueOnce({ text: "Intro B." });
+
+    await t.action(internal.intro.refreshIntro, { contentHash: "a", corpus: "A" });
+    await t.action(internal.intro.refreshIntro, { contentHash: "b", corpus: "B" });
+    await t.action(internal.intro.refreshIntro, { contentHash: "a", corpus: "A" });
+
+    expect(generateText).toHaveBeenCalledTimes(2);
+    expect(await t.action(api.intro.getCachedIntro, {})).toBe("Intro A.");
+  });
 });
