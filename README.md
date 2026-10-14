@@ -76,7 +76,7 @@ tests/e2e/                Playwright specs
 5. The user message is persisted; `gpt-5.6-luna` streams the answer (with the `download_resume`, `link_work_entry` and `contact_lucien` tools).
 8. `onFinish` persists the assistant message.
 
-The homepage's first message is a separate **cached intro** (`convex/intro.ts`) so a new visit renders an LLM intro without a per-request model call. `refreshIntro` generates it from the same full corpus the chat uses, once per prompt version (`INTRO_VERSION`) and content hash, and stores it in the `intros` table. `getCachedIntro` returns the current one (the latest written, or re-promoted when content rolls back), or `null` before the first refresh (callers then use the static `HOMEPAGE_INTRO_FALLBACK`). The `Refresh intro` workflow (`.github/workflows/intro.yml`) runs it on pushes to main that touch `content/**`, `scripts/refresh-intro.ts` or `convex/intro.ts`, and on manual dispatch.
+The homepage's first message is a separate **cached intro** (`convex/intro.ts`) so a new visit renders an LLM intro without a per-request model call. `refreshIntro` generates it from the same full corpus the chat uses, once per prompt version (`INTRO_VERSION`) and content hash, and stores it in the `intros` table. `getCachedIntro` returns the current one (the latest written, or re-promoted when content rolls back), or `null` before the first refresh (callers then use the static `HOMEPAGE_INTRO_FALLBACK`). The `Refresh intro` workflow (`.github/workflows/intro.yml`) runs it after every successful production deploy (GitHub `deployment_status` from Vercel), and on manual dispatch. It has to wait for the deploy: Vercel's build command (`pnpm dlx convex deploy --cmd 'pnpm build'`) is what deploys the Convex functions.
 
 Key files:
 
@@ -229,7 +229,7 @@ To update Lucien's knowledge base:
 1. Add or edit markdown files in `content/`
 2. Keep `content/system-prompt.md` for prompt instructions only (it's excluded from the corpus)
 
-No manual step: the chat picks up content on the next Vercel deploy, and the intro refreshes via the `Refresh intro` workflow. If you bump `INTRO_VERSION`, run `npx convex deploy` and then dispatch `intro.yml` by hand.
+No manual step: the chat picks up content on the next Vercel deploy, and the intro refreshes via the `Refresh intro` workflow right after it. Bumping `INTRO_VERSION` works the same way, since the Vercel build also deploys Convex.
 
 The same `content/*.md` drives the chat prompt, the cached intro and the rendered HTML pages + `/llms-full.txt`.
 

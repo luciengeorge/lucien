@@ -1,24 +1,15 @@
 name: Refresh intro
 
-# Regenerate Poof's cached homepage intro whenever content/ (or the intro code)
-# lands on main, so the first message always reflects the current content. The
-# chat itself reads content/ directly and needs nothing here. Convex skips the
-# model call when this content was already introduced, so reruns are free.
-# Also runnable on demand via the Actions tab (workflow_dispatch), e.g. after a
-# manual `npx convex deploy` that bumped the intro prompt version.
+# Regenerate Poof's cached homepage intro after every successful production
+# deploy, so the first message always reflects the deployed content. Vercel's
+# build runs `convex deploy`, so this must wait for the deploy: on a plain push
+# trigger it raced the build and called functions that did not exist yet. Convex
+# skips the model call when this content (and prompt version) was already
+# introduced, so a deploy that changed neither costs one no-op call.
+# Also runnable on demand via the Actions tab (workflow_dispatch).
 on:
-  push:
-    branches: [main]
-    paths:
-      - "content/**"
-      - "scripts/refresh-intro.ts"
-      - "convex/intro.ts"
-      - ".github/workflows/intro.yml"
+  deployment_status: {}
   workflow_dispatch: {}
-
-concurrency:
-  group: intro-prod
-  cancel-in-progress: false
 
 env:
   PNPM_VERSION: 10.33.0
@@ -28,10 +19,22 @@ env:
 jobs:
   refresh:
     name: Refresh the prod intro
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.deployment_status.state == 'success' && github.event.deployment.environment == 'Production')
+    # Job-level, so only runs that pass the `if` join the group: every deployment_status event
+    # (previews, `pending`) starts a run, and a workflow-level group would let one of those
+    # cancel a prod refresh that is queued behind a running one.
+    concurrency:
+      group: intro-prod
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
+        with:
+          # The commit Vercel just deployed, so the corpus matches what visitors are served.
+          ref: ${{ github.event.deployment.sha || github.sha }}
       - uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
