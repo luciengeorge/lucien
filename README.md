@@ -2,11 +2,11 @@
 
 Lucien George's personal site and AI portfolio assistant ("Poof").
 
-A TanStack Start full-stack app: a public chat UI grounded (RAG) in markdown about Lucien, static work/resume/about pages, Better Auth (owner-only), and a Convex backend.
+A TanStack Start full-stack app: a public chat UI grounded in markdown about Lucien, static work/resume/about pages, Better Auth (owner-only), and a Convex backend.
 
 ## What it does
 
-- Public chat at `/` - visitors ask about Lucien; Poof answers using only retrieved context from `content/`
+- Public chat at `/` - visitors ask about Lucien; Poof answers using only the `content/` corpus
 - First assistant message is a cached, LLM-written intro baked into the first paint
 - Per-visitor conversation history persisted in Convex
 - Static pages: about, skills, education, work (per role), resume (HTML + downloadable PDF)
@@ -18,7 +18,7 @@ A TanStack Start full-stack app: a public chat UI grounded (RAG) in markdown abo
 - TanStack Start (Vite + Nitro), TanStack Router / Query / Form
 - React 19 + React Compiler
 - Tailwind CSS v4, shadcn-style UI on Base UI / Radix, `motion`, `sonner`
-- Convex + `@convex-dev/rag`, `@convex-dev/better-auth`, `@convex-dev/action-cache`, `@convex-dev/react-query`
+- Convex + `@convex-dev/better-auth`, `@convex-dev/rate-limiter`, `@convex-dev/react-query`
 - Vercel AI SDK (`ai` v6) + OpenAI
 - Better Auth (email/password, verification, allowlist gate)
 - `@react-pdf/renderer` (resume PDF)
@@ -29,8 +29,7 @@ A TanStack Start full-stack app: a public chat UI grounded (RAG) in markdown abo
 
 ### Models
 
-- Query expansion, chat, intro generation, weekly digest: `gpt-5.6-luna`
-- Embeddings: `text-embedding-3-small` (1536 dims)
+- Chat, intro generation, weekly digest: `gpt-5.6-luna`
 
 ## App structure
 
@@ -42,17 +41,14 @@ src/
   lib/                    auth, content registry, resume, sessions, analytics, logger, schemas
   router.tsx start.ts server.ts styles.css
 convex/
-  schema.ts               conversations + messages + messageParts
+  schema.ts               conversations + messages + messageParts + intros
   conversations.ts        conversation persistence (queries/mutations)
-  search.ts               RAG search action
-  intro.ts                cached LLM intro (action-cache)
-  rag.ts                  RAG instance
-  seed.ts                 content seed actions
+  intro.ts                cached LLM intro (stored in the intros table)
   http.ts                 Better Auth routes
   betterAuth/             Better Auth Convex component (schema is generated)
 content/                  Markdown knowledge base + system-prompt.md + resume.json
 evals/                    Poof eval harness (datasets, run.ts, judge.ts)
-scripts/seed.ts           Seeds content/*.md into Convex RAG
+scripts/refresh-intro.ts   Regenerates the cached intro from the full corpus
 tests/e2e/                Playwright specs
 ```
 
@@ -80,12 +76,12 @@ tests/e2e/                Playwright specs
 5. The user message is persisted; `gpt-5.6-luna` streams the answer (with the `download_resume`, `link_work_entry` and `contact_lucien` tools).
 8. `onFinish` persists the assistant message.
 
-The homepage's first message is a separate **cached intro** (`convex/intro.ts`, action-cache, 30-day TTL) so a new visit renders an LLM intro without a per-request model call.
+The homepage's first message is a separate **cached intro** (`convex/intro.ts`) so a new visit renders an LLM intro without a per-request model call. `refreshIntro` generates it from the same full corpus the chat uses, once per prompt version (`INTRO_VERSION`) and content hash, and stores it in the `intros` table. `getCachedIntro` returns the current one (the latest written, or re-promoted when content rolls back), or `null` before the first refresh (callers then use the static `HOMEPAGE_INTRO_FALLBACK`). The `Refresh intro` workflow (`.github/workflows/intro.yml`) runs it on pushes to main that touch `content/**`, `scripts/refresh-intro.ts` or `convex/intro.ts`, and on manual dispatch.
 
 Key files:
 
 - `src/routes/api/chat/index.ts`
-- `convex/search.ts`, `convex/rag.ts`, `convex/intro.ts`
+- `src/lib/chat/corpus.ts`, `convex/intro.ts`, `scripts/refresh-intro.ts`
 - `content/system-prompt.md`
 
 ## Local setup
@@ -144,12 +140,12 @@ Notes:
 pnpm dlx convex dev
 ```
 
-### 4. Seed portfolio content
+### 4. Generate the intro (optional)
 
-Reads `content/*.md` and uploads them to Convex RAG via an authenticated `npx convex run` call, so you need a logged in Convex CLI session (e.g. from step 3).
+Builds the corpus from `content/`, hashes it, and runs `intro:refreshIntro` on the dev deployment (from `.env.local`) via `npx convex run`, so you need a logged in Convex CLI session (e.g. from step 3). Until it runs, the homepage uses the static fallback intro.
 
 ```bash
-pnpm seed
+pnpm intro:refresh
 ```
 
 ### 5. Run the app
@@ -180,7 +176,7 @@ App schema (`convex/schema.ts`):
 - `messages` - `conversationId`, `role`, `uiMessageId`, `createdAt`, `modelId?`, `provider?`, `metadataJson?`
 - `messageParts` - `messageId`, `order`, `partJson`, `type`, plus tool/text columns
 
-Better Auth tables (`user`, `session`, `account`, `verification`, `jwks`) live in the betterAuth component (`convex/betterAuth/schema.ts`, generated). Content embeddings are managed by `@convex-dev/rag`.
+Better Auth tables (`user`, `session`, `account`, `verification`, `jwks`) live in the betterAuth component (`convex/betterAuth/schema.ts`, generated). The `intros` table (`key`, `text`, `promotedAt`; indexes `by_key`, `by_promoted_at`) holds the cached homepage intro.
 
 ## Useful commands
 
@@ -194,7 +190,7 @@ pnpm evals         # Poof eval harness
 pnpm typecheck     # tsgo --noEmit
 pnpm lint          # oxfmt + oxlint
 pnpm format
-pnpm seed
+pnpm intro:refresh
 ```
 
 ## Conventions
@@ -231,13 +227,14 @@ Relevant files: `src/start.ts`, `src/server.ts`, `src/router.tsx`, `vite.config.
 To update Lucien's knowledge base:
 
 1. Add or edit markdown files in `content/`
-2. Keep `content/system-prompt.md` for prompt instructions only (it's skipped by the seed script)
-3. Run `pnpm seed`
+2. Keep `content/system-prompt.md` for prompt instructions only (it's excluded from the corpus)
 
-The same `content/*.md` drives both the chat RAG index and the rendered HTML pages + `/llms-full.txt`.
+No manual step: the chat picks up content on the next Vercel deploy, and the intro refreshes via the `Refresh intro` workflow. If you bump `INTRO_VERSION`, run `npx convex deploy` and then dispatch `intro.yml` by hand.
+
+The same `content/*.md` drives the chat prompt, the cached intro and the rendered HTML pages + `/llms-full.txt`.
 
 ## Known limitations
 
 - Auth is owner-only (allowlist), not open signup
 - No role/permission system
-- Small route surface; Convex is used for chat persistence, RAG, and auth (not broader app data)
+- Small route surface; Convex is used for chat persistence, the cached intro, and auth (not broader app data)

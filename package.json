@@ -21,15 +21,13 @@
     "format:check": "oxfmt --check .",
     "format": "oxfmt .",
     "typecheck": "tsgo --noEmit",
-    "seed": "dotenv -e .env.local -- tsx scripts/seed.ts"
+    "intro:refresh": "dotenv -e .env.local -- tsx scripts/refresh-intro.ts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.50",
     "@ai-sdk/react": "^3.0.149",
     "@base-ui/react": "^1.3.0",
-    "@convex-dev/action-cache": "^0.3.1",
     "@convex-dev/better-auth": "^0.12.5",
-    "@convex-dev/rag": "^0.7.2",
     "@convex-dev/rate-limiter": "^0.3.2",
     "@convex-dev/react-query": "0.1.0",
     "@fontsource-variable/geist": "^5.2.8",

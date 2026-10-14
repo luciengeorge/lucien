@@ -6,9 +6,6 @@ on:
     paths:
       - "content/**"
       - "convex/intro.ts"
-      - "convex/search.ts"
-      - "convex/rag.ts"
-      - "convex/seed.ts"
       - "src/routes/api/chat/**"
       - "evals/**"
       - ".github/workflows/evals.yml"
