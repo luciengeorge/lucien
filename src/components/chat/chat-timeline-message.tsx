@@ -169,20 +169,29 @@ export function ChatTimelineMessage({
     : [];
   const hasToolActivity = hasToolCard || toolProgressChips.length > 0;
 
-  // The mark belongs to the turn that is still being produced: a settled answer, a past
-  // turn, and the user's own messages all read as plain text. A tool in progress outranks
-  // streaming text, and "in progress" means whatever the chip below is showing, so the face
-  // and the chip can never tell two different stories about the same moment.
-  const isLiveAssistantTurn = role === "assistant" && isActive && !isSettled;
+  // Poof sits on the latest answer: it works on it while it streams, then stays there idling
+  // until the next turn takes over. Past turns and the user's own messages read as plain text.
+  // A tool in progress outranks streaming text, and "in progress" means whatever the chip below
+  // is showing, so the face and the chip can never tell two different stories about the same moment.
+  const isLatestAssistantTurn = role === "assistant" && isActive;
   const showsToolProgress = toolProgressChips.length > 0;
-  const markState: PoofMarkState = showsToolProgress ? "working" : textParts.length > 0 ? "writing" : "thinking";
+  const markState: PoofMarkState =
+    status === "error"
+      ? "confused"
+      : isSettled
+        ? "idle"
+        : showsToolProgress
+          ? "working"
+          : textParts.length > 0
+            ? "writing"
+            : "thinking";
 
   return (
     <div className="space-y-4">
       <div className="flex items-center">
         {/* Not `initial={false}`: that would freeze the face's keyframe loops on first render. */}
         <AnimatePresence>
-          {isLiveAssistantTurn ? <PoofMark key="poof" entrance={false} state={markState} /> : null}
+          {isLatestAssistantTurn ? <PoofMark key="poof" entrance={false} state={markState} /> : null}
         </AnimatePresence>
         <p className="font-mono text-sm tracking-wide text-neutral-500 uppercase">{role === "user" ? "You" : "Poof"}</p>
       </div>

@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ChatComposer } from "./chat-composer";
+import { createPoofSignals, PoofSignalsContext } from "./poof-signals";
 
 afterEach(() => {
   cleanup();
@@ -61,5 +62,31 @@ describe("ChatComposer Escape", () => {
     const onStop = renderStreaming();
     fireEvent.keyDown(document, { isComposing: true, key: "Escape" });
     expect(onStop).not.toHaveBeenCalled();
+  });
+});
+
+describe("ChatComposer and Poof", () => {
+  it("tells Poof the visitor is typing", () => {
+    const signals = createPoofSignals();
+    const heard = vi.fn();
+    signals.subscribe(heard);
+    const { getByLabelText } = render(
+      <PoofSignalsContext value={signals}>
+        <ChatComposer
+          canSubmit
+          isStreaming={false}
+          isSubmitting={false}
+          message=""
+          onBlur={vi.fn()}
+          onChange={vi.fn()}
+          onResumeRequest={vi.fn()}
+          onStop={vi.fn()}
+          onSubmit={vi.fn()}
+        />
+      </PoofSignalsContext>,
+    );
+
+    fireEvent.change(getByLabelText("Ask Poof about Lucien"), { target: { value: "H" } });
+    expect(heard).toHaveBeenCalledWith("typing");
   });
 });

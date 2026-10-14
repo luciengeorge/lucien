@@ -148,12 +148,20 @@ describe("ChatTimelineMessage Poof mark", () => {
     expect(svg?.getAttribute("style") ?? "").not.toContain("opacity: 0");
   });
 
-  it("drops the mark once the turn settles, so a finished answer reads as plain text", () => {
+  it("keeps Poof on the latest answer once it settles, idling there until the next turn", () => {
     const { container } = render(
       <ChatTimelineMessage isActive message={message([textPart("Lucien is a product engineer.")])} status="ready" />,
     );
 
-    expect(markState(container)).toBeNull();
+    expect(markState(container)).toBe("idle");
+  });
+
+  it("shows Poof confused when the latest answer broke off with an error", () => {
+    const { container } = render(
+      <ChatTimelineMessage isActive message={message([textPart("Lucien is")])} status="error" />,
+    );
+
+    expect(markState(container)).toBe("confused");
   });
 
   it("never marks a past turn, even while the global status is streaming for a newer one", () => {
