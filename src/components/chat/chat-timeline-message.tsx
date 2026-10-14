@@ -8,6 +8,7 @@ import type { PoofMarkState } from "./poof-mark";
 
 import { ChatContactCard } from "./chat-contact-card";
 import { ChatMarkdown } from "./chat-markdown";
+import { ChatReasoning } from "./chat-reasoning";
 import { ChatResumeCard } from "./chat-resume-card";
 import { ChatStatusMarker } from "./chat-status-marker";
 import { ChatWorkLinkCard } from "./chat-work-link-card";
@@ -93,6 +94,10 @@ export function ChatTimelineMessage({
       )
       .otherwise(() => []),
   );
+  const isThinking =
+    isActive &&
+    status === "streaming" &&
+    message.parts.some((part) => part.type === "reasoning" && part.state === "streaming");
   const textParts = message.parts.flatMap((part, index) =>
     match(part)
       .with({ type: "text" }, (textPart) => [
@@ -202,16 +207,7 @@ export function ChatTimelineMessage({
         <p className="font-mono text-sm tracking-wide text-neutral-500 uppercase">{role === "user" ? "You" : "Poof"}</p>
       </div>
 
-      {reasoningParts.length > 0 ? (
-        <div className="space-y-2 border-l border-neutral-950/8 pl-4">
-          <p className="font-mono text-sm tracking-wide text-neutral-500 uppercase">Thinking</p>
-          {reasoningParts.map((part) => (
-            <p key={part.key} className="max-w-[62ch] text-sm text-pretty text-neutral-500 italic">
-              {part.text}
-            </p>
-          ))}
-        </div>
-      ) : null}
+      {reasoningParts.length > 0 ? <ChatReasoning parts={reasoningParts} thinking={isThinking} /> : null}
 
       {textParts.length > 0 ? (
         <div

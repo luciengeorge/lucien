@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import type { ChatMessage } from "./chat.types";
@@ -32,8 +32,8 @@ function workLinkInputPart(state: "input-streaming" | "input-available"): ChatMe
   };
 }
 
-function reasoningPart(text: string): ChatMessage["parts"][number] {
-  return { state: "done", text, type: "reasoning" };
+function reasoningPart(text: string, state: "done" | "streaming" = "done"): ChatMessage["parts"][number] {
+  return { state, text, type: "reasoning" };
 }
 
 function message(parts: ChatMessage["parts"][number][]): ChatMessage {
@@ -194,9 +194,23 @@ describe("ChatTimelineMessage reasoning", () => {
     );
 
     expect(screen.queryByText("Thinking")).toBeNull();
+    expect(screen.queryByText("Thought")).toBeNull();
   });
 
-  it("does render the Thinking header when there is reasoning text to show", () => {
+  it("shows Poof's thinking, open, while it reasons", () => {
+    render(
+      <ChatTimelineMessage
+        isActive
+        message={message([reasoningPart("Checking which role is most recent.", "streaming")])}
+        status="streaming"
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Thinking" }).getAttribute("aria-expanded")).toBe("true");
+    expect(screen.getByText("Checking which role is most recent.")).not.toBeNull();
+  });
+
+  it("folds the thinking away once it is done, one click from reopening", () => {
     render(
       <ChatTimelineMessage
         isActive
@@ -205,7 +219,11 @@ describe("ChatTimelineMessage reasoning", () => {
       />,
     );
 
-    expect(screen.getByText("Thinking")).not.toBeNull();
+    const trigger = screen.getByRole("button", { name: "Thought" });
+    expect(trigger.getAttribute("aria-expanded")).toBe("false");
+    expect(screen.queryByText("Checking which role is most recent.")).toBeNull();
+
+    fireEvent.click(trigger);
     expect(screen.getByText("Checking which role is most recent.")).not.toBeNull();
   });
 });
