@@ -118,7 +118,8 @@ export const Route = createFileRoute("/api/chat/")({
         userMessageWrite.catch(() => {});
         // `/api/chat` opts into Vercel request cancellation (nitro.config.ts), so a visitor's Stop
         // terminates this function and only work handed to waitUntil survives. Registered before the
-        // stream starts, resolved once the turn is saved. The cap stops a stream that never settles
+        // stream starts, resolved once the turn is saved (onFinish, not onError: errors inside a stream, like a
+        // tool given bad input, don't end it). The cap stops a stream that never settles
         // from holding the function open.
         let markTurnSaved = () => {};
         const turnSaved = new Promise<void>((resolve) => {
@@ -213,7 +214,6 @@ export const Route = createFileRoute("/api/chat/")({
           },
           onError: (error) => {
             logger.error("chat stream error", { conversationId: id, error, requestId });
-            markTurnSaved();
             return "An error occurred.";
           },
           originalMessages: messages,

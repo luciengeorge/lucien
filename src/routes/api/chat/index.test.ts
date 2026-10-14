@@ -298,14 +298,21 @@ describe("POST /api/chat", () => {
       // With supportsCancellation, a visitor's Stop terminates the function; only work handed to
       // waitUntil survives. So the persistence has to be registered before the stream can end.
       let captured: UIMessageStreamOnFinishCallback<UIMessage> | undefined;
+      let capturedOnError: ((error: unknown) => string) | undefined;
       vi.mocked(streamText, { partial: true }).mockReturnValue({
-        toUIMessageStreamResponse: (options?: { onFinish?: UIMessageStreamOnFinishCallback<UIMessage> }) => {
+        toUIMessageStreamResponse: (options?: {
+          onError?: (error: unknown) => string;
+          onFinish?: UIMessageStreamOnFinishCallback<UIMessage>;
+        }) => {
           captured = options?.onFinish;
+          capturedOnError = options?.onError;
           return new Response("stream", { status: 200 });
         },
       });
 
       await invokePost(postRequest(validBody));
+      // A tool error mid-stream reaches onError, but the stream carries on and onFinish still runs.
+      capturedOnError?.(new Error("tool input too long"));
       const kept = vi.mocked(waitUntil).mock.calls[0]?.[0];
       expect(kept).toBeInstanceOf(Promise);
       let settled = false;
