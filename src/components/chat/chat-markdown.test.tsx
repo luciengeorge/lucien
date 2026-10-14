@@ -51,3 +51,16 @@ describe("ChatMarkdown links", () => {
     expect(open).not.toHaveBeenCalled();
   });
 });
+
+describe("ChatMarkdown code", () => {
+  it("renders a fenced block as code with a copy button", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+    render(<ChatMarkdown isAnimating={false} text={"Try this:\n\n```ts\nconst answer = 42;\n```"} />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "Copy" }, { timeout: 5000 }));
+
+    expect(writeText).toHaveBeenCalledWith("const answer = 42;");
+    expect(screen.getByText(/const answer = 42;/)).not.toBeNull();
+  });
+});

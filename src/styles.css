@@ -7,6 +7,11 @@
 
 @import "@fontsource-variable/geist";
 
+/* Used by the shadcn code block; not in Tailwind or shadcn/tailwind.css. */
+@utility scrollbar-thin {
+  scrollbar-width: thin;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 :root {
