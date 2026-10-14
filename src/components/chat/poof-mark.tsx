@@ -239,7 +239,7 @@ export function PoofMark({
         exit={still ? { opacity: 0 } : { opacity: [1, 1, 0], scale: [1, 1.12, 0] }}
         transition={still ? { duration: 0 } : { duration: 0.44, ease: EASE_OUT, times: [0, 0.32, 1] }}
       >
-        <g key={still ? "still" : "live"} data-slot="poof-mark-figure" transform={figureTransform(frame)}>
+        <g key={still ? "still-figure" : "live-figure"} data-slot="poof-mark-figure" transform={figureTransform(frame)}>
           <rect className="fill-primary" data-slot="poof-mark-body" x="7" y="9" width="34" height="30" rx="13" />
           <g data-slot="poof-mark-gaze" transform={gazeTransform(frame)}>
             {[0, 1].map((index) => (
@@ -247,7 +247,7 @@ export function PoofMark({
             ))}
           </g>
         </g>
-        <g key={still ? "still" : "live"} className="pointer-events-none">
+        <g key={still ? "still-particles" : "live-particles"} className="pointer-events-none">
           {frame.particles.map((particle, index) =>
             particle.kind === "spark" ? (
               <path key={index} className="fill-primary" data-slot="poof-mark-particle" d={SPARK} opacity="0" />

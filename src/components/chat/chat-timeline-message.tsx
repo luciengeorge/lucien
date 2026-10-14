@@ -189,7 +189,6 @@ export function ChatTimelineMessage({
   return (
     <div className="space-y-4">
       <div className="flex items-center">
-        {/* Not `initial={false}`: that would freeze the face's keyframe loops on first render. */}
         <AnimatePresence>
           {isLatestAssistantTurn ? <PoofMark key="poof" entrance={false} state={markState} /> : null}
         </AnimatePresence>

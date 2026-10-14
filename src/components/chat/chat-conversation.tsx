@@ -220,7 +220,9 @@ export function ChatConversation({
             <MessageScroller className="min-h-0 grow">
               <MessageScrollerViewport>
                 <MessageScrollerContent className="mx-auto w-full max-w-3xl gap-0 px-4 pb-20 sm:px-6 sm:pb-24">
-                  {showIntroPlaceholder ? <ChatIntroPlaceholder /> : null}
+                  {showIntroPlaceholder ? (
+                    <ChatIntroPlaceholder withPoof={queuedMessage === null && !hasConversationStartFailed} />
+                  ) : null}
                   {visibleMessages.map((message, index) => (
                     <MessageScrollerItem
                       key={message.id}
@@ -248,7 +250,7 @@ export function ChatConversation({
                     <ChatPendingReply isFirst={false} />
                   ) : null}
                   {hasConversationStartFailed && !isReady ? (
-                    <ChatSendFailed onRetry={() => startConversation({ fresh: false })} />
+                    <ChatSendFailed withPoof onRetry={() => startConversation({ fresh: false })} />
                   ) : null}
                   {status === "error" ? (
                     <ChatSendFailed
