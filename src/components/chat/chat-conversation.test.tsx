@@ -163,3 +163,28 @@ describe("ChatConversation and Poof", () => {
     expect(poofMood(container)).toBe("surprised");
   });
 });
+
+describe("ChatConversation stopping a reply", () => {
+  it("shows one reply generating after a stopped one, and marks the stopped one", () => {
+    const emptyReply: UIMessage = { id: "a1", parts: [], role: "assistant" };
+    chat.messages = [user, emptyReply];
+    chat.status = "streaming";
+    const { rerender } = renderConversation();
+
+    fireEvent.click(screen.getByRole("button", { name: "Stop" }));
+    chat.status = "ready";
+    rerender();
+
+    chat.messages = [
+      user,
+      emptyReply,
+      { id: "u2", parts: [{ text: "Can I see Lucien's resume?", type: "text" }], role: "user" },
+      { id: "a2", parts: [], role: "assistant" },
+    ];
+    chat.status = "streaming";
+    rerender();
+
+    expect(screen.getAllByText("Generating response…")).toHaveLength(1);
+    expect(screen.getByText("Stopped")).not.toBeNull();
+  });
+});

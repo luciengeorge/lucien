@@ -177,6 +177,8 @@ export function ChatTimelineMessage({
   // A tool in progress outranks streaming text, and "in progress" means whatever the chip below
   // is showing, so the face and the chip can never tell two different stories about the same moment.
   const isLatestAssistantTurn = role === "assistant" && isActive;
+  // Every message gets the same global status, so a stopped turn is told apart by `wasStopped` alone.
+  const isStoppedReply = role === "assistant" && wasStopped;
   const showsToolProgress = toolProgressChips.length > 0;
   const markState: PoofMarkState =
     status === "error"
@@ -230,7 +232,7 @@ export function ChatTimelineMessage({
             ),
           )}
         </div>
-      ) : role === "assistant" && status === "streaming" && !hasToolActivity ? (
+      ) : isStoppedReply ? null : role === "assistant" && isActive && status === "streaming" && !hasToolActivity ? (
         <ChatStatusMarker label="Generating response…" />
       ) : role === "assistant" && isSettled && !messageHasRenderableContent ? (
         <p className="max-w-[62ch] text-sm text-pretty text-neutral-500 italic">
@@ -269,6 +271,8 @@ export function ChatTimelineMessage({
           ))}
         </div>
       ) : null}
+
+      {isStoppedReply ? <p className="font-mono text-xs tracking-wide text-neutral-400 uppercase">Stopped</p> : null}
     </div>
   );
 }

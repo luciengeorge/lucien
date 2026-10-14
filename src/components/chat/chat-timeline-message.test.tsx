@@ -226,3 +226,34 @@ describe("ChatTimelineMessage user text", () => {
     expect(container.querySelector("em, h1")).toBeNull();
   });
 });
+
+describe("ChatTimelineMessage stopped replies", () => {
+  it("never shows a past turn generating, even while a newer reply streams", () => {
+    // A reply stopped before its first word is an empty assistant turn. Every message gets the
+    // same global status, so without the active check it read "Generating response…" again the
+    // moment the next reply started streaming.
+    render(<ChatTimelineMessage isActive={false} message={message([])} status="streaming" />);
+
+    expect(screen.queryByText("Generating response…")).toBeNull();
+  });
+
+  it("marks a reply stopped before its first word as stopped, not as Poof failing to understand", () => {
+    render(<ChatTimelineMessage isActive={false} message={message([])} status="ready" wasStopped />);
+
+    expect(screen.getByText("Stopped")).not.toBeNull();
+    expect(screen.queryByText(/didn't catch that/)).toBeNull();
+  });
+
+  it("keeps what a stopped reply had written, marked as stopped", () => {
+    render(<ChatTimelineMessage isActive message={message([textPart("Lucien is")])} status="ready" wasStopped />);
+
+    expect(screen.getByText("Lucien is")).not.toBeNull();
+    expect(screen.getByText("Stopped")).not.toBeNull();
+  });
+
+  it("does not mark a reply that finished on its own", () => {
+    render(<ChatTimelineMessage isActive message={message([textPart("Lucien is")])} status="ready" />);
+
+    expect(screen.queryByText("Stopped")).toBeNull();
+  });
+});

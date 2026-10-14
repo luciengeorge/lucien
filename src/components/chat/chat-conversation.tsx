@@ -36,8 +36,9 @@ export function ChatConversation({
 }) {
   const { capture } = useAnalytics();
   const [poofSignals] = useState(createPoofSignals);
-  // State, not a ref like `stopRequestedRef` below: Poof needs a render to learn the reply settled because of a stop.
-  const [replyStopped, setReplyStopped] = useState(false);
+  // Replies the visitor stopped, by id: they stay marked as stopped and never read as generating again.
+  // State, not a ref like `stopRequestedRef` below, because the transcript has to re-render.
+  const [stoppedReplyIds, setStoppedReplyIds] = useState<ReadonlySet<string>>(() => new Set());
   const lastCompletedMessageIdRef = useRef<string | null>(null);
   // A stopped reply settles to "ready" like a finished one; this keeps it out of the completion metrics.
   const stopRequestedRef = useRef(false);
@@ -154,7 +155,6 @@ export function ChatConversation({
 
   const sendOrQueue = async (text: string) => {
     stopRequestedRef.current = false;
-    setReplyStopped(false);
     if (!isReady) {
       setQueuedMessage(text);
       return;
@@ -168,7 +168,8 @@ export function ChatConversation({
       return;
     }
     stopRequestedRef.current = true;
-    setReplyStopped(true);
+    const reply = visibleMessages.at(-1);
+    if (reply?.role === "assistant") setStoppedReplyIds((ids) => new Set(ids).add(reply.id));
     void stop();
   };
 
@@ -238,7 +239,7 @@ export function ChatConversation({
                         isActive={index === visibleMessages.length - 1}
                         message={message}
                         status={status}
-                        wasStopped={replyStopped}
+                        wasStopped={stoppedReplyIds.has(message.id)}
                       />
                     </MessageScrollerItem>
                   ))}
@@ -262,7 +263,6 @@ export function ChatConversation({
                       withPoof={visibleMessages.at(-1)?.role !== "assistant"}
                       onRetry={() => {
                         clearError();
-                        setReplyStopped(false);
                         void regenerate();
                       }}
                     />
