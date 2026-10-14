@@ -11,10 +11,6 @@ on:
   deployment_status: {}
   workflow_dispatch: {}
 
-concurrency:
-  group: intro-prod
-  cancel-in-progress: false
-
 env:
   PNPM_VERSION: 10.33.0
   NODE_VERSION: 22
@@ -26,6 +22,12 @@ jobs:
     if: >-
       github.event_name == 'workflow_dispatch' ||
       (github.event.deployment_status.state == 'success' && github.event.deployment.environment == 'Production')
+    # Job-level, so only runs that pass the `if` join the group: every deployment_status event
+    # (previews, `pending`) starts a run, and a workflow-level group would let one of those
+    # cancel a prod refresh that is queued behind a running one.
+    concurrency:
+      group: intro-prod
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
