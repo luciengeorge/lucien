@@ -35,6 +35,14 @@ const embeddableAssetHeaders = {
 };
 
 export default defineNitroConfig({
+  vercel: {
+    // Stop in the chat aborts the fetch; without this Vercel never fires request.signal, so the
+    // model kept generating (and billing) to the end. Scoped to /api/chat: cancellation
+    // terminates the function, and the route hands its persistence to waitUntil to survive that.
+    functionRules: {
+      "/api/chat": { supportsCancellation: true },
+    },
+  },
   routeRules: {
     "/**": {
       headers: securityHeaders,
