@@ -347,3 +347,62 @@ describe("upsertConversationMessage", () => {
     ).rejects.toThrowError();
   });
 });
+
+describe("deleteConversationMessage", () => {
+  test("removes the message and its parts, so a stopped question is gone on reload", async () => {
+    const t = convexTest(schema, modules);
+    const id = await t.mutation(api.conversations.createConversation, { sessionId: SESSION_A });
+    await t.mutation(api.conversations.upsertConversationMessage, {
+      conversationId: id,
+      messageJson: persistedMessage({ id: "keep", role: "assistant" }),
+      sessionId: SESSION_A,
+    });
+    await t.mutation(api.conversations.upsertConversationMessage, {
+      conversationId: id,
+      messageJson: persistedMessage({ id: "stopped", role: "user" }),
+      sessionId: SESSION_A,
+    });
+
+    await t.mutation(api.conversations.deleteConversationMessage, {
+      conversationId: id,
+      sessionId: SESSION_A,
+      uiMessageId: "stopped",
+    });
+
+    const result = await t.query(api.conversations.getConversationById, { conversationId: id, sessionId: SESSION_A });
+    expect(result?.serializedMessages.map((m) => JSON.parse(m).id)).toEqual(["keep"]);
+    const parts = await t.run(async (ctx) => ctx.db.query("messageParts").collect());
+    expect(parts).toHaveLength(1);
+  });
+
+  test("is a no-op for a message that was never stored", async () => {
+    const t = convexTest(schema, modules);
+    const id = await t.mutation(api.conversations.createConversation, { sessionId: SESSION_A });
+
+    await expect(
+      t.mutation(api.conversations.deleteConversationMessage, {
+        conversationId: id,
+        sessionId: SESSION_A,
+        uiMessageId: "missing",
+      }),
+    ).resolves.toBeNull();
+  });
+
+  test("refuses another session's conversation", async () => {
+    const t = convexTest(schema, modules);
+    const id = await t.mutation(api.conversations.createConversation, { sessionId: SESSION_A });
+    await t.mutation(api.conversations.upsertConversationMessage, {
+      conversationId: id,
+      messageJson: persistedMessage({ id: "m", role: "user" }),
+      sessionId: SESSION_A,
+    });
+
+    await expect(() =>
+      t.mutation(api.conversations.deleteConversationMessage, {
+        conversationId: id,
+        sessionId: SESSION_B,
+        uiMessageId: "m",
+      }),
+    ).rejects.toThrowError(/access denied/i);
+  });
+});

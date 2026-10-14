@@ -9,12 +9,14 @@ import {
   MessageScrollerViewport,
 } from "#/components/ui/message-scroller";
 import { AnalyticsEvent, useAnalytics } from "#/lib/analytics";
-import { parseSerializedMessages } from "#/lib/chat-types";
+import { getTextFromMessage, hasRenderableMessageContent, parseSerializedMessages } from "#/lib/chat-types";
 import { resumeOrStartConversation, startNewConversation } from "#/lib/functions/start-new-conversation";
 import { useChat } from "@ai-sdk/react";
 import { useMutation } from "@tanstack/react-query";
 import { DefaultChatTransport } from "ai";
 import { startTransition, useEffect, useMemo, useRef, useState } from "react";
+
+import type { ChatComposerHandle } from "./chat-composer-block";
 
 import { ChatComposerBlock } from "./chat-composer-block";
 import { ChatIntroPlaceholder } from "./chat-intro-placeholder";
@@ -76,7 +78,7 @@ export function ChatConversation({
     startConversation({ fresh: false });
   }, [chatState.conversation, startConversation]);
 
-  const { clearError, messages, regenerate, sendMessage, status, stop } = useChat({
+  const { clearError, messages, regenerate, sendMessage, setMessages, status, stop } = useChat({
     id: chatState.conversation?.id ?? "new-conversation",
     messages: initialMessages,
     transport: new DefaultChatTransport({
@@ -162,15 +164,28 @@ export function ChatConversation({
     await sendMessage({ text });
   };
 
+  const composerRef = useRef<ChatComposerHandle>(null);
+
   const handleStop = () => {
     if (queuedMessage !== null) {
+      composerRef.current?.restore(queuedMessage);
       setQueuedMessage(null);
       return;
     }
     stopRequestedRef.current = true;
-    const reply = visibleMessages.at(-1);
-    if (reply?.role === "assistant") setStoppedReplyIds((ids) => new Set(ids).add(reply.id));
-    void stop();
+    const last = visibleMessages.at(-1);
+    if (last?.role === "assistant") setStoppedReplyIds((ids) => new Set(ids).add(last.id));
+    // Stopped before any answer: the visitor most likely sent too early or wants to rephrase, so the
+    // question comes back to the composer (undo send). The server withdraws its stored copy too.
+    // Same "nothing yet" test as the server, so the two always agree on which stops are undone.
+    const question = last?.role === "assistant" ? visibleMessages.at(-2) : last;
+    const answered = last?.role === "assistant" && hasRenderableMessageContent(last);
+    void Promise.resolve(stop()).then(() => {
+      if (answered || question?.role !== "user") return;
+      const withdrawn = new Set([question.id, last?.id]);
+      setMessages((current) => current.filter((message) => !withdrawn.has(message.id)));
+      composerRef.current?.restore(getTextFromMessage(question));
+    });
   };
 
   const handleSend = async (message: string) => {
@@ -283,6 +298,7 @@ export function ChatConversation({
             <div className="relative mx-auto w-full max-w-3xl px-4 sm:px-6">
               <div className="bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/75">
                 <ChatComposerBlock
+                  ref={composerRef}
                   isStreaming={isBusy}
                   onResumeRequest={handleResumeRequest}
                   onSend={handleSend}

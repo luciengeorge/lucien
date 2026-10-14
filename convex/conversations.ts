@@ -267,3 +267,39 @@ export const upsertConversationMessage = mutation({
     });
   },
 });
+
+/** Undo send: a question the visitor stopped before any answer arrived goes back to their composer. */
+export const deleteConversationMessage = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+    sessionId: v.string(),
+    uiMessageId: v.string(),
+  },
+  handler: async (ctx, { conversationId, sessionId, uiMessageId }) => {
+    const conversationRecord = await ctx.db.get(ConversationIdSchema.parse(conversationId));
+    if (!conversationRecord) {
+      throw new Error("Conversation not found");
+    }
+    if (conversationRecord.sessionId !== sessionId) {
+      throw new Error("Conversation access denied");
+    }
+
+    const message = await ctx.db
+      .query("messages")
+      .withIndex("by_conversation_and_ui_message_id", (q) =>
+        q.eq("conversationId", conversationRecord._id).eq("uiMessageId", uiMessageId),
+      )
+      .unique();
+    if (!message) return null;
+
+    const parts = await ctx.db
+      .query("messageParts")
+      .withIndex("by_message_id", (q) => q.eq("messageId", message._id))
+      .collect();
+    for (const part of parts) {
+      await ctx.db.delete(part._id);
+    }
+    await ctx.db.delete(message._id);
+    return null;
+  },
+});
