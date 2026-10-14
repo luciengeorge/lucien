@@ -29,7 +29,7 @@ function TraceLine({
       data-slot="trace-line"
       data-status={status}
       className={cn(
-        "data-[status=running]:*:data-[slot=trace-title]:shimmer flex w-fit max-w-full min-w-0 items-center gap-2 text-sm text-muted-foreground transition-colors in-[a,button]:cursor-pointer in-[a:hover,button:hover]:text-foreground data-[status=error]:text-destructive data-[status=error]:in-[a:hover,button:hover]:text-destructive data-[status=pending]:opacity-60",
+        "flex w-fit max-w-full min-w-0 items-center gap-2 text-sm text-muted-foreground transition-colors in-[a,button]:cursor-pointer in-[a:hover,button:hover]:text-foreground data-[status=error]:text-destructive data-[status=error]:in-[a:hover,button:hover]:text-destructive data-[status=pending]:opacity-60 data-[status=running]:*:data-[slot=trace-title]:shimmer",
         className,
       )}
       {...props}
@@ -53,7 +53,7 @@ function TraceIcon({ className, ...props }: React.ComponentProps<"span">) {
 
 function TraceTitle({ className, ...props }: React.ComponentProps<"span">) {
   return (
-    <span data-slot="trace-title" className={cn("motion-reduce:shimmer-none min-w-0 truncate", className)} {...props} />
+    <span data-slot="trace-title" className={cn("min-w-0 truncate motion-reduce:shimmer-none", className)} {...props} />
   );
 }
 
