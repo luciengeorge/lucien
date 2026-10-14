@@ -2,6 +2,7 @@ import { HOMEPAGE_FALLBACK_HTML } from "#/lib/content/homepage-fallback";
 import { cn } from "#/lib/utils";
 import { PlusSignIcon } from "@hugeicons-pro/core-solid-rounded";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { useEffect, useRef, useState } from "react";
 import { useSpinDelay } from "spin-delay";
 
 import { Button } from "../ui/button";
@@ -30,6 +31,30 @@ export function ChatIdentity({
   onNew: () => void;
 }) {
   const isLoading = useSpinDelay(isStartingNew, { delay: 250, minDuration: 200 });
+  const detailsRef = useRef<HTMLDetailsElement>(null);
+  const [isShortVersionOpen, setIsShortVersionOpen] = useState(false);
+
+  // It floats over the transcript like a popover, so it closes like one: Escape, or a press
+  // anywhere outside it. Still a real `details`, so crawlers and no-JS readers are unaffected.
+  useEffect(() => {
+    if (!isShortVersionOpen) return;
+    const close = () => {
+      if (detailsRef.current) detailsRef.current.open = false;
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") close();
+    };
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.target instanceof Node && detailsRef.current?.contains(event.target)) return;
+      close();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("pointerdown", onPointerDown);
+    };
+  }, [isShortVersionOpen]);
 
   return (
     // Below `lg` the fixed nav's menu button sits at the top right of this row, hence the gutter.
@@ -51,12 +76,12 @@ export function ChatIdentity({
               <span className="max-sm:sr-only">, London</span>
             </p>
             <span aria-hidden className="size-0.75 rounded-full bg-neutral-400" />
-            <details>
+            <details ref={detailsRef} onToggle={(event) => setIsShortVersionOpen(event.currentTarget.open)}>
               <summary className="cursor-pointer list-none text-neutral-950 underline decoration-neutral-950/25 underline-offset-[3px] transition-colors hover:decoration-neutral-950 [&::-webkit-details-marker]:hidden">
                 Short version
               </summary>
               <div
-                className="absolute inset-x-4 top-full z-20 prose prose-sm max-h-[60vh] max-w-none overflow-y-auto rounded-2xl bg-white p-5 shadow-lg ring-1 ring-neutral-950/10 prose-neutral sm:inset-x-6"
+                className="absolute inset-x-4 top-full z-20 prose prose-sm max-h-[50svh] max-w-none overflow-y-auto rounded-2xl bg-white p-5 shadow-lg ring-1 ring-neutral-950/10 prose-neutral sm:inset-x-6"
                 dangerouslySetInnerHTML={{ __html: HOMEPAGE_FALLBACK_HTML }}
               />
             </details>

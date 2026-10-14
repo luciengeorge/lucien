@@ -48,4 +48,32 @@ describe("ChatIdentity", () => {
     fireEvent.click(screen.getByRole("button", { name: "New" }));
     expect(onNew).toHaveBeenCalledTimes(1);
   });
+
+  it("closes the short version on Escape or a click outside, like any popover", () => {
+    const { container } = render(<ChatIdentity compact={false} isStartingNew={false} onNew={vi.fn()} />);
+    const details = container.querySelector("details");
+    if (!details) throw new Error("no details");
+
+    details.open = true;
+    fireEvent(details, new Event("toggle"));
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(details.open).toBe(false);
+
+    details.open = true;
+    fireEvent(details, new Event("toggle"));
+    fireEvent.pointerDown(document.body);
+    expect(details.open).toBe(false);
+  });
+
+  it("stays open for clicks inside it, so the text can be read and selected", () => {
+    const { container } = render(<ChatIdentity compact={false} isStartingNew={false} onNew={vi.fn()} />);
+    const details = container.querySelector("details");
+    const inside = container.querySelector("details h2");
+    if (!details || !inside) throw new Error("no details");
+
+    details.open = true;
+    fireEvent(details, new Event("toggle"));
+    fireEvent.pointerDown(inside);
+    expect(details.open).toBe(true);
+  });
 });
