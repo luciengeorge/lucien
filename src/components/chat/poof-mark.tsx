@@ -218,13 +218,13 @@ export function PoofMark({
 
   // The box collapses over the tail of the pop, once the face is already shrinking, so the
   // label glides into place rather than snapping the moment the face is gone. The box owns
-  // its own trailing space (mr-3) and collapses that too, so the header wrappers need no gap
+  // its own trailing space (mr-2.5) and collapses that too, so the header wrappers need no gap
   // and there is no spacing constant elsewhere for this exit to fall out of step with.
   const exitTiming: Transition = still ? { duration: 0 } : { duration: 0.3, delay: 0.14, ease: EASE_OUT };
 
   return (
     <motion.div
-      className={cn("mr-3 size-14 shrink-0", className)}
+      className={cn("mr-2.5 size-9 shrink-0", className)}
       data-slot="poof-mark-box"
       exit={{ height: 0, marginRight: 0, width: 0 }}
       transition={exitTiming}

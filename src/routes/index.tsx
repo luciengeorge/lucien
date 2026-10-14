@@ -1,7 +1,6 @@
 import type { ChatConversationState } from "#/lib/chat-types";
 
 import { ChatPage } from "#/components/chat/chat-page";
-import { HOMEPAGE_FALLBACK_HTML } from "#/lib/content/homepage-fallback";
 import { fetchHomepageIntro } from "#/lib/homepage-intro";
 import { SITE_URL } from "#/lib/site-config";
 import { createFileRoute } from "@tanstack/react-router";
@@ -35,40 +34,7 @@ export const Route = createFileRoute("/")({
 function HomePage() {
   const { initialChatState } = Route.useLoaderData();
 
-  /*
-   * A visible identity, not the sr-only stand-in #56 added. The page opened
-   * on a wall of assistant prose with no name, no role and nothing saying
-   * what the box at the bottom was for. This sits in space the transcript
-   * was already leaving empty, so it costs no scroll.
-   *
-   * A div rather than a <header>: an extractor looking for the main content of
-   * a page drops header, nav, and footer elements wherever they sit, and the
-   * only h1 on the homepage was inside one. An audit read the document as
-   * having no heading at all while the same document reported h1=1 to a
-   * checker counting tags.
-   */
-  return (
-    <>
-      <div className="mx-auto w-full max-w-3xl shrink-0 px-4 pb-3 sm:px-6 sm:pb-4">
-        <h1 className="text-xl font-semibold tracking-tight text-neutral-950 sm:text-2xl">Lucien George</h1>
-        <p className="mt-1 text-sm text-neutral-600 sm:text-base">
-          Senior Product Engineer at Fyxer, in London. He builds the notetaker: a macOS and Windows app that records
-          meetings without sending a bot into the call. Ask this page anything about his work.
-        </p>
-      </div>
-      <details className="group mx-auto w-full max-w-3xl shrink-0 px-4 sm:px-6">
-        <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 font-mono text-[11px] tracking-[0.14em] text-neutral-500 uppercase transition-colors hover:text-neutral-950">
-          <span aria-hidden className="transition-transform group-open:rotate-90">
-            &rsaquo;
-          </span>
-          Or read the short version
-        </summary>
-        <div
-          className="prose prose-sm mt-4 max-h-[50vh] max-w-none overflow-y-auto pb-4 prose-neutral"
-          dangerouslySetInnerHTML={{ __html: HOMEPAGE_FALLBACK_HTML }}
-        />
-      </details>
-      <ChatPage initialChatState={initialChatState} />
-    </>
-  );
+  // The visible identity (h1 + role + the short version for crawlers) lives in ChatIdentity, at the
+  // top of the conversation, so it can shrink once the visitor starts asking.
+  return <ChatPage initialChatState={initialChatState} />;
 }

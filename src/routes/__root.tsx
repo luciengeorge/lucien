@@ -11,8 +11,9 @@ import { HOME_META } from "#/lib/content/page-meta";
 import { getToast } from "#/lib/functions/get-toast";
 import { OG_IMAGE_URL, SITE_URL } from "#/lib/site-config";
 import { structuredData } from "#/lib/structured-data";
+import { cn } from "#/lib/utils";
 import { TanStackDevtools } from "@tanstack/react-devtools";
-import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from "@tanstack/react-router";
+import { HeadContent, Outlet, Scripts, createRootRouteWithContext, useRouterState } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
@@ -181,6 +182,9 @@ function RootComponent() {
 }
 
 function RootDocument({ children }: { children: ReactNode }) {
+  // Below `lg` the homepage's identity row shares the fixed nav's row (its h1 stands in for the
+  // monogram), so the chat does not give up a whole row to the nav there.
+  const isHome = useRouterState({ select: (state) => state.location.pathname === "/" });
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -196,7 +200,12 @@ function RootDocument({ children }: { children: ReactNode }) {
             <PostHogInit />
             <Toaster closeButton richColors />
             <SiteNav />
-            <main className="isolate flex h-dvh min-h-0 w-full flex-col overflow-hidden pt-14 pb-2 sm:pt-16 sm:pb-6">
+            <main
+              className={cn(
+                "isolate flex h-dvh min-h-0 w-full flex-col overflow-hidden pb-2 sm:pb-6",
+                isHome ? "pt-3 lg:pt-16" : "pt-14 sm:pt-16",
+              )}
+            >
               {children}
             </main>
             <TanStackDevtools
