@@ -19,8 +19,8 @@ import { startTransition, useEffect, useMemo, useRef, useState } from "react";
 import type { ChatComposerHandle } from "./chat-composer-block";
 
 import { ChatComposerBlock } from "./chat-composer-block";
+import { ChatIdentity } from "./chat-identity";
 import { ChatIntroPlaceholder } from "./chat-intro-placeholder";
-import { ChatNewConversationBar } from "./chat-new-conversation-bar";
 import { ChatPendingReply } from "./chat-pending-reply";
 import { transcriptScrollBehaviour } from "./chat-scroll-position";
 import { ChatSendFailed } from "./chat-send-failed";
@@ -232,7 +232,11 @@ export function ChatConversation({
     <PoofSignalsContext value={poofSignals}>
       <section aria-label="Conversation with Poof" className="flex min-h-0 grow overflow-hidden bg-background">
         <div className="flex min-h-0 w-full grow flex-col gap-2 sm:gap-5">
-          <ChatNewConversationBar isDisabled={isStartingNewConversation} onClick={handleNewConversation} />
+          <ChatIdentity
+            compact={hasVisibleUserMessage || queuedMessage !== null}
+            isStartingNew={isStartingNewConversation}
+            onNew={handleNewConversation}
+          />
 
           <MessageScrollerProvider
             key={chatState.conversation?.id ?? "new-conversation"}

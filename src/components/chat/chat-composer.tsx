@@ -97,7 +97,7 @@ export function ChatComposer({
   const canSend = !isStreaming && !isSubmitting && canSubmit && message.length > 0;
 
   return (
-    <form className="border-t border-neutral-950/8 pt-2.5 pb-2 sm:pt-4 sm:pb-3" onSubmit={onSubmit}>
+    <form className="pt-2 pb-2 sm:pt-3 sm:pb-3" onSubmit={onSubmit}>
       <InputGroup className="rounded-3xl border-transparent bg-neutral-950/3 ring-1 ring-neutral-950/10 has-[[data-slot=input-group-control]:focus-visible]:border-transparent has-[[data-slot=input-group-control]:focus-visible]:ring-2 has-[[data-slot=input-group-control]:focus-visible]:ring-neutral-950/15">
         <InputGroupTextarea
           aria-label="Ask Poof about Lucien"
@@ -118,25 +118,25 @@ export function ChatComposer({
             }
           }}
           ref={textareaRef}
-          placeholder="Ask about Lucien's work, background, projects, or interests"
+          placeholder="Ask anything about Lucien"
           rows={1}
           value={message}
         />
-        <InputGroupAddon align="block-end" className="justify-end gap-1 px-2 pb-2 sm:px-2.5">
+        {/* Beside the text, not under it: an empty composer is one line, and it grows as you type. */}
+        <InputGroupAddon align="inline-end" className="gap-1 self-end pr-1.5 pb-1.5 sm:pr-2 sm:pb-2">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger
                 render={
                   <Button
-                    className="size-9 shrink-0 rounded-full text-neutral-700 hover:bg-neutral-950/6 hover:text-neutral-950 sm:size-10"
+                    className="h-9 shrink-0 gap-1.5 rounded-full text-neutral-700 hover:bg-neutral-950/6 hover:text-neutral-950 max-sm:w-9 max-sm:px-0 sm:h-10 sm:px-3"
                     disabled={isStreaming}
                     onClick={onResumeRequest}
-                    size="icon"
                     type="button"
                     variant="ghost"
                   >
                     <HugeiconsIcon icon={File01Icon} size={18} />
-                    <span className="sr-only">Resume</span>
+                    <span className="max-sm:sr-only">Resume</span>
                   </Button>
                 }
               />

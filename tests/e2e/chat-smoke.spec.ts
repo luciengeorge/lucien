@@ -126,7 +126,7 @@ test.describe("composer with an empty message", () => {
     await expect(composer).toHaveValue("");
 
     const group = page.locator("[data-slot=input-group]");
-    // Exact: a starter prompt reads "Can I see Lucien's resume?" and matches otherwise.
+    // Exact: the "His resume" starter chip would match a looser query.
     const resume = page.getByRole("button", { exact: true, name: "Resume" });
     const send = page.getByRole("button", { name: "Send" });
 
@@ -212,7 +212,7 @@ test.describe("starter prompts before the conversation exists", () => {
   test("queue like a typed message instead of failing", async ({ page }) => {
     const release = await holdConversationCreation(page);
     await page.goto("/");
-    const prompt = page.getByRole("button", { name: "Can I see Lucien's resume?" });
+    const prompt = page.getByRole("button", { name: "His resume" });
     await expect(prompt).toBeVisible({ timeout: 10_000 });
 
     await prompt.click();

@@ -162,8 +162,9 @@ function MobileMenu() {
 }
 
 export function SiteNav() {
+  const isHome = useRouterState({ select: (state) => state.location.pathname === "/" });
   return (
-    <div className="fixed inset-x-0 top-0 z-30" style={{ viewTransitionName: "site-chrome" }}>
+    <div className="pointer-events-none fixed inset-x-0 top-0 z-30" style={{ viewTransitionName: "site-chrome" }}>
       <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 pt-3 sm:px-6">
         {/* Desktop pill - sits centered above content */}
         <div className="hidden flex-1 justify-center lg:flex">
@@ -191,7 +192,8 @@ export function SiteNav() {
           </nav>
         </div>
 
-        {/* Mobile - monogram left, dropdown-menu trigger right */}
+        {/* Mobile - monogram left, dropdown-menu trigger right. On the homepage the h1 takes the
+            monogram's place (see ChatIdentity), so the chat keeps that row. */}
         <div className="flex w-full items-center justify-between gap-2 lg:hidden">
           <Link
             to="/"
@@ -199,6 +201,7 @@ export function SiteNav() {
             className={cn(
               "pointer-events-auto inline-flex size-9 items-center justify-center rounded-full text-neutral-950",
               GLASS_CLASSES,
+              isHome && "invisible",
             )}
           >
             <InitialsMark className="size-4" />
