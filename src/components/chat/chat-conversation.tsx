@@ -177,7 +177,8 @@ export function ChatConversation({
     if (last?.role === "assistant") setStoppedReplyIds((ids) => new Set(ids).add(last.id));
     // Stopped before any answer: the visitor most likely sent too early or wants to rephrase, so the
     // question comes back to the composer (undo send). The server withdraws its stored copy too.
-    // Same "nothing yet" test as the server, so the two always agree on which stops are undone.
+    // Same "nothing yet" test as the server, but the server judges later: words written after the click
+    // that never reached us make it keep its copy, as when the abort never reaches it at all.
     const question = last?.role === "assistant" ? visibleMessages.at(-2) : last;
     const answered = last?.role === "assistant" && hasRenderableMessageContent(last);
     void Promise.resolve(stop()).then(() => {

@@ -73,7 +73,7 @@ export function ChatTimelineMessage({
   isActive: boolean;
   message: ChatMessage;
   status: ChatStatus;
-  /** The visitor stopped the latest reply, so it settles without the "answer landed" celebration. */
+  /** The visitor stopped this reply: it is marked "Stopped", and Poof settles without the "answer landed" celebration. */
   wasStopped?: boolean;
 }) {
   const role = message.role === "user" ? "user" : "assistant";
