@@ -14,10 +14,7 @@ import type * as digest from "../digest.js";
 import type * as http from "../http.js";
 import type * as intro from "../intro.js";
 import type * as migrations from "../migrations.js";
-import type * as rag from "../rag.js";
 import type * as rateLimits from "../rateLimits.js";
-import type * as search from "../search.js";
-import type * as seed from "../seed.js";
 
 import type {
   ApiFromModules,
@@ -32,10 +29,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   intro: typeof intro;
   migrations: typeof migrations;
-  rag: typeof rag;
   rateLimits: typeof rateLimits;
-  search: typeof search;
-  seed: typeof seed;
 }>;
 
 /**
@@ -65,8 +59,6 @@ export declare const internal: FilterApi<
 >;
 
 export declare const components: {
-  actionCache: import("@convex-dev/action-cache/_generated/component.js").ComponentApi<"actionCache">;
   betterAuth: import("../betterAuth/_generated/component.js").ComponentApi<"betterAuth">;
-  rag: import("@convex-dev/rag/_generated/component.js").ComponentApi<"rag">;
   rateLimiter: import("@convex-dev/rate-limiter/_generated/component.js").ComponentApi<"rateLimiter">;
 };

@@ -8,8 +8,8 @@ Lucien George's personal site + AI portfolio assistant ("Poof"). A single TanSta
 - **Routing**: TanStack Router (file-based, `defaultPreload: "intent"`)
 - **Data**: TanStack Query + `@convex-dev/react-query`
 - **Forms**: TanStack Form + Zod
-- **Backend**: Convex (`@convex-dev/rag`, `@convex-dev/better-auth`, `@convex-dev/action-cache`)
-- **AI**: Vercel AI SDK (`ai` v6) + OpenAI (`gpt-5.6-luna` for expansion, chat, intro and digest; `text-embedding-3-small` embeddings)
+- **Backend**: Convex (`@convex-dev/better-auth`, `@convex-dev/rate-limiter`)
+- **AI**: Vercel AI SDK (`ai` v6) + OpenAI (`gpt-5.6-luna` for expansion, chat, intro and digest)
 - **Auth**: Better Auth (email/password, verification, owner-only allowlist)
 - **UI**: shadcn-style components on Base UI / Radix + CVA, Tailwind CSS v4, `motion`, `sonner`, hugeicons/lucide
 - **PDF**: `@react-pdf/renderer` (resume)
@@ -24,7 +24,7 @@ src/        frontend + API routes (TanStack Start)
 convex/     Convex backend (schema, functions, components)
 content/    markdown knowledge base + system-prompt.md + resume.json
 evals/      Poof eval harness
-scripts/    seed.ts (content → Convex RAG)
+scripts/    refresh-intro.ts (corpus → cached intro in Convex)
 tests/e2e/  Playwright specs
 ```
 
@@ -38,8 +38,8 @@ Browser ──► TanStack Start (Nitro / Vercel)
               └─ /api/resume/pdf ─► @react-pdf/renderer
             Convex
               ├─ conversations / messages / messageParts
-              ├─ rag component (portfolio namespace)
-              ├─ actionCache component (cached intro)
+              ├─ intros (cached homepage intro)
+              ├─ rateLimiter component
               └─ betterAuth component (user/session/account/...)
 ```
 
@@ -94,15 +94,12 @@ UI messages are stored as JSON parts with extracted columns for queryability. Be
 ### Functions
 
 - `conversations.ts` - `createConversation`, `getConversationById` (ownership-checked, hydrates parts), `upsertConversationMessage` (zod-validated, derives title)
-- `search.ts` - `searchContext(query)` → RAG search text (no longer used by chat or evals; the cached intro uses `rag` directly)
-- `intro.ts` - `generateIntro` (internal) + `getCachedIntro`, wrapped in action-cache (30-day TTL)
-- `rag.ts` - RAG instance (`text-embedding-3-small`, 1536-d, namespace `portfolio`)
-- `seed.ts` - `resetNamespace` + `addContent`
+- `intro.ts` - `refreshIntro({ contentHash, corpus })` (internal) generates the intro from the full corpus once per `INTRO_VERSION` + content hash and stores it in `intros` (`key`, `text`, index `by_key`); `getCachedIntro` (public) returns the newest, or `null` before the first refresh (callers use `HOMEPAGE_INTRO_FALLBACK`). No TTL
 - `http.ts` - registers Better Auth routes (CORS)
 
 ## Content (`content/`)
 
-Markdown is the single source of truth for the chat prompt (the whole corpus, bundled at build), the cached intro's RAG index, and the rendered HTML pages + `/llms-full.txt`. Files: bio, personal, education, tech-stack, socials, contact, privacy, signature-work, one per work entry (fyxer, localista, skyla, shopify, le-wagon, impact-lebanon, early-career), and `writing/` for articles. `socials.md` and `signature-work.md` are seeded for RAG but never rendered as pages. `system-prompt.md` holds Poof's prompt (`{context}` and `{today}` slots, filled only via `renderSystemPrompt` in `src/lib/chat/system-prompt.ts`; skipped by seeding). `resume.json` is structured and validated by `src/lib/resume/schema.ts`. `scripts/seed.ts` (`pnpm seed`) embeds the markdown into Convex RAG.
+Markdown is the single source of truth for the chat prompt (the whole corpus, bundled at build), the cached intro, and the rendered HTML pages + `/llms-full.txt`. Files: bio, personal, education, tech-stack, socials, contact, privacy, signature-work, one per work entry (fyxer, localista, skyla, shopify, le-wagon, impact-lebanon, early-career), and `writing/` for articles. `socials.md` and `signature-work.md` feed the corpus but are never rendered as pages. `system-prompt.md` holds Poof's prompt (`{context}` and `{today}` slots, filled only via `renderSystemPrompt` in `src/lib/chat/system-prompt.ts`; excluded from the corpus). `resume.json` is structured and validated by `src/lib/resume/schema.ts`. `scripts/refresh-intro.ts` (`pnpm intro:refresh`, dev deployment) builds the corpus from disk (`evals/corpus.ts` `readCorpusFromDisk`), hashes it (sha256, 16 hex chars) and runs `intro:refreshIntro`. CI does the same on prod via `.github/workflows/intro.yml` ("Refresh intro"; pushes to main touching `content/**`, `scripts/refresh-intro.ts`, `convex/intro.ts` or the workflow, plus `workflow_dispatch`; `CONVEX_DEPLOY_KEY`). Content edits need no manual step: chat picks them up on the next Vercel deploy. A bumped `INTRO_VERSION` needs `npx convex deploy` plus a manual dispatch of `intro.yml`.
 
 ## Sessions (three, independent)
 

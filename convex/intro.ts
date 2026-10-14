@@ -1,14 +1,12 @@
 import { openai } from "@ai-sdk/openai";
-import { ActionCache } from "@convex-dev/action-cache";
 import { generateText } from "ai";
 import { v } from "convex/values";
 
-import { components, internal } from "./_generated/api";
-import { action, internalAction } from "./_generated/server";
-import { rag } from "./rag";
+import { internal } from "./_generated/api";
+import { action, internalAction, internalMutation, internalQuery } from "./_generated/server";
 
-const INTRO_CACHE_VERSION = "portfolio-intro:gpt-5.6-luna:v5";
-const INTRO_QUERY = "Lucien George bio current role Fyxer product engineer projects background personal intro";
+/** Bump when the prompt or model changes, so the next refresh writes a new intro for unchanged content. */
+const INTRO_VERSION = "portfolio-intro:gpt-5.6-luna:v6";
 const INTRO_SYSTEM_PROMPT = `You are Poof, Lucien George's AI portfolio assistant.
 
 Write the cached first assistant message for a new visitor on Lucien's portfolio chat page.
@@ -16,13 +14,13 @@ Write the cached first assistant message for a new visitor on Lucien's portfolio
 Requirements:
 - Start by introducing yourself as Poof.
 - Briefly say what you can help with on this page.
-- Give a warm introduction to Lucien in one slightly longer paragraph grounded in the provided context.
+- Give a warm introduction to Lucien in one slightly longer paragraph grounded in the provided content.
 - End with a gentle invitation to ask about his work, background, projects, or interests.
 - Be warm, concise, and polished.
 - Do not mention that this response is cached.
 
-Retrieved context:
-{retrieved_context}`;
+Everything published about Lucien (the same content the chat answers from):
+{corpus}`;
 
 const DASH = /(\s*)([–—])(\s*)/g;
 
@@ -53,35 +51,53 @@ function stripDashes(text: string): string {
   });
 }
 
-const introCache = new ActionCache(components.actionCache, {
-  action: internal.intro.generateIntro,
-  name: INTRO_CACHE_VERSION,
-  ttl: 1000 * 60 * 60 * 24 * 30,
-});
-
-export const generateIntro = internalAction({
-  args: { version: v.string() },
-  handler: async (ctx): Promise<string> => {
-    const { text: context } = await rag.search(ctx, {
-      namespace: "portfolio",
-      query: INTRO_QUERY,
-      limit: 5,
-      vectorScoreThreshold: 0.4,
-    });
+/**
+ * Run by CI whenever content/ lands on main (scripts/refresh-intro.ts), with the corpus built
+ * exactly as the chat route builds it. One intro per prompt version and content hash, so a rerun
+ * on unchanged content costs nothing and a content edit always gets a fresh intro.
+ */
+export const refreshIntro = internalAction({
+  args: { contentHash: v.string(), corpus: v.string() },
+  handler: async (ctx, { contentHash, corpus }): Promise<{ generated: boolean; key: string }> => {
+    const key = `${INTRO_VERSION}:${contentHash}`;
+    if (await ctx.runQuery(internal.intro.hasIntro, { key })) return { generated: false, key };
 
     const { text } = await generateText({
       model: openai("gpt-5.6-luna"),
-      system: INTRO_SYSTEM_PROMPT.replace("{retrieved_context}", context),
+      // A function replacer, so `$&`-style sequences in the content go in verbatim.
+      system: INTRO_SYSTEM_PROMPT.replace("{corpus}", () => corpus),
       prompt: "Write the first assistant message.",
     });
-
-    return stripDashes(text);
+    await ctx.runMutation(internal.intro.storeIntro, { key, text: stripDashes(text) });
+    return { generated: true, key };
   },
 });
 
+export const hasIntro = internalQuery({
+  args: { key: v.string() },
+  handler: async (ctx, { key }) => {
+    const intro = await ctx.db
+      .query("intros")
+      .withIndex("by_key", (q) => q.eq("key", key))
+      .first();
+    return intro !== null;
+  },
+});
+
+export const storeIntro = internalMutation({
+  args: { key: v.string(), text: v.string() },
+  handler: async (ctx, { key, text }) => {
+    await ctx.db.insert("intros", { key, text });
+  },
+});
+
+export const latestIntro = internalQuery({
+  args: {},
+  handler: async (ctx) => (await ctx.db.query("intros").order("desc").first())?.text ?? null,
+});
+
+/** The newest intro, or null before the first refresh: callers then show their static fallback. */
 export const getCachedIntro = action({
   args: {},
-  handler: async (ctx): Promise<string> => {
-    return await introCache.fetch(ctx, { version: INTRO_CACHE_VERSION });
-  },
+  handler: async (ctx): Promise<string | null> => await ctx.runQuery(internal.intro.latestIntro, {}),
 });

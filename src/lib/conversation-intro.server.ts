@@ -32,7 +32,8 @@ export async function createConversationWithIntro(
   let introText = FALLBACK_INTRO_TEXT;
 
   try {
-    introText = await fetchAuthAction(api.intro.getCachedIntro, {});
+    // Null until CI has run the first intro refresh for this deployment.
+    introText = (await fetchAuthAction(api.intro.getCachedIntro, {})) ?? FALLBACK_INTRO_TEXT;
   } catch (error) {
     logger.error("cached intro failed", {
       conversationId,

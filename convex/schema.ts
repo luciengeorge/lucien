@@ -2,6 +2,11 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
+  /** Cached homepage intros, one per prompt version + content hash. The newest is served. */
+  intros: defineTable({
+    key: v.string(),
+    text: v.string(),
+  }).index("by_key", ["key"]),
   conversations: defineTable({
     createdAt: v.number(),
     sessionId: v.optional(v.string()),

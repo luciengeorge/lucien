@@ -18,7 +18,7 @@ Lucien from the markdown in `content/`, sent whole in the system prompt.
 - `pnpm test` - vitest (convex + node + jsdom projects)
 - `pnpm test:e2e` - Playwright (`pnpm test:e2e:install` first for browsers)
 - `pnpm evals` - Poof eval harness
-- `pnpm seed` - embed `content/*.md` into Convex RAG (needs a logged-in Convex CLI session)
+- `pnpm intro:refresh` - regenerate the cached intro on the dev deployment (needs a logged-in Convex CLI session)
 
 ## Conventions (must follow)
 
@@ -43,8 +43,7 @@ Lucien from the markdown in `content/`, sent whole in the system prompt.
 
 - HTTP: `src/routes/api/chat/index.ts` (POST only).
 - Corpus: `src/lib/chat/corpus.ts` (every `content/**/*.md` except the prompt, bundled via `import.meta.glob`).
-- Convex: `convex/intro.ts` (cached LLM intro; still uses the RAG index in `convex/rag.ts`, seeded by `pnpm seed`).
-  `convex/search.ts` is no longer called by chat or evals.
+- Convex: `convex/intro.ts` (cached LLM intro built from the full corpus; `refreshIntro` stores it in the `intros` table, run by `pnpm intro:refresh` or the `intro.yml` workflow). No RAG index.
 - Prompt: `content/system-prompt.md` (`{context}` + `{today}` slots; `{context}` is the whole `content/` corpus). Fill them only via
   `renderSystemPrompt` (`src/lib/chat/system-prompt.ts`), never a bare `.replace`, so the
   chat route and the eval harness cannot drift.
