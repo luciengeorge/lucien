@@ -31,7 +31,7 @@ permissions:
 
 env:
   PNPM_VERSION: 10.33.0
-  NODE_VERSION: 22
+  NODE_VERSION: 24
   HUGEICONS_TOKEN: ${{ secrets.HUGEICONS_TOKEN }}
 
 jobs:
