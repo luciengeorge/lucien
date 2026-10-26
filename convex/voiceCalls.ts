@@ -1,8 +1,8 @@
-import { v } from "convex/values";
+import { type ObjectType, v } from "convex/values";
 
 import type { Doc, Id } from "./_generated/dataModel";
 
-import { internalMutation, mutation } from "./_generated/server";
+import { internalMutation, mutation, type MutationCtx } from "./_generated/server";
 import { deriveConversationTitle, type PersistedMessage, storeMessage } from "./conversations";
 import { rateLimiter } from "./rateLimits";
 import { stripDashes } from "./stripDashes";
@@ -144,69 +144,98 @@ export const allowVoiceContact = mutation({
   },
 });
 
+const transcriptArgs = {
+  callId: v.string(),
+  conversationStartedAtSecs: v.optional(v.number()),
+  durationSecs: v.number(),
+  elevenConversationId: v.string(),
+  transcript: v.array(
+    v.object({
+      index: v.number(),
+      message: v.union(v.string(), v.null()),
+      role: v.union(v.literal("agent"), v.literal("user")),
+      timeInCallSecs: v.number(),
+    }),
+  ),
+};
+
 /**
- * Puts what was said on a call into the visitor's chat and settles the call, from ElevenLabs'
- * post-call webhook. Each ElevenLabs conversation counts once, so a redelivery changes nothing, and
- * its reported time replaces a release, since a released call may still have connected.
+ * Puts what was said on a call into the visitor's chat and settles the call. Each ElevenLabs
+ * conversation counts once, so a redelivery, or the webhook and the app's own settle both landing,
+ * changes nothing; its reported time replaces a release, since a released call may still have
+ * connected. True once the call holds this conversation, whether now or before.
  */
+async function recordTranscript(
+  ctx: MutationCtx,
+  call: Doc<"voiceCalls">,
+  { conversationStartedAtSecs, durationSecs, elevenConversationId, transcript }: ObjectType<typeof transcriptArgs>,
+) {
+  const settled = call.elevenConversationIds ?? [];
+  if (settled.includes(elevenConversationId)) return true;
+
+  const conversationStartedAt =
+    conversationStartedAtSecs === undefined ? call.startedAt : conversationStartedAtSecs * 1000;
+  if (conversationStartedAt < call.startedAt - 60_000 || conversationStartedAt > staleAt(call)) {
+    console.warn(`Voice transcript ${elevenConversationId} started outside call ${call._id}`);
+    return false;
+  }
+
+  const conversation = await ctx.db.get(call.conversationId);
+  if (conversation) {
+    const messages: PersistedMessage[] = transcript.flatMap((turn) => {
+      const text = stripDashes(turn.message ?? "").trim();
+      if (!text) return [];
+      return {
+        createdAt: conversationStartedAt + turn.timeInCallSecs * 1000,
+        id: `voice-${elevenConversationId}-${turn.index}`,
+        metadata: { callId: call._id, channel: "voice" },
+        parts: [{ text, type: "text" }],
+        role: turn.role === "agent" ? "assistant" : "user",
+      };
+    });
+    for (const message of messages) {
+      await storeMessage(ctx, conversation, message);
+    }
+    await ctx.db.patch(conversation._id, {
+      title: conversation.title ?? deriveConversationTitle(messages),
+      updatedAt: Date.now(),
+    });
+  }
+
+  await ctx.db.patch(call._id, {
+    durationSecs: (settled.length > 0 ? (call.durationSecs ?? 0) : 0) + durationSecs,
+    elevenConversationIds: [...settled, elevenConversationId],
+    status: "ended",
+  });
+  return true;
+}
+
+/** From ElevenLabs' post-call webhook, signed by ElevenLabs. */
 export const recordVoiceTranscript = internalMutation({
-  args: {
-    callId: v.string(),
-    conversationStartedAtSecs: v.optional(v.number()),
-    durationSecs: v.number(),
-    elevenConversationId: v.string(),
-    transcript: v.array(
-      v.object({
-        index: v.number(),
-        message: v.union(v.string(), v.null()),
-        role: v.union(v.literal("agent"), v.literal("user")),
-        timeInCallSecs: v.number(),
-      }),
-    ),
-  },
-  handler: async (ctx, { callId, conversationStartedAtSecs, durationSecs, elevenConversationId, transcript }) => {
-    const id = ctx.db.normalizeId("voiceCalls", callId);
+  args: transcriptArgs,
+  handler: async (ctx, args) => {
+    const id = ctx.db.normalizeId("voiceCalls", args.callId);
     const call = id ? await ctx.db.get(id) : null;
     if (!call) {
-      console.warn(`Voice transcript for unknown call ${callId} (${elevenConversationId})`);
+      console.warn(`Voice transcript for unknown call ${args.callId} (${args.elevenConversationId})`);
       return;
     }
-    const settled = call.elevenConversationIds ?? [];
-    if (settled.includes(elevenConversationId)) return;
+    await recordTranscript(ctx, call, args);
+  },
+});
 
-    const conversationStartedAt =
-      conversationStartedAtSecs === undefined ? call.startedAt : conversationStartedAtSecs * 1000;
-    if (conversationStartedAt < call.startedAt - 60_000 || conversationStartedAt > staleAt(call)) {
-      console.warn(`Voice transcript ${elevenConversationId} started outside call ${callId}`);
-      return;
-    }
-
-    const conversation = await ctx.db.get(call.conversationId);
-    if (conversation) {
-      const messages: PersistedMessage[] = transcript.flatMap((turn) => {
-        const text = stripDashes(turn.message ?? "").trim();
-        if (!text) return [];
-        return {
-          createdAt: conversationStartedAt + turn.timeInCallSecs * 1000,
-          id: `voice-${elevenConversationId}-${turn.index}`,
-          metadata: { callId: call._id, channel: "voice" },
-          parts: [{ text, type: "text" }],
-          role: turn.role === "agent" ? "assistant" : "user",
-        };
-      });
-      for (const message of messages) {
-        await storeMessage(ctx, conversation, message);
-      }
-      await ctx.db.patch(conversation._id, {
-        title: conversation.title ?? deriveConversationTitle(messages),
-        updatedAt: Date.now(),
-      });
-    }
-
-    await ctx.db.patch(call._id, {
-      durationSecs: (settled.length > 0 ? (call.durationSecs ?? 0) : 0) + durationSecs,
-      elevenConversationIds: [...settled, elevenConversationId],
-      status: "ended",
-    });
+/**
+ * The app server settling a call it just watched end, from ElevenLabs' conversations API: the
+ * webhook can be slow, fail, or (in dev) go to another deployment, and until a call settles it
+ * blocks the visitor's next one. Only the cookie's own session's call.
+ */
+export const settleVoiceCall = mutation({
+  args: { ...transcriptArgs, serverSecret: v.string(), sessionId: v.string() },
+  handler: async (ctx, { serverSecret, sessionId, ...args }): Promise<{ settled: boolean }> => {
+    assertServer(serverSecret);
+    const id = ctx.db.normalizeId("voiceCalls", args.callId);
+    const call = id ? await ctx.db.get(id) : null;
+    if (!call || call.sessionId !== sessionId) return { settled: false };
+    return { settled: await recordTranscript(ctx, call, args) };
   },
 });

@@ -1,4 +1,5 @@
 import { AnalyticsEvent, useAnalytics } from "#/lib/analytics";
+import { settleVoiceCall } from "#/lib/functions/settle-voice-call";
 import { ConversationProvider, useConversation } from "@elevenlabs/react";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 
@@ -14,6 +15,7 @@ import {
   VoiceEndButton,
 } from "./chat-voice-screen";
 import { releaseUnusedCall } from "./chat-voice-start";
+import { ChatVoiceWaveform, type VoiceWaveformHandle } from "./chat-voice-waveform";
 import { formatCountdown } from "./chat-voice.utils";
 
 /** Refusals that are nobody's fault get a calm face; the rest look puzzled. */
@@ -68,9 +70,11 @@ function VoiceCall({
     callId: string;
     connectedAt: number | null;
     conversationId: string;
+    elevenConversationId: string | null;
     maxSecs: number;
   } | null>(null);
   const endButtonRef = useRef<HTMLButtonElement>(null);
+  const waveformRef = useRef<VoiceWaveformHandle>(null);
   const settledRef = useRef(false);
   const releasedRef = useRef(false);
   const unmountTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -99,6 +103,12 @@ function VoiceCall({
       onClose(null);
       return;
     }
+    // Settles it from ElevenLabs' own record now, rather than waiting on the post-call webhook.
+    if (current.elevenConversationId) {
+      void settleVoiceCall({
+        data: { callId: current.callId, elevenConversationId: current.elevenConversationId },
+      }).catch(() => {});
+    }
     capture(AnalyticsEvent.voiceCallEnded, {
       duration_secs: Math.round((Date.now() - current.connectedAt) / 1000),
       ended_by: endedBy,
@@ -107,10 +117,11 @@ function VoiceCall({
   };
 
   const conversation = useConversation({
-    onConnect: () => {
+    onConnect: ({ conversationId: elevenConversationId }) => {
       const current = callRef.current;
       if (!current || settledRef.current) return;
       current.connectedAt = Date.now();
+      current.elevenConversationId = elevenConversationId;
       setPhase("live");
       if (context) conversation.sendContextualUpdate(context);
       capture(AnalyticsEvent.voiceCallStarted, { max_secs: current.maxSecs });
@@ -138,6 +149,7 @@ function VoiceCall({
       callId: result.callId,
       connectedAt: null,
       conversationId: result.conversationId,
+      elevenConversationId: null,
       maxSecs: result.maxSecs,
     };
     try {
@@ -205,6 +217,7 @@ function VoiceCall({
     else finish("visitor");
   };
 
+  const hearsVisitor = phase === "live" && !conversation.isSpeaking;
   const poof: PoofState = refused
     ? CALM_REFUSALS.has(refused)
       ? "idle"
@@ -217,9 +230,14 @@ function VoiceCall({
 
   return (
     <ChatVoiceScreen
+      belowPoof={hearsVisitor ? <ChatVoiceWaveform ref={waveformRef} /> : null}
       levels={
         phase === "live"
-          ? () => ({ input: conversation.getInputVolume(), output: conversation.getOutputVolume() })
+          ? () => {
+              // Poof's frame drives the waveform too: one animation loop for the whole call.
+              if (hearsVisitor) waveformRef.current?.draw(conversation.getInputByteFrequencyData());
+              return { input: conversation.getInputVolume(), output: conversation.getOutputVolume() };
+            }
           : undefined
       }
       announcement={refused ? undefined : phase === "live" ? "Connected to Poof" : "Connecting to Poof"}

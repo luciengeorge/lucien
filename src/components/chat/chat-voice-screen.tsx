@@ -49,6 +49,7 @@ export const VOICE_PRIVACY_NOTE = (
  */
 export function ChatVoiceScreen({
   announcement,
+  belowPoof,
   children,
   levels,
   message,
@@ -60,6 +61,8 @@ export function ChatVoiceScreen({
 }: {
   /** Read out by screen readers: the connection's milestones, not every turn of the talk. */
   announcement?: string;
+  /** A small live detail right under Poof. Its row is always there, so nothing shifts when it comes and goes. */
+  belowPoof?: ReactNode;
   /** The controls along the bottom. */
   children: ReactNode;
   levels?: () => PoofLevels;
@@ -105,6 +108,7 @@ export function ChatVoiceScreen({
     >
       <div className="flex min-h-0 grow flex-col items-center justify-center gap-5 text-center">
         <PoofMark className="mr-0 size-36 sm:size-44" levels={levels} state={poof} />
+        <div className="-mt-2 flex h-6 items-center justify-center">{belowPoof}</div>
         <p aria-hidden="true" className="h-5 font-mono text-sm tracking-wide text-neutral-500 uppercase">
           {status}
         </p>

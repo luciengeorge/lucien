@@ -3,6 +3,7 @@ import type { UIMessage } from "ai";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { MotionConfig } from "motion/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ChatConversation } from "./chat-conversation";
@@ -54,6 +55,11 @@ vi.mock("#/lib/functions/release-voice-call", () => ({
   releaseVoiceCall: (options: unknown) => releaseVoiceCall(options),
 }));
 
+const settleVoiceCall = vi.fn();
+vi.mock("#/lib/functions/settle-voice-call", () => ({
+  settleVoiceCall: (options: unknown) => settleVoiceCall(options),
+}));
+
 const sendContactMessage = vi.fn();
 vi.mock("#/lib/functions/send-contact-message", () => ({
   sendContactMessage: (options: unknown) => sendContactMessage(options),
@@ -72,12 +78,14 @@ type SessionOptions = {
 };
 const sdk: {
   endSession: ReturnType<typeof vi.fn>;
+  inputFrequencies: ReturnType<typeof vi.fn<() => Uint8Array>>;
   isSpeaking: boolean;
   props: SdkProps;
   sendContextualUpdate: ReturnType<typeof vi.fn>;
   startSession: ReturnType<typeof vi.fn<(options: SessionOptions) => void>>;
 } = {
   endSession: vi.fn(),
+  inputFrequencies: vi.fn(() => new Uint8Array(64).fill(180)),
   isSpeaking: false,
   props: {},
   sendContextualUpdate: vi.fn(),
@@ -89,6 +97,7 @@ vi.mock("@elevenlabs/react", () => ({
     sdk.props = props;
     return {
       endSession: sdk.endSession,
+      getInputByteFrequencyData: sdk.inputFrequencies,
       getInputVolume: () => 0,
       getOutputVolume: () => 0,
       isSpeaking: sdk.isSpeaking,
@@ -139,12 +148,15 @@ async function connect() {
 const capturedEvents = () => capture.mock.calls.map(([event]) => event);
 
 beforeEach(() => {
+  // jsdom has no canvas; the waveform draws nothing here, and these tests only need it fed.
+  vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
   vi.stubEnv("VITE_VOICE_ENABLED", "true");
   vi.stubGlobal("navigator", { ...navigator, mediaDevices: { getUserMedia } });
   getUserMedia.mockResolvedValue({ getTracks: () => [{ stop: vi.fn() }] });
   startVoiceCall.mockResolvedValue(granted);
   resumeOrStartConversation.mockResolvedValue({ conversation, serializedMessages: [] });
   releaseVoiceCall.mockResolvedValue(null);
+  settleVoiceCall.mockResolvedValue({ status: "settled" });
   getConversation.mockResolvedValue({ conversation, serializedMessages: [] });
   waitForVoiceTranscript.override = null;
   chat.messages = [intro];
@@ -481,5 +493,75 @@ describe("a call that never connects", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(releaseVoiceCall).not.toHaveBeenCalled();
+  });
+});
+
+describe("hearing the visitor", () => {
+  const waveform = () => document.querySelector('[data-slot="voice-waveform"]');
+
+  it("shows the visitor's voice under Poof only once connected, from the call's own audio", async () => {
+    renderChat();
+    await startCall();
+    expect(waveform()).toBeNull();
+
+    await waitFor(() => expect(sdk.startSession).toHaveBeenCalled());
+    act(() => sdk.props.onConnect?.({ conversationId: "el-1" }));
+
+    expect(waveform()).not.toBeNull();
+    await waitFor(() => expect(sdk.inputFrequencies).toHaveBeenCalled());
+    // The SDK's stream only: the microphone was asked for once, before the call.
+    expect(getUserMedia).toHaveBeenCalledTimes(1);
+  });
+
+  it("steps aside while Poof talks", async () => {
+    sdk.isSpeaking = true;
+    renderChat();
+    await connect();
+
+    expect(waveform()).toBeNull();
+  });
+
+  it("is not drawn at all when motion is reduced", async () => {
+    render(
+      <MotionConfig reducedMotion="always">
+        <QueryClientProvider client={new QueryClient()}>
+          <ChatConversation chatState={{ conversation, serializedMessages: [] }} onConversationChange={vi.fn()} />
+        </QueryClientProvider>
+      </MotionConfig>,
+    );
+    await connect();
+
+    expect(screen.getByRole("dialog", { name: "Voice call with Poof" })).toBeTruthy();
+    expect(waveform()).toBeNull();
+  });
+});
+
+describe("settling a call", () => {
+  const settled = { data: { callId: "call-1", elevenConversationId: "el-1" } };
+
+  it.each([
+    ["the visitor hangs up", () => fireEvent.click(screen.getByRole("button", { name: "End call" }))],
+    ["Poof hangs up", () => act(() => sdk.props.onDisconnect?.({ reason: "agent" }))],
+    ["the line drops", () => act(() => sdk.props.onError?.("lost", new Error("lost")))],
+  ])("asks the server to settle a connected call when %s, and still waits for the transcript", async (_name, end) => {
+    renderChat();
+    await connect();
+
+    end();
+
+    expect(settleVoiceCall).toHaveBeenCalledWith(settled);
+    expect(settleVoiceCall).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(getConversation).toHaveBeenCalled());
+  });
+
+  it("leaves a call that never connected to the release instead", async () => {
+    renderChat();
+    await startCall();
+    await waitFor(() => expect(sdk.startSession).toHaveBeenCalled());
+
+    fireEvent.click(screen.getByRole("button", { name: "End call" }));
+
+    await waitFor(() => expect(releaseVoiceCall).toHaveBeenCalled());
+    expect(settleVoiceCall).not.toHaveBeenCalled();
   });
 });

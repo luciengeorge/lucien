@@ -62,6 +62,10 @@ describe("buildVoiceAgentConfig", () => {
     expect(config.conversation_config.conversation.max_duration_seconds).toBe(300);
   });
 
+  it("ignores background voices so noise neither interrupts Poof nor holds the visitor's turn open", () => {
+    expect(build().conversation_config.vad).toEqual({ background_voice_detection: true });
+  });
+
   it("keeps the agent's current voice by not sending tts", () => {
     expect(build().conversation_config).not.toHaveProperty("tts");
   });

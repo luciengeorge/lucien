@@ -88,6 +88,7 @@ export function buildVoiceAgentConfig({
       conversation: { max_duration_seconds: VOICE_LIMITS.callMaxSecs },
       // Max reasons before it speaks, which the long prompt and the scope rules need.
       realtime_model: "eleven_realtime_v1_max",
+      vad: { background_voice_detection: true },
     },
     platform_settings: {
       auth: { enable_auth: true },
