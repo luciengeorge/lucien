@@ -48,6 +48,10 @@ export async function postContactToSlack({
     },
   ];
 
+  return postBlocks(webhookUrl, blocks, { conversationId });
+}
+
+async function postBlocks(webhookUrl: string, blocks: unknown[], context: Record<string, unknown>) {
   try {
     const response = await fetch(webhookUrl, {
       body: JSON.stringify({ blocks }),
@@ -55,12 +59,38 @@ export async function postContactToSlack({
       method: "POST",
     });
     if (!response.ok) {
-      logger.warn("slack webhook responded with a non-ok status", { conversationId, status: response.status });
+      logger.warn("slack webhook responded with a non-ok status", { ...context, status: response.status });
       return false;
     }
     return true;
   } catch (error) {
-    logger.warn("slack webhook post failed", { conversationId, error });
+    logger.warn("slack webhook post failed", { ...context, error });
     return false;
   }
+}
+
+/**
+ * Tells Lucien voice has gone to rest because ElevenLabs refused the account. Sent once per outage
+ * by the caller; carries the HTTP status and what to check, never the key.
+ */
+export async function postVoiceOutageToSlack({ status }: { status: number }): Promise<boolean> {
+  const webhookUrl = process.env.SLACK_WEBHOOK_URL;
+  if (!webhookUrl) {
+    logger.warn("SLACK_WEBHOOK_URL not set, skipping voice outage alert", { status });
+    return false;
+  }
+  return postBlocks(
+    webhookUrl,
+    [
+      { text: { text: "Poof's voice is resting", type: "plain_text" }, type: "header" },
+      {
+        text: {
+          text: `ElevenLabs refused a call token with HTTP ${status}, so voice calls are paused for an hour. Check the ElevenLabs credits and the API key's credit limit.`,
+          type: "plain_text",
+        },
+        type: "section",
+      },
+    ],
+    { status },
+  );
 }

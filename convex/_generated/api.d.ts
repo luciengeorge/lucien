@@ -19,6 +19,8 @@ import type * as stripDashes from "../stripDashes.js";
 import type * as voiceAgent from "../voiceAgent.js";
 import type * as voiceCalls from "../voiceCalls.js";
 import type * as voiceLimits from "../voiceLimits.js";
+import type * as voiceOutages from "../voiceOutages.js";
+import type * as voiceTranscript from "../voiceTranscript.js";
 import type * as voiceWebhook from "../voiceWebhook.js";
 
 import type {
@@ -39,6 +41,8 @@ declare const fullApi: ApiFromModules<{
   voiceAgent: typeof voiceAgent;
   voiceCalls: typeof voiceCalls;
   voiceLimits: typeof voiceLimits;
+  voiceOutages: typeof voiceOutages;
+  voiceTranscript: typeof voiceTranscript;
   voiceWebhook: typeof voiceWebhook;
 }>;
 

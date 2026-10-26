@@ -37,6 +37,8 @@ export const ChatConversationStateSchema = z.object({
     })
     .nullable(),
   serializedMessages: z.array(z.string()),
+  /** Voice calls are paused (ElevenLabs refused our account), so the page greys out the voice button. */
+  voiceResting: z.boolean().optional(),
 });
 
 export type ChatConversationState = z.infer<typeof ChatConversationStateSchema>;

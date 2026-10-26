@@ -45,17 +45,30 @@ export default defineSchema({
     .index("by_message_id", ["messageId", "order"])
     .index("by_conversation", ["conversationId", "order"]),
   /** One row per voice call reservation; its seconds count against the limits in voiceLimits.ts. */
+  /** At most one row: voice is resting until `until`, after ElevenLabs refused our account. */
+  voiceOutages: defineTable({
+    openedAt: v.number(),
+    status: v.number(),
+    until: v.number(),
+  }),
+  /**
+   * One row per voice call. An orphan (empty sessionId and ip, no conversation) is an ElevenLabs
+   * conversation the webhook could not match to a call: it counts against the month and nothing else.
+   */
   voiceCalls: defineTable({
-    conversationId: v.id("conversations"),
+    conversationId: v.optional(v.id("conversations")),
     durationSecs: v.optional(v.number()),
     /** ElevenLabs conversations already settled against this call, so a redelivery counts nothing twice. */
     elevenConversationIds: v.optional(v.array(v.string())),
     ip: v.string(),
     maxSecs: v.number(),
+    /** Set only on an orphan, so a redelivered webhook finds it and counts nothing twice. */
+    orphanConversationId: v.optional(v.string()),
     sessionId: v.string(),
     startedAt: v.number(),
     status: v.union(v.literal("active"), v.literal("ended")),
   })
+    .index("by_orphan_conversation_id", ["orphanConversationId"])
     .index("by_session_id", ["sessionId", "startedAt"])
     .index("by_started_at", ["startedAt"]),
 });

@@ -5,7 +5,7 @@ import type { PoofFrame, PoofMood, PoofState } from "./poof-engine";
 import { createPoofEngine, restFrame } from "./poof-engine";
 
 const FPS = 60;
-const STATES: PoofState[] = ["idle", "thinking", "working", "writing", "confused"];
+const STATES: PoofState[] = ["idle", "thinking", "working", "writing", "confused", "listening", "talking"];
 
 function run(engine: ReturnType<typeof createPoofEngine>, seconds: number, each?: (frame: PoofFrame) => void) {
   let frame = engine.step(0);
@@ -161,7 +161,7 @@ describe("Poof engine", () => {
   });
 
   it("never dozes off while it has work to do", () => {
-    for (const state of ["thinking", "working", "writing", "confused"] as const) {
+    for (const state of ["thinking", "working", "writing", "confused", "listening", "talking"] as const) {
       const engine = createPoofEngine({ seed: 9, state });
       expect(moods(engine, 90)).toEqual([state]);
     }
@@ -190,6 +190,46 @@ describe("Poof engine", () => {
   it("looks unsure of itself when something went wrong", () => {
     const frame = run(createPoofEngine({ seed: 12, state: "confused" }), 1);
     expect(frame.eyes[0]).not.toEqual(frame.eyes[1]);
+  });
+});
+
+describe("Poof on a voice call", () => {
+  function tallest(state: PoofState, levels?: { input: number; output: number }) {
+    const engine = createPoofEngine({ seed: 21, state });
+    let max = 0;
+    run(engine, 0.5);
+    if (levels) engine.hear(levels);
+    run(engine, 2, (frame) => {
+      max = Math.max(max, frame.body.scaleY);
+    });
+    return max;
+  }
+
+  it("swells with its own voice while it talks", () => {
+    expect(tallest("talking", { input: 0, output: 1 })).toBeGreaterThan(tallest("talking") + 0.04);
+  });
+
+  it("answers the visitor's voice more lightly while it listens", () => {
+    const swell = tallest("listening", { input: 1, output: 0 }) - tallest("listening");
+    expect(swell).toBeGreaterThan(0.01);
+    expect(swell).toBeLessThan(tallest("talking", { input: 0, output: 1 }) - tallest("talking"));
+  });
+
+  it("ignores sound when it is not on a call", () => {
+    const deaf = createPoofEngine({ seed: 22, state: "writing" });
+    deaf.hear({ input: 1, output: 1 });
+    expect(run(deaf, 2)).toEqual(run(createPoofEngine({ seed: 22, state: "writing" }), 2));
+  });
+
+  it("stays on the face whatever levels it is fed", () => {
+    const engine = createPoofEngine({ seed: 23, state: "talking" });
+    engine.hear({ input: 50, output: -3 });
+    run(engine, 3, (frame) => {
+      expect(Object.values(frame.body).every(Number.isFinite)).toBe(true);
+      expect(frame.body.scaleY).toBeLessThan(1.3);
+    });
+    engine.hear({ input: Number.NaN, output: Number.POSITIVE_INFINITY });
+    expect(Object.values(run(engine, 1).body).every(Number.isFinite)).toBe(true);
   });
 });
 

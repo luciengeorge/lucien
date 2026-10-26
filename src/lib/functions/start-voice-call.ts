@@ -5,12 +5,15 @@ import { getConversationSession } from "#/lib/conversation-session.server";
 import { getOrCreateCorrelationId } from "#/lib/correlation-id";
 import { startConversation } from "#/lib/functions/start-new-conversation";
 import { createLogger } from "#/lib/logger";
+import { postVoiceOutageToSlack } from "#/lib/notify-slack";
 import { VOICE_AGENT_ID } from "#/lib/voice/agent-config";
+import { isVoiceResting } from "#/lib/voice/voice-resting.server";
 import { createServerFn, createServerOnlyFn } from "@tanstack/react-start";
 import { getRequestHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
 
 import { api } from "../../../convex/_generated/api";
+import { isAccountRefusal } from "../../../convex/voiceLimits";
 
 const logger = createLogger("voice.start-call");
 
@@ -18,13 +21,19 @@ const TokenResponseSchema = z.object({ token: z.string().min(1) });
 
 export type StartVoiceCallResult =
   | { ok: true; callId: string; conversationId: string; maxSecs: number; today: string; token: string }
-  | { ok: false; reason: "call_active" | "global_limit" | "ip_limit" | "unavailable" | "visitor_limit" };
+  | { ok: false; reason: "call_active" | "global_limit" | "ip_limit" | "resting" | "unavailable" | "visitor_limit" };
+
+class TokenRefusedError extends Error {
+  constructor(readonly status: number) {
+    super(`ElevenLabs token request failed (${status})`);
+  }
+}
 
 async function mintConversationToken(apiKey: string): Promise<string> {
   const response = await fetch(`https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=${VOICE_AGENT_ID}`, {
     headers: { "xi-api-key": apiKey },
   });
-  if (!response.ok) throw new Error(`ElevenLabs token request failed (${response.status})`);
+  if (!response.ok) throw new TokenRefusedError(response.status);
   return TokenResponseSchema.parse(await response.json()).token;
 }
 
@@ -53,6 +62,12 @@ export const startVoiceCallForRequest = createServerOnlyFn(
       return { ok: false, reason: "unavailable" };
     }
 
+    // First, so a visitor is refused before any conversation, reservation or token.
+    if (await isVoiceResting()) {
+      logger.info("voice call refused", { correlationId, reason: "resting" });
+      return { ok: false, reason: "resting" };
+    }
+
     const { conversationId, sessionId } = await resolveConversation(correlationId);
     // Not x-vercel-id: it is unique per request, so every call would get a fresh IP allowance.
     const ip =
@@ -70,6 +85,10 @@ export const startVoiceCallForRequest = createServerOnlyFn(
 
     try {
       const token = await mintConversationToken(apiKey);
+      // The call is good either way: a failed clear only leaves an already lapsed outage row behind.
+      await fetchAuthMutation(api.voiceOutages.clearVoiceOutage, { serverSecret }).catch((error: unknown) => {
+        logger.warn("voice outage clear failed", { callId: reservation.callId, correlationId, error });
+      });
       logger.info("voice call started", {
         callId: reservation.callId,
         conversationId,
@@ -87,7 +106,15 @@ export const startVoiceCallForRequest = createServerOnlyFn(
     } catch (error) {
       logger.error("voice call token failed", { callId: reservation.callId, conversationId, correlationId, error });
       await fetchAuthMutation(api.voiceCalls.releaseVoiceCall, { callId: reservation.callId, serverSecret, sessionId });
-      return { ok: false, reason: "unavailable" };
+      if (!(error instanceof TokenRefusedError) || !isAccountRefusal(error.status))
+        return { ok: false, reason: "unavailable" };
+
+      const { opened } = await fetchAuthMutation(api.voiceOutages.recordVoiceMintFailure, {
+        serverSecret,
+        status: error.status,
+      });
+      if (opened) await postVoiceOutageToSlack({ status: error.status });
+      return { ok: false, reason: "resting" };
     }
   },
 );
@@ -95,4 +122,9 @@ export const startVoiceCallForRequest = createServerOnlyFn(
 export const startVoiceCall = createServerFn({ method: "POST" }).handler(
   async (): Promise<StartVoiceCallResult> =>
     startVoiceCallForRequest(getOrCreateCorrelationId(getRequestHeader("x-vercel-id"))),
+);
+
+/** Asked before the microphone, so a visitor never grants it only to hear voice is resting. */
+export const checkVoiceResting = createServerFn({ method: "POST" }).handler(
+  async (): Promise<boolean> => isVoiceResting(),
 );

@@ -1,13 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("#/lib/auth-server", () => ({ fetchAuthMutation: vi.fn() }));
+vi.mock("#/lib/auth-server", () => ({ fetchAuthMutation: vi.fn(), fetchAuthQuery: vi.fn() }));
+vi.mock("#/lib/notify-slack", () => ({ postVoiceOutageToSlack: vi.fn() }));
 vi.mock("#/lib/conversation-session.server", () => ({ getConversationSession: vi.fn() }));
 vi.mock("#/lib/functions/start-new-conversation", () => ({ startConversation: vi.fn() }));
 vi.mock("@tanstack/react-start/server", () => ({ getRequestHeader: vi.fn() }));
 
-import { fetchAuthMutation } from "#/lib/auth-server";
+import { fetchAuthMutation, fetchAuthQuery } from "#/lib/auth-server";
 import { getConversationSession } from "#/lib/conversation-session.server";
 import { startConversation } from "#/lib/functions/start-new-conversation";
+import { postVoiceOutageToSlack } from "#/lib/notify-slack";
 import { VOICE_AGENT_ID } from "#/lib/voice/agent-config";
 import { getRequestHeader } from "@tanstack/react-start/server";
 import { getFunctionName } from "convex/server";
@@ -23,10 +25,13 @@ function mutationCalls(name: string) {
     .map(([, args]) => args);
 }
 
-function respondToReserve(result: unknown) {
-  vi.mocked(fetchAuthMutation).mockImplementation(async (...[fn]) =>
-    getFunctionName(fn) === "voiceCalls:reserveVoiceCall" ? result : null,
-  );
+function respondToReserve(result: unknown, { breakerOpened = true } = {}) {
+  vi.mocked(fetchAuthMutation).mockImplementation(async (...[fn]) => {
+    const name = getFunctionName(fn);
+    if (name === "voiceCalls:reserveVoiceCall") return result;
+    if (name === "voiceOutages:recordVoiceMintFailure") return { opened: breakerOpened };
+    return null;
+  });
 }
 
 const fetchMock = vi.fn<typeof fetch>();
@@ -47,6 +52,7 @@ describe("startVoiceCallForRequest", () => {
     });
     respondToReserve({ allowed: true, callId: "call-1", maxSecs: 240 });
     fetchMock.mockResolvedValue(Response.json({ token: "webrtc-token" }));
+    vi.mocked(fetchAuthQuery).mockResolvedValue(false);
   });
 
   afterEach(() => {
@@ -97,13 +103,59 @@ describe("startVoiceCallForRequest", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("gives the reservation back when no token can be minted", async () => {
+  it("gives the reservation back when no token can be minted, without resting voice for a server error", async () => {
     fetchMock.mockResolvedValue(new Response("boom", { status: 500 }));
 
     expect(await startVoiceCallForRequest("corr")).toEqual({ ok: false, reason: "unavailable" });
     expect(mutationCalls("voiceCalls:releaseVoiceCall")).toEqual([
       { callId: "call-1", serverSecret: "server-secret", sessionId: "sess-1" },
     ]);
+    expect(mutationCalls("voiceOutages:recordVoiceMintFailure")).toEqual([]);
+    expect(postVoiceOutageToSlack).not.toHaveBeenCalled();
+  });
+
+  it("rests voice when ElevenLabs refuses the account, and tells Lucien once", async () => {
+    fetchMock.mockResolvedValue(new Response('{"detail":{"status":"quota_exceeded"}}', { status: 401 }));
+
+    expect(await startVoiceCallForRequest("corr")).toEqual({ ok: false, reason: "resting" });
+    expect(mutationCalls("voiceOutages:recordVoiceMintFailure")).toEqual([
+      { serverSecret: "server-secret", status: 401 },
+    ]);
+    expect(mutationCalls("voiceCalls:releaseVoiceCall")).toHaveLength(1);
+    expect(postVoiceOutageToSlack).toHaveBeenCalledExactlyOnceWith({ status: 401 });
+
+    vi.clearAllMocks();
+    respondToReserve({ allowed: true, callId: "call-2", maxSecs: 240 }, { breakerOpened: false });
+    await startVoiceCallForRequest("corr");
+    expect(postVoiceOutageToSlack).not.toHaveBeenCalled();
+  });
+
+  it("refuses at once while voice rests, before reserving anything or touching the conversation", async () => {
+    vi.mocked(fetchAuthQuery).mockResolvedValue(true);
+
+    expect(await startVoiceCallForRequest("corr")).toEqual({ ok: false, reason: "resting" });
+    expect(getFunctionName(vi.mocked(fetchAuthQuery).mock.calls[0]?.[0] ?? "")).toBe("voiceOutages:isVoiceResting");
+    expect(fetchAuthMutation).not.toHaveBeenCalled();
+    expect(getConversationSession).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("keeps a good call when lifting the rest fails", async () => {
+    vi.mocked(fetchAuthMutation).mockImplementation(async (...[fn]) => {
+      const name = getFunctionName(fn);
+      if (name === "voiceCalls:reserveVoiceCall") return { allowed: true, callId: "call-1", maxSecs: 240 };
+      if (name === "voiceOutages:clearVoiceOutage") throw new Error("convex blip");
+      return null;
+    });
+
+    expect(await startVoiceCallForRequest("corr")).toMatchObject({ callId: "call-1", ok: true, token: "webrtc-token" });
+    expect(mutationCalls("voiceCalls:releaseVoiceCall")).toEqual([]);
+  });
+
+  it("lifts the rest once a token is minted again", async () => {
+    await startVoiceCallForRequest("corr");
+
+    expect(mutationCalls("voiceOutages:clearVoiceOutage")).toEqual([{ serverSecret: "server-secret" }]);
   });
 
   it("does not reserve anything when the API key is missing", async () => {

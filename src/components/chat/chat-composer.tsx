@@ -3,7 +3,7 @@ import { InputGroup, InputGroupAddon, InputGroupTextarea } from "#/components/ui
 import { Spinner } from "#/components/ui/spinner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "#/components/ui/tooltip";
 import { StopIcon } from "@hugeicons-pro/core-solid-rounded";
-import { File01Icon, Navigation03Icon } from "@hugeicons-pro/core-stroke-rounded";
+import { AudioWave01Icon, File01Icon, Navigation03Icon } from "@hugeicons-pro/core-stroke-rounded";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useEffect, useEffectEvent, useRef } from "react";
 
@@ -49,7 +49,12 @@ export function ChatComposer({
   onResumeRequest,
   onStop,
   onSubmit,
+  onVoice,
+  onVoiceIntent,
   textareaRef: givenTextareaRef,
+  voiceButtonRef,
+  voiceDisabled = false,
+  voiceResting = false,
 }: {
   canSubmit: boolean;
   isStreaming: boolean;
@@ -60,7 +65,15 @@ export function ChatComposer({
   onResumeRequest: () => void;
   onStop: () => void;
   onSubmit: React.SubmitEventHandler<HTMLFormElement>;
+  /** Starts a voice call. No button without it. */
+  onVoice?: () => void;
+  /** The visitor is reaching for the voice button: a chance to load the call ahead of the click. */
+  onVoiceIntent?: () => void;
   textareaRef?: React.RefObject<HTMLTextAreaElement | null>;
+  voiceButtonRef?: React.Ref<HTMLButtonElement>;
+  voiceDisabled?: boolean;
+  /** Voice is paused for everyone: the button stays focusable so its tooltip can say so. */
+  voiceResting?: boolean;
 }) {
   const ownTextareaRef = useRef<HTMLTextAreaElement>(null);
   const textareaRef = givenTextareaRef ?? ownTextareaRef;
@@ -129,19 +142,44 @@ export function ChatComposer({
               <TooltipTrigger
                 render={
                   <Button
-                    className="h-9 shrink-0 gap-1.5 rounded-full text-neutral-700 hover:bg-neutral-950/6 hover:text-neutral-950 max-sm:w-9 max-sm:px-0 sm:h-10 sm:px-3"
+                    aria-label="Resume"
+                    className="size-9 shrink-0 rounded-full text-neutral-700 hover:bg-neutral-950/6 hover:text-neutral-950 sm:size-10"
                     disabled={isStreaming}
                     onClick={onResumeRequest}
+                    size="icon"
                     type="button"
                     variant="ghost"
                   >
                     <HugeiconsIcon icon={File01Icon} size={18} />
-                    <span className="max-sm:sr-only">Resume</span>
                   </Button>
                 }
               />
               <TooltipContent>Get Lucien's resume</TooltipContent>
             </Tooltip>
+            {onVoice ? (
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      ref={voiceButtonRef}
+                      aria-label="Talk to Poof"
+                      className="size-9 shrink-0 rounded-full text-neutral-700 hover:bg-neutral-950/6 hover:text-neutral-950 aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:hover:bg-transparent sm:size-10"
+                      disabled={isStreaming || voiceDisabled || voiceResting}
+                      focusableWhenDisabled={voiceResting}
+                      onClick={onVoice}
+                      onFocus={onVoiceIntent}
+                      onPointerEnter={onVoiceIntent}
+                      size="icon"
+                      type="button"
+                      variant="ghost"
+                    >
+                      <HugeiconsIcon icon={AudioWave01Icon} size={18} />
+                    </Button>
+                  }
+                />
+                <TooltipContent>{voiceResting ? "Voice is resting" : "Talk to Poof"}</TooltipContent>
+              </Tooltip>
+            ) : null}
           </TooltipProvider>
           {/* Distinct keys: one reused <button> flipped to type=submit mid-click would send from the Stop click. */}
           {isStreaming ? (

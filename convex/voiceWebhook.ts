@@ -3,29 +3,14 @@ import { z } from "zod";
 import { internal } from "./_generated/api";
 import { httpAction } from "./_generated/server";
 import { VOICE_AGENT_ID } from "./voiceAgent";
+import { ElevenConversationSchema, toVoiceTranscriptArgs } from "./voiceTranscript";
 
 /** ElevenLabs' own tolerance: a delivery signed longer ago than this may be a replay. */
 const SIGNATURE_MAX_AGE_SECS = 30 * 60;
 
 const EventSchema = z.object({ type: z.string() });
 const AgentSchema = z.object({ data: z.object({ agent_id: z.string() }) });
-/** Only what settling the call needs is required; anything else odd is skipped, not refused. */
-const TranscriptionSchema = z.object({
-  data: z.object({
-    conversation_id: z.string(),
-    conversation_initiation_client_data: z.object({ dynamic_variables: z.object({ call_id: z.string() }) }),
-    metadata: z.object({
-      call_duration_secs: z.number(),
-      start_time_unix_secs: z.number().optional().catch(undefined),
-    }),
-    transcript: z.array(z.unknown()).catch([]),
-  }),
-});
-const TurnSchema = z.object({
-  message: z.string().nullish(),
-  role: z.enum(["agent", "user"]),
-  time_in_call_secs: z.number(),
-});
+const TranscriptionSchema = z.object({ data: ElevenConversationSchema });
 
 const encoder = new TextEncoder();
 
@@ -82,23 +67,6 @@ export const postCallWebhook = httpAction(async (ctx, request) => {
     console.error("post_call_transcription without the fields to settle a call", transcription.error?.message);
     return new Response("Invalid transcription", { status: 400 });
   }
-  const { data } = transcription.data;
-
-  await ctx.runMutation(internal.voiceCalls.recordVoiceTranscript, {
-    callId: data.conversation_initiation_client_data.dynamic_variables.call_id,
-    conversationStartedAtSecs: data.metadata.start_time_unix_secs,
-    durationSecs: data.metadata.call_duration_secs,
-    elevenConversationId: data.conversation_id,
-    transcript: data.transcript.flatMap((raw, index) => {
-      const turn = TurnSchema.safeParse(raw);
-      if (!turn.success) return [];
-      return {
-        index,
-        message: turn.data.message ?? null,
-        role: turn.data.role,
-        timeInCallSecs: turn.data.time_in_call_secs,
-      };
-    }),
-  });
+  await ctx.runMutation(internal.voiceCalls.recordVoiceTranscript, toVoiceTranscriptArgs(transcription.data.data));
   return ok();
 });

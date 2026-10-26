@@ -1,4 +1,6 @@
 import { cn } from "#/lib/utils";
+import { AudioWave01Icon } from "@hugeicons-pro/core-stroke-rounded";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { AnimatePresence } from "motion/react";
 import { match } from "ts-pattern";
 import { z } from "zod";
@@ -11,6 +13,7 @@ import { ChatMarkdown } from "./chat-markdown";
 import { ChatReasoning } from "./chat-reasoning";
 import { ChatResumeCard } from "./chat-resume-card";
 import { ChatStatusMarker } from "./chat-status-marker";
+import { isVoiceMessage } from "./chat-voice.utils";
 import { ChatWorkLinkCard } from "./chat-work-link-card";
 import { TOOL_PROGRESS_LABELS } from "./chat.constants";
 import { PoofMark } from "./poof-mark";
@@ -205,6 +208,12 @@ export function ChatTimelineMessage({
           ) : null}
         </AnimatePresence>
         <p className="font-mono text-sm tracking-wide text-neutral-500 uppercase">{role === "user" ? "You" : "Poof"}</p>
+        {isVoiceMessage(message) ? (
+          <span className="ml-2.5 inline-flex items-center gap-1 font-mono text-xs tracking-wide text-neutral-400 uppercase">
+            <HugeiconsIcon icon={AudioWave01Icon} size={12} />
+            Voice
+          </span>
+        ) : null}
       </div>
 
       {reasoningParts.length > 0 ? <ChatReasoning parts={reasoningParts} thinking={isThinking} /> : null}

@@ -8,6 +8,7 @@ import type { Id } from "./_generated/dataModel";
 
 import { api } from "./_generated/api";
 import schema from "./schema";
+import { VOICE_LIMITS } from "./voiceLimits";
 
 const modules = import.meta.glob(["./**/*.{ts,js}", "!./**/*.test.ts"]);
 
@@ -347,10 +348,31 @@ describe("releaseVoiceCall", () => {
     const t = setup();
     const callId = await seedCall(t, { maxSecs: 300, startedAt: NOW, status: "active" });
 
-    await expect(
-      t.mutation(api.voiceCalls.releaseVoiceCall, { callId, serverSecret: SECRET, sessionId: "session-b" }),
-    ).rejects.toThrow(/access denied/);
+    await t.mutation(api.voiceCalls.releaseVoiceCall, { callId, serverSecret: SECRET, sessionId: "session-b" });
+
     expect(await getCall(t, callId)).toMatchObject({ status: "active" });
+  });
+
+  /* The session id reaches the browser, so a release must not be a way to talk for free. */
+  test("only gives back a call reserved moments ago, which cannot have run long", async () => {
+    const t = setup();
+    const fresh = await seedCall(t, {
+      maxSecs: 300,
+      startedAt: NOW - (VOICE_LIMITS.releaseWindowSecs - 1) * 1000,
+      status: "active",
+    });
+    const old = await seedCall(t, {
+      maxSecs: 300,
+      startedAt: NOW - (VOICE_LIMITS.releaseWindowSecs + 1) * 1000,
+      status: "active",
+    });
+
+    await t.mutation(api.voiceCalls.releaseVoiceCall, { callId: fresh, serverSecret: SECRET, sessionId: SESSION });
+    await t.mutation(api.voiceCalls.releaseVoiceCall, { callId: old, serverSecret: SECRET, sessionId: SESSION });
+
+    expect(await getCall(t, fresh)).toMatchObject({ durationSecs: 0, status: "ended" });
+    expect(await getCall(t, old)).toMatchObject({ status: "active" });
+    expect(VOICE_LIMITS.releaseWindowSecs).toBe(90);
   });
 
   test("leaves a call that already ended as it was", async () => {
@@ -360,5 +382,61 @@ describe("releaseVoiceCall", () => {
     await t.mutation(api.voiceCalls.releaseVoiceCall, { callId, serverSecret: SECRET, sessionId: SESSION });
 
     expect(await getCall(t, callId)).toMatchObject({ durationSecs: 120, status: "ended" });
+  });
+});
+
+describe("allowVoiceContact", () => {
+  const ask = (t: T, { ip = "1.1.1.1", sessionId = SESSION, serverSecret = SECRET } = {}) =>
+    t.mutation(api.voiceCalls.allowVoiceContact, { ip, serverSecret, sessionId });
+
+  test("lets a visitor who just had a call write to Lucien", async () => {
+    const t = setup();
+    await seedCall(t, { maxSecs: 300, startedAt: NOW - 5 * MINUTE, status: "ended", durationSecs: 60 });
+
+    expect(await ask(t)).toEqual({ allowed: true });
+  });
+
+  /* The form only ever opens from a call, so without one the request is not the form. */
+  test("refuses a session with no call in the last few minutes", async () => {
+    const t = setup();
+    await seedCall(t, {
+      maxSecs: 300,
+      startedAt: NOW - (VOICE_LIMITS.contactAfterCallSecs * 1000 + MINUTE),
+      status: "ended",
+      durationSecs: 60,
+    });
+    await seedCall(t, { maxSecs: 300, sessionId: "session-b", startedAt: NOW, status: "active" });
+
+    expect(await ask(t)).toEqual({ allowed: false });
+  });
+
+  test("allows a few messages a day per session", async () => {
+    const t = setup();
+    await seedCall(t, { maxSecs: 300, startedAt: NOW, status: "active" });
+
+    for (let index = 0; index < VOICE_LIMITS.contactDailyMessages; index++) {
+      expect(await ask(t, { ip: `9.9.9.${index}` })).toEqual({ allowed: true });
+    }
+    expect(await ask(t, { ip: "9.9.9.99" })).toEqual({ allowed: false });
+  });
+
+  test("allows a few messages a day per IP, whatever the session", async () => {
+    const t = setup();
+    for (let index = 0; index <= VOICE_LIMITS.contactDailyMessages; index++) {
+      await seedCall(t, { maxSecs: 300, sessionId: `session-${index}`, startedAt: NOW, status: "active" });
+    }
+
+    for (let index = 0; index < VOICE_LIMITS.contactDailyMessages; index++) {
+      expect(await ask(t, { sessionId: `session-${index}` })).toEqual({ allowed: true });
+    }
+    expect(await ask(t, { sessionId: `session-${VOICE_LIMITS.contactDailyMessages}` })).toEqual({ allowed: false });
+    expect(VOICE_LIMITS.contactDailyMessages).toBe(3);
+  });
+
+  test("refuses without the server secret", async () => {
+    const t = setup();
+    await seedCall(t, { maxSecs: 300, startedAt: NOW, status: "active" });
+
+    await expect(ask(t, { serverSecret: "guess" })).rejects.toThrow(/Unauthorized/);
   });
 });

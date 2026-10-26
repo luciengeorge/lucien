@@ -1,6 +1,6 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MotionConfig } from "motion/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { restFrame } from "./poof-engine";
 import { eyePath } from "./poof-eyes";
@@ -29,7 +29,7 @@ describe("PoofMark", () => {
   });
 
   it("exposes the state it is expressing", () => {
-    for (const state of ["idle", "thinking", "working", "writing", "confused"] as const) {
+    for (const state of ["idle", "thinking", "working", "writing", "confused", "listening", "talking"] as const) {
       const { container } = render(<PoofMark state={state} />);
       expect(mark(container)?.getAttribute("data-state")).toBe(state);
       cleanup();
@@ -97,5 +97,27 @@ describe("PoofMark", () => {
 
     signals.emit("typing");
     expect(mark(container)?.getAttribute("data-mood")).toBe("listening");
+  });
+
+  it("follows a call's levels frame by frame", async () => {
+    const levels = vi.fn(() => ({ input: 0, output: 0.8 }));
+    render(<PoofMark levels={levels} state="talking" />);
+
+    await waitFor(() => expect(levels.mock.calls.length).toBeGreaterThan(2));
+  });
+
+  it("does not pulse with the call when motion is reduced", async () => {
+    const levels = vi.fn(() => ({ input: 0, output: 0.8 }));
+    const { container } = render(
+      <MotionConfig reducedMotion="always">
+        <PoofMark levels={levels} state="talking" />
+      </MotionConfig>,
+    );
+
+    await new Promise((resolve) => setTimeout(resolve, 80));
+    expect(levels).not.toHaveBeenCalled();
+    expect(container.querySelector('[data-slot="poof-mark-figure"]')?.getAttribute("transform")).toContain(
+      `scale(${restFrame("talking").body.scaleX} ${restFrame("talking").body.scaleY})`,
+    );
   });
 });

@@ -31,6 +31,7 @@
     "@convex-dev/better-auth": "^0.12.5",
     "@convex-dev/rate-limiter": "^0.3.2",
     "@convex-dev/react-query": "0.1.0",
+    "@elevenlabs/react": "1.20.0",
     "@fontsource-variable/geist": "^5.2.8",
     "@hugeicons-pro/core-solid-rounded": "^4.0.0",
     "@hugeicons-pro/core-stroke-rounded": "^4.0.0",

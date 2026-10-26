@@ -27,6 +27,10 @@ vi.mock("#/lib/functions/start-new-conversation", () => ({
   resumeOrStartConversation: () => resumeOrStartConversation(),
   startNewConversation: vi.fn(),
 }));
+// The voice server functions import the Convex auth client, which needs env CI doesn't have.
+vi.mock("#/lib/functions/get-conversation", () => ({ getConversation: vi.fn() }));
+vi.mock("#/lib/functions/release-voice-call", () => ({ releaseVoiceCall: vi.fn() }));
+vi.mock("#/lib/functions/start-voice-call", () => ({ startVoiceCall: vi.fn() }));
 
 afterEach(() => {
   cleanup();
