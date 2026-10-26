@@ -54,6 +54,7 @@ export function ChatComposer({
   textareaRef: givenTextareaRef,
   voiceButtonRef,
   voiceDisabled = false,
+  voiceResting = false,
 }: {
   canSubmit: boolean;
   isStreaming: boolean;
@@ -71,6 +72,8 @@ export function ChatComposer({
   textareaRef?: React.RefObject<HTMLTextAreaElement | null>;
   voiceButtonRef?: React.Ref<HTMLButtonElement>;
   voiceDisabled?: boolean;
+  /** Voice is paused for everyone: the button stays focusable so its tooltip can say so. */
+  voiceResting?: boolean;
 }) {
   const ownTextareaRef = useRef<HTMLTextAreaElement>(null);
   const textareaRef = givenTextareaRef ?? ownTextareaRef;
@@ -160,8 +163,9 @@ export function ChatComposer({
                     <Button
                       ref={voiceButtonRef}
                       aria-label="Talk to Poof"
-                      className="size-9 shrink-0 rounded-full text-neutral-700 hover:bg-neutral-950/6 hover:text-neutral-950 sm:size-10"
-                      disabled={isStreaming || voiceDisabled}
+                      className="size-9 shrink-0 rounded-full text-neutral-700 hover:bg-neutral-950/6 hover:text-neutral-950 aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:hover:bg-transparent sm:size-10"
+                      disabled={isStreaming || voiceDisabled || voiceResting}
+                      focusableWhenDisabled={voiceResting}
                       onClick={onVoice}
                       onFocus={onVoiceIntent}
                       onPointerEnter={onVoiceIntent}
@@ -173,7 +177,7 @@ export function ChatComposer({
                     </Button>
                   }
                 />
-                <TooltipContent>Talk to Poof</TooltipContent>
+                <TooltipContent>{voiceResting ? "Voice is resting" : "Talk to Poof"}</TooltipContent>
               </Tooltip>
             ) : null}
           </TooltipProvider>

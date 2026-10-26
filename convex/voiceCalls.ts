@@ -16,7 +16,7 @@ type Reservation =
  * Only the app server may spend voice time: the session id also reaches the browser, so it proves
  * nothing on its own. Refuses everything when the deployment has no VOICE_SERVER_SECRET.
  */
-function assertServer(serverSecret: string) {
+export function assertServer(serverSecret: string) {
   const expected = process.env.VOICE_SERVER_SECRET;
   if (!expected || !constantTimeEqual(serverSecret, expected)) throw new Error("Unauthorized");
 }

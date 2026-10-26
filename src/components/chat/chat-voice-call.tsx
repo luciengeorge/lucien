@@ -20,7 +20,13 @@ import { formatCountdown } from "./chat-voice.utils";
 import { useSettledSpeaking } from "./use-settled-speaking";
 
 /** Refusals that are nobody's fault get a calm face; the rest look puzzled. */
-const CALM_REFUSALS: ReadonlySet<VoiceRefusal> = new Set(["call_active", "global_limit", "ip_limit", "visitor_limit"]);
+const CALM_REFUSALS: ReadonlySet<VoiceRefusal> = new Set([
+  "call_active",
+  "global_limit",
+  "ip_limit",
+  "resting",
+  "visitor_limit",
+]);
 const COUNTDOWN_FROM_SECS = 30;
 
 type EndedBy = "agent" | "error" | "timer" | "visitor";
@@ -39,7 +45,8 @@ function isMicrophoneError(context: unknown): VoiceRefusal | null {
  * token), started by the click itself so the page fetches this code and the token at the same time.
  * `onClose` gets the call when it actually ran, so the chat knows where to wait for its transcript.
  */
-export type EndedCall = { callId: string; conversationId: string };
+/** `dropped`: the line failed mid-call rather than anyone hanging up. */
+export type EndedCall = { callId: string; conversationId: string; dropped: boolean };
 
 export default function ChatVoiceCall(props: {
   call: Promise<VoiceCallStart>;
@@ -114,7 +121,7 @@ function VoiceCall({
       duration_secs: Math.round((Date.now() - current.connectedAt) / 1000),
       ended_by: endedBy,
     });
-    onClose({ callId: current.callId, conversationId: current.conversationId });
+    onClose({ callId: current.callId, conversationId: current.conversationId, dropped: endedBy === "error" });
   };
 
   const conversation = useConversation({

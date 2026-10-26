@@ -14,8 +14,19 @@ export const VOICE_LIMITS = {
   contactAfterCallSecs: 15 * 60,
   /** Contact messages one session, and separately one IP, may send per day from the form. */
   contactDailyMessages: 3,
+  /** How long voice rests after ElevenLabs refuses our account (no credit, key limit, bad key). */
+  outageSecs: 60 * 60,
   /** Calls one IP may start per day. */
   ipDailyCalls: 6,
   /** An active call this long past the call cap never reported its end; it stops blocking new calls. */
   staleAfterMs: 10 * 60_000,
 };
+
+/**
+ * A 4xx from ElevenLabs' token endpoint is about our account, not the request: no credit left, the
+ * key's limit reached, or the key revoked. Every call would fail the same way, so voice rests for a
+ * while. 429 is a rate limit and passes on its own, like a 5xx.
+ */
+export function isAccountRefusal(status: number) {
+  return status >= 400 && status < 500 && status !== 429;
+}

@@ -1,7 +1,7 @@
 import type { StartVoiceCallResult } from "#/lib/functions/start-voice-call";
 
 import { releaseVoiceCall } from "#/lib/functions/release-voice-call";
-import { startVoiceCall } from "#/lib/functions/start-voice-call";
+import { checkVoiceResting, startVoiceCall } from "#/lib/functions/start-voice-call";
 
 export type VoiceRefusal =
   | Extract<StartVoiceCallResult, { ok: false }>["reason"]
@@ -31,10 +31,15 @@ async function requestMicrophone(): Promise<"granted" | VoiceRefusal> {
 }
 
 /**
- * The microphone first: a visitor who blocks it should not spend a call from their daily allowance,
- * and a call reserved on the server is not given back until it goes stale.
+ * Whether voice is resting first, so nobody grants the microphone only to be turned away. Then the
+ * microphone: a visitor who blocks it should not spend a call from their daily allowance.
  */
 export async function requestVoiceCall(): Promise<VoiceCallStart> {
+  try {
+    if (await checkVoiceResting()) return { ok: false, reason: "resting" };
+  } catch {
+    // Unknown is not resting: the call itself checks again.
+  }
   const microphone = await requestMicrophone();
   if (microphone !== "granted") return { ok: false, reason: microphone };
   try {

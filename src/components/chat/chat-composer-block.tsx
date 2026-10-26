@@ -24,6 +24,7 @@ export function ChatComposerBlock({
   onVoiceIntent,
   ref,
   voiceDisabled,
+  voiceResting,
 }: {
   isStreaming: boolean;
   onResumeRequest: () => void;
@@ -33,6 +34,7 @@ export function ChatComposerBlock({
   onVoiceIntent?: () => void;
   ref?: React.Ref<ChatComposerHandle>;
   voiceDisabled?: boolean;
+  voiceResting?: boolean;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const voiceButtonRef = useRef<HTMLButtonElement>(null);
@@ -104,6 +106,7 @@ export function ChatComposerBlock({
               textareaRef={textareaRef}
               voiceButtonRef={voiceButtonRef}
               voiceDisabled={voiceDisabled}
+              voiceResting={voiceResting}
             />
           )}
         </form.Field>

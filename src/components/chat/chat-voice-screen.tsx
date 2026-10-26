@@ -20,6 +20,7 @@ export const VOICE_REFUSAL_COPY: Record<VoiceRefusal, string> = {
   ip_limit: `That's all the talking for today. ${STILL_TYPING}`,
   mic_denied:
     "Poof can't hear you yet. To let it, click the icon next to the address bar, allow the microphone for this site, then try again.",
+  resting: "Poof's voice is resting for now. The chat still works.",
   mic_missing: "Poof can't find a microphone. Plug one in and try again, or keep typing.",
   unavailable: `Voice isn't available right now. ${STILL_TYPING}`,
   visitor_limit: `That's all the talking for today. ${STILL_TYPING}`,

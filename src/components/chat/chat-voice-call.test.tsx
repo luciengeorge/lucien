@@ -48,7 +48,11 @@ vi.mock("./chat-voice.utils", async (importOriginal) => {
 });
 
 const startVoiceCall = vi.fn();
-vi.mock("#/lib/functions/start-voice-call", () => ({ startVoiceCall: () => startVoiceCall() }));
+const checkVoiceResting = vi.fn();
+vi.mock("#/lib/functions/start-voice-call", () => ({
+  checkVoiceResting: () => checkVoiceResting(),
+  startVoiceCall: () => startVoiceCall(),
+}));
 
 const releaseVoiceCall = vi.fn();
 vi.mock("#/lib/functions/release-voice-call", () => ({
@@ -122,11 +126,11 @@ const granted = {
   token: "webrtc-token",
 };
 
-function renderChat(onConversationChange = vi.fn()) {
+function renderChat(onConversationChange = vi.fn(), { voiceResting = false } = {}) {
   const { unmount } = render(
     <QueryClientProvider client={new QueryClient()}>
       <ChatConversation
-        chatState={{ conversation, serializedMessages: [] }}
+        chatState={{ conversation, serializedMessages: [], voiceResting }}
         onConversationChange={onConversationChange}
       />
     </QueryClientProvider>,
@@ -156,6 +160,7 @@ beforeEach(() => {
   startVoiceCall.mockResolvedValue(granted);
   resumeOrStartConversation.mockResolvedValue({ conversation, serializedMessages: [] });
   releaseVoiceCall.mockResolvedValue(null);
+  checkVoiceResting.mockResolvedValue(false);
   settleVoiceCall.mockResolvedValue({ status: "settled" });
   getConversation.mockResolvedValue({ conversation, serializedMessages: [] });
   waitForVoiceTranscript.override = null;
@@ -563,5 +568,67 @@ describe("settling a call", () => {
 
     await waitFor(() => expect(releaseVoiceCall).toHaveBeenCalled());
     expect(settleVoiceCall).not.toHaveBeenCalled();
+  });
+});
+
+describe("voice resting", () => {
+  it("greys the button out and says why when the page loads with voice resting", async () => {
+    renderChat(vi.fn(), { voiceResting: true });
+
+    const button = screen.getByRole("button", { name: "Talk to Poof" });
+    expect(button.getAttribute("aria-disabled")).toBe("true");
+    fireEvent.click(button);
+    expect(screen.queryByRole("dialog")).toBeNull();
+
+    fireEvent.pointerEnter(button);
+    fireEvent.mouseEnter(button);
+    fireEvent.focus(button);
+    expect(await screen.findByText("Voice is resting")).toBeTruthy();
+  });
+
+  it("checks before asking for the microphone, so a visitor never grants it just to be refused", async () => {
+    checkVoiceResting.mockResolvedValue(true);
+    renderChat();
+    await startCall();
+
+    expect(await screen.findByText("Poof's voice is resting for now. The chat still works.")).toBeTruthy();
+    expect(getUserMedia).not.toHaveBeenCalled();
+    expect(startVoiceCall).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Back to chat" }));
+    expect(screen.getByRole("button", { name: "Talk to Poof" }).getAttribute("aria-disabled")).toBe("true");
+  });
+
+  it("rests the button too when the server says so mid-visit", async () => {
+    startVoiceCall.mockResolvedValue({ ok: false, reason: "resting" });
+    renderChat();
+    await startCall();
+
+    expect(await screen.findByText(/resting for now/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Back to chat" }));
+    expect(screen.getByRole("button", { name: "Talk to Poof" }).getAttribute("aria-disabled")).toBe("true");
+  });
+});
+
+describe("a call that drops", () => {
+  const note = "The call dropped. Anything said so far is saved below.";
+
+  it("says so quietly in the chat when the line errors mid-call", async () => {
+    renderChat();
+    await connect();
+
+    act(() => sdk.props.onDisconnect?.({ reason: "error" }));
+
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.getByText(note)).toBeTruthy();
+  });
+
+  it("says nothing when the call simply ends", async () => {
+    renderChat();
+    await connect();
+
+    act(() => sdk.props.onDisconnect?.({ reason: "agent" }));
+
+    expect(screen.queryByText(note)).toBeNull();
   });
 });

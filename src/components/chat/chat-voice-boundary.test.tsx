@@ -29,6 +29,7 @@ vi.mock("#/lib/functions/release-voice-call", () => ({
   releaseVoiceCall: (options: unknown) => releaseVoiceCall(options),
 }));
 vi.mock("#/lib/functions/start-voice-call", () => ({
+  checkVoiceResting: async () => false,
   startVoiceCall: async () => ({
     callId: "call-1",
     conversationId: "conv-1",

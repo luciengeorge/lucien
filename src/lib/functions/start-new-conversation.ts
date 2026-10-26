@@ -10,6 +10,7 @@ import { createConversationWithIntro } from "../conversation-intro.server";
 import { getConversationSession } from "../conversation-session.server";
 import { getOrCreateCorrelationId } from "../correlation-id";
 import { createLogger } from "../logger";
+import { voiceRestingForPage } from "../voice/voice-resting.server";
 
 const logger = createLogger("conversation.start-new");
 
@@ -40,7 +41,7 @@ export const startNewConversation = createServerFn({ method: "POST" }).handler(
   async (): Promise<ChatConversationState> => {
     const correlationId = getOrCreateCorrelationId(getRequestHeader("x-vercel-id"));
     logger.info("start new conversation received", { correlationId, operation: "start-new-conversation" });
-    return startConversation(correlationId);
+    return { ...(await startConversation(correlationId)), voiceResting: await voiceRestingForPage() };
   },
 );
 
@@ -60,13 +61,13 @@ export const resumeOrStartConversation = createServerFn({ method: "POST" }).hand
         });
         if (existing) {
           logger.info("conversation resumed", { conversationId: conversationId.data, correlationId, sessionId });
-          return existing;
+          return { ...existing, voiceResting: await voiceRestingForPage() };
         }
       } catch (error) {
         logger.warn("conversation resume failed", { correlationId, error, sessionId });
       }
     }
 
-    return startConversation(correlationId);
+    return { ...(await startConversation(correlationId)), voiceResting: await voiceRestingForPage() };
   },
 );

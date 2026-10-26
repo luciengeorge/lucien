@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { postContactToSlack } from "./notify-slack";
+import { postContactToSlack, postVoiceOutageToSlack } from "./notify-slack";
 
 function parseFetchBody(callIndex: number): unknown {
   const [, options] = vi.mocked(global.fetch).mock.calls[callIndex];
@@ -97,5 +97,35 @@ describe("postContactToSlack", () => {
 
     const sent = await postContactToSlack({ conversationId: "conv-4", message: "hi" });
     expect(sent).toBe(false);
+  });
+});
+
+describe("postVoiceOutageToSlack", () => {
+  const originalEnv = process.env.SLACK_WEBHOOK_URL;
+  const originalFetch = global.fetch;
+
+  beforeEach(() => {
+    global.fetch = vi.fn();
+    process.env.SLACK_WEBHOOK_URL = "https://hooks.slack.test/webhook";
+    process.env.ELEVENLABS_API_KEY = "sk_secret_key";
+  });
+
+  afterEach(() => {
+    process.env.SLACK_WEBHOOK_URL = originalEnv;
+    delete process.env.ELEVENLABS_API_KEY;
+    global.fetch = originalFetch;
+    vi.clearAllMocks();
+  });
+
+  it("says voice is resting, with the status and what to check, and never the key", async () => {
+    vi.mocked(global.fetch).mockResolvedValue(new Response(null, { status: 200 }));
+
+    expect(await postVoiceOutageToSlack({ status: 401 })).toBe(true);
+
+    const body = JSON.stringify(parseFetchBody(0));
+    expect(body).toContain("401");
+    expect(body).toMatch(/credits/);
+    expect(body).toMatch(/API key/);
+    expect(body).not.toContain("sk_secret_key");
   });
 });

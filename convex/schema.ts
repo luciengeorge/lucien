@@ -45,6 +45,12 @@ export default defineSchema({
     .index("by_message_id", ["messageId", "order"])
     .index("by_conversation", ["conversationId", "order"]),
   /** One row per voice call reservation; its seconds count against the limits in voiceLimits.ts. */
+  /** At most one row: voice is resting until `until`, after ElevenLabs refused our account. */
+  voiceOutages: defineTable({
+    openedAt: v.number(),
+    status: v.number(),
+    until: v.number(),
+  }),
   voiceCalls: defineTable({
     conversationId: v.id("conversations"),
     durationSecs: v.optional(v.number()),

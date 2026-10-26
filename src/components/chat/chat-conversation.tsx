@@ -15,7 +15,7 @@ import { resumeOrStartConversation, startNewConversation } from "#/lib/functions
 import { useChat } from "@ai-sdk/react";
 import { useMutation } from "@tanstack/react-query";
 import { DefaultChatTransport } from "ai";
-import { lazy, startTransition, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, lazy, startTransition, Suspense, useEffect, useMemo, useRef, useState } from "react";
 
 import type { ChatComposerHandle } from "./chat-composer-block";
 import type { EndedCall } from "./chat-voice-call";
@@ -213,6 +213,7 @@ export function ChatConversation({
 
   const handleSend = async (message: string) => {
     setIsCallLate(false);
+    setDroppedAfterId(null);
     capture(AnalyticsEvent.chatMessageSubmitted, {
       message_length: message.length,
       source: "composer",
@@ -246,20 +247,31 @@ export function ChatConversation({
   const [isSavingCall, setIsSavingCall] = useState(false);
   // The webhook outran the wait: the transcript is saved, just not here yet.
   const [isCallLate, setIsCallLate] = useState(false);
+  // A call whose line failed mid-way: a note sits after the last message from before it ended.
+  const [droppedAfterId, setDroppedAfterId] = useState<string | null>(null);
   const transcriptWaitRef = useRef<AbortController | null>(null);
+  // The page loads knowing; a refusal mid-visit greys the button from then on too.
+  const [restedThisVisit, setRestedThisVisit] = useState(false);
+  const voiceResting = Boolean(chatState.voiceResting) || restedThisVisit;
 
   useEffect(() => () => transcriptWaitRef.current?.abort(), []);
 
   const handleVoiceStart = () => {
-    if (isBusy || !isReady || voiceCall) return;
+    if (isBusy || !isReady || voiceCall || voiceResting) return;
     setIsCallLate(false);
-    setVoiceCall({ call: requestVoiceCall(), context: buildVoiceContext(visibleMessages) });
+    setDroppedAfterId(null);
+    const call = requestVoiceCall();
+    void call.then((result) => {
+      if (!result.ok && result.reason === "resting") setRestedThisVisit(true);
+    });
+    setVoiceCall({ call, context: buildVoiceContext(visibleMessages) });
   };
 
   const handleVoiceEnd = (ended: EndedCall | null) => {
     setVoiceCall(null);
     requestAnimationFrame(() => composerRef.current?.focusVoice());
     if (!ended) return;
+    if (ended.dropped) setDroppedAfterId(visibleMessages.at(-1)?.id ?? null);
     const controller = new AbortController();
     transcriptWaitRef.current = controller;
     setIsSavingCall(true);
@@ -295,6 +307,7 @@ export function ChatConversation({
     transcriptWaitRef.current?.abort();
     setIsSavingCall(false);
     setIsCallLate(false);
+    setDroppedAfterId(null);
     capture(AnalyticsEvent.newConversationClicked, {
       source: "cta",
     });
@@ -323,19 +336,27 @@ export function ChatConversation({
                     <ChatIntroPlaceholder withPoof={queuedMessage === null && !hasConversationStartFailed} />
                   ) : null}
                   {visibleMessages.map((message, index) => (
-                    <MessageScrollerItem
-                      key={message.id}
-                      messageId={message.id}
-                      scrollAnchor={message.role === "user"}
-                      className={entryItemClassName(index === 0)}
-                    >
-                      <ChatTimelineMessage
-                        isActive={index === visibleMessages.length - 1}
-                        message={message}
-                        status={status}
-                        wasStopped={stoppedReplyIds.has(message.id)}
-                      />
-                    </MessageScrollerItem>
+                    <Fragment key={message.id}>
+                      <MessageScrollerItem
+                        messageId={message.id}
+                        scrollAnchor={message.role === "user"}
+                        className={entryItemClassName(index === 0)}
+                      >
+                        <ChatTimelineMessage
+                          isActive={index === visibleMessages.length - 1}
+                          message={message}
+                          status={status}
+                          wasStopped={stoppedReplyIds.has(message.id)}
+                        />
+                      </MessageScrollerItem>
+                      {message.id === droppedAfterId ? (
+                        <div className={entryItemClassName(false)}>
+                          <p className="text-sm text-neutral-500" role="status">
+                            The call dropped. Anything said so far is saved below.
+                          </p>
+                        </div>
+                      ) : null}
+                    </Fragment>
                   ))}
                   {queuedMessage === null ? null : (
                     <MessageScrollerItem messageId="queued-message" scrollAnchor className={entryItemClassName(false)}>
@@ -397,6 +418,7 @@ export function ChatConversation({
                   onVoice={isVoiceEnabled() ? handleVoiceStart : undefined}
                   onVoiceIntent={() => void loadVoiceCall()}
                   voiceDisabled={!isReady || isSavingCall}
+                  voiceResting={voiceResting}
                 />
               </div>
             </div>
