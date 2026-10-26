@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { renderSystemPrompt } from "./system-prompt";
+import { formatPromptDate, renderSystemPrompt } from "./system-prompt";
 
 const template = readFileSync(join(import.meta.dirname, "..", "..", "..", "content", "system-prompt.md"), "utf-8");
 
@@ -31,5 +31,17 @@ describe("renderSystemPrompt", () => {
   it("leaves no slot unfilled", () => {
     const prompt = renderSystemPrompt(template, { context: "ctx", today: new Date() });
     expect(prompt).not.toMatch(/\{(today|context)\}/);
+  });
+
+  /* The voice agent's prompt is synced once, so the date is a runtime variable the call fills in. */
+  it("takes a preformatted today as is", () => {
+    const prompt = renderSystemPrompt(template, { context: "ctx", today: "{{today}}" });
+    expect(prompt).toContain("Today is {{today}}.");
+  });
+});
+
+describe("formatPromptDate", () => {
+  it("formats the day the way the prompt reads it, in London", () => {
+    expect(formatPromptDate(new Date("2026-10-11T23:30:00Z"))).toBe("Monday, 12 October 2026");
   });
 });

@@ -21,7 +21,8 @@
     "format:check": "oxfmt --check .",
     "format": "oxfmt .",
     "typecheck": "tsgo --noEmit",
-    "intro:refresh": "dotenv -e .env.local -- tsx scripts/refresh-intro.ts"
+    "intro:refresh": "dotenv -e .env.local -- tsx scripts/refresh-intro.ts",
+    "voice:sync": "dotenv -e .env.local -- tsx scripts/voice-sync.ts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.50",

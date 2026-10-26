@@ -13,7 +13,7 @@ import { createLogger } from "../logger";
 
 const logger = createLogger("conversation.start-new");
 
-async function startConversation(correlationId: string): Promise<ChatConversationState> {
+export async function startConversation(correlationId: string): Promise<ChatConversationState> {
   const session = await getConversationSession();
   const sessionId = session.data.sessionId ?? crypto.randomUUID();
   const conversation = await createConversationWithIntro(sessionId, correlationId);
