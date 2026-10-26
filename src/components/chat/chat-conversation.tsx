@@ -10,13 +10,16 @@ import {
 } from "#/components/ui/message-scroller";
 import { AnalyticsEvent, useAnalytics } from "#/lib/analytics";
 import { getTextFromMessage, hasRenderableMessageContent, parseSerializedMessages } from "#/lib/chat-types";
+import { getConversation } from "#/lib/functions/get-conversation";
 import { resumeOrStartConversation, startNewConversation } from "#/lib/functions/start-new-conversation";
 import { useChat } from "@ai-sdk/react";
 import { useMutation } from "@tanstack/react-query";
 import { DefaultChatTransport } from "ai";
-import { startTransition, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, startTransition, Suspense, useEffect, useMemo, useRef, useState } from "react";
 
 import type { ChatComposerHandle } from "./chat-composer-block";
+import type { EndedCall } from "./chat-voice-call";
+import type { VoiceCallStart } from "./chat-voice-start";
 
 import { ChatComposerBlock } from "./chat-composer-block";
 import { ChatIdentity } from "./chat-identity";
@@ -25,9 +28,23 @@ import { ChatPendingReply } from "./chat-pending-reply";
 import { transcriptScrollBehaviour } from "./chat-scroll-position";
 import { ChatSendFailed } from "./chat-send-failed";
 import { ChatStarterPrompts } from "./chat-starter-prompts";
+import { ChatStatusMarker } from "./chat-status-marker";
 import { ChatTimelineMessage } from "./chat-timeline-message";
+import { ChatVoiceBoundary } from "./chat-voice-boundary";
+import {
+  ChatVoiceScreen,
+  VOICE_PRIVACY_NOTE,
+  VOICE_REFUSAL_COPY,
+  VoiceBackButton,
+  VoiceEndButton,
+} from "./chat-voice-screen";
+import { isVoiceEnabled, releaseUnusedCall, requestVoiceCall } from "./chat-voice-start";
+import { buildVoiceContext, waitForVoiceTranscript } from "./chat-voice.utils";
 import { createRateLimitAwareFetch, entryItemClassName, getSettledAssistantAnalyticsEvents } from "./chat.utils";
 import { createPoofSignals, PoofSignalsContext } from "./poof-signals";
+
+const loadVoiceCall = () => import("./chat-voice-call");
+const ChatVoiceCall = lazy(loadVoiceCall);
 
 export function ChatConversation({
   chatState,
@@ -189,7 +206,13 @@ export function ChatConversation({
     });
   };
 
+  const handleVoiceLoadFailed = () => {
+    if (voiceCall) releaseUnusedCall(voiceCall.call);
+    capture(AnalyticsEvent.voiceCallRefused, { reason: "connect_failed" });
+  };
+
   const handleSend = async (message: string) => {
+    setIsCallLate(false);
     capture(AnalyticsEvent.chatMessageSubmitted, {
       message_length: message.length,
       source: "composer",
@@ -219,8 +242,59 @@ export function ChatConversation({
     void sendOrQueue(prompt);
   };
 
+  const [voiceCall, setVoiceCall] = useState<{ call: Promise<VoiceCallStart>; context: string | null } | null>(null);
+  const [isSavingCall, setIsSavingCall] = useState(false);
+  // The webhook outran the wait: the transcript is saved, just not here yet.
+  const [isCallLate, setIsCallLate] = useState(false);
+  const transcriptWaitRef = useRef<AbortController | null>(null);
+
+  useEffect(() => () => transcriptWaitRef.current?.abort(), []);
+
+  const handleVoiceStart = () => {
+    if (isBusy || !isReady || voiceCall) return;
+    setIsCallLate(false);
+    setVoiceCall({ call: requestVoiceCall(), context: buildVoiceContext(visibleMessages) });
+  };
+
+  const handleVoiceEnd = (ended: EndedCall | null) => {
+    setVoiceCall(null);
+    requestAnimationFrame(() => composerRef.current?.focusVoice());
+    if (!ended) return;
+    const controller = new AbortController();
+    transcriptWaitRef.current = controller;
+    setIsSavingCall(true);
+    // Read-only, by id: a blip here must never start a new conversation and move the visitor onto it.
+    void waitForVoiceTranscript({
+      callId: ended.callId,
+      fetchConversation: () => getConversation({ data: { conversationId: ended.conversationId } }),
+      signal: controller.signal,
+    }).then(({ found, state }) => {
+      if (controller.signal.aborted) return;
+      setIsSavingCall(false);
+      setIsCallLate(!found);
+      if (!state) return;
+      // The call lands in the visitor's session conversation, which another tab may have moved on from.
+      if (state.conversation?.id !== chatState.conversation?.id) {
+        startTransition(() => {
+          onConversationChange(state);
+        });
+        return;
+      }
+      setMessages(parseSerializedMessages(state.serializedMessages));
+    });
+  };
+
+  // Left before the call's code loaded, so the call itself never got the chance to hand its time back.
+  const handleVoiceCancel = () => {
+    if (voiceCall) releaseUnusedCall(voiceCall.call);
+    handleVoiceEnd(null);
+  };
+
   const handleNewConversation = () => {
     if (isStartingNewConversation) return;
+    transcriptWaitRef.current?.abort();
+    setIsSavingCall(false);
+    setIsCallLate(false);
     capture(AnalyticsEvent.newConversationClicked, {
       source: "cta",
     });
@@ -278,6 +352,18 @@ export function ChatConversation({
                   {hasConversationStartFailed && !isReady ? (
                     <ChatSendFailed withPoof onRetry={() => startConversation({ fresh: false })} />
                   ) : null}
+                  {isSavingCall ? (
+                    <div className={entryItemClassName(false)}>
+                      <ChatStatusMarker label="Saving your call…" />
+                    </div>
+                  ) : null}
+                  {isCallLate ? (
+                    <div className={entryItemClassName(false)}>
+                      <p className="text-sm text-neutral-500" role="status">
+                        Your call is still saving. Reload in a minute to see it here.
+                      </p>
+                    </div>
+                  ) : null}
                   {status === "error" ? (
                     <ChatSendFailed
                       withPoof={visibleMessages.at(-1)?.role !== "assistant"}
@@ -308,11 +394,44 @@ export function ChatConversation({
                   onResumeRequest={handleResumeRequest}
                   onSend={handleSend}
                   onStop={handleStop}
+                  onVoice={isVoiceEnabled() ? handleVoiceStart : undefined}
+                  onVoiceIntent={() => void loadVoiceCall()}
+                  voiceDisabled={!isReady || isSavingCall}
                 />
               </div>
             </div>
           </div>
         </div>
+        {voiceCall ? (
+          <ChatVoiceBoundary
+            fallback={
+              <ChatVoiceScreen
+                message={VOICE_REFUSAL_COPY.connect_failed}
+                onEscape={() => handleVoiceEnd(null)}
+                poof="confused"
+              >
+                <VoiceBackButton onClick={() => handleVoiceEnd(null)} />
+              </ChatVoiceScreen>
+            }
+            onError={handleVoiceLoadFailed}
+          >
+            <Suspense
+              fallback={
+                <ChatVoiceScreen
+                  announcement="Connecting to Poof"
+                  note={VOICE_PRIVACY_NOTE}
+                  onEscape={handleVoiceCancel}
+                  poof="thinking"
+                  status="Connecting"
+                >
+                  <VoiceEndButton onClick={handleVoiceCancel} />
+                </ChatVoiceScreen>
+              }
+            >
+              <ChatVoiceCall call={voiceCall.call} context={voiceCall.context} onClose={handleVoiceEnd} />
+            </Suspense>
+          </ChatVoiceBoundary>
+        ) : null}
       </section>
     </PoofSignalsContext>
   );

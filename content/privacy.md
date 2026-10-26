@@ -6,6 +6,10 @@ The assistant on the homepage ("Poof") keeps your conversation so it can answer 
 
 Do not type anything into the chat you would not want stored or read. Treat it as a message to a stranger's website, because that is what it is: Lucien can read the conversations, and does read them to find where the assistant answers badly. If you use the assistant to send him a message, that message and any contact detail you give it are posted to a private Slack channel so it reaches him.
 
+## Voice calls
+
+You can also talk to Poof out loud. **ElevenLabs** runs the call: your voice goes to it to be turned into text, and it speaks Poof's replies back. It does not keep a recording of the audio, and it deletes its copy of the transcript after 30 days. This site keeps no audio either. When the call ends, the transcript is saved in your chat like your other messages, marked as said by voice. A call lasts five minutes at most, and nothing starts until you press the button and allow your microphone.
+
 ## Analytics and errors
 
 The site measures traffic, not people. In production only: Vercel Analytics and Speed Insights for page views and performance, PostHog for a short list of events the code names explicitly, and Sentry for errors. PostHog runs in cookieless mode, storing nothing in your browser. Sentry's server setup sends default personal information with an error, which can include an IP address, because a bug report without the request is not actionable.
@@ -25,7 +29,7 @@ That is the complete list. All four are strictly necessary, which is why the sit
 
 The lawful basis is legitimate interests: running a personal site, answering questions about its owner, keeping it working, and knowing roughly how it is used. Nothing here feeds an automated decision about you.
 
-Processors, each acting on instruction and each with its own privacy policy: **Vercel** (hosting), **Cloudflare** (network), **Convex** (database), **OpenAI** (replies), **PostHog** (analytics, EU region), **Sentry** (errors), **Slack** (contact messages), and **Resend**, which sends the owner's sign-in emails and nothing else. Data may be processed in the United States as well as the EU and UK, depending on the provider.
+Processors, each acting on instruction and each with its own privacy policy: **Vercel** (hosting), **Cloudflare** (network), **Convex** (database), **OpenAI** (replies), **ElevenLabs** (voice calls), **PostHog** (analytics, EU region), **Sentry** (errors), **Slack** (contact messages), and **Resend**, which sends the owner's sign-in emails and nothing else. Data may be processed in the United States as well as the EU and UK, depending on the provider.
 
 ## Retention, your rights, complaints
 

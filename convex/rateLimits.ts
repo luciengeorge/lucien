@@ -11,6 +11,8 @@ export const rateLimiter = new RateLimiter(components.rateLimiter, {
   chatIpDaily: { kind: "fixed window", rate: 60, period: DAY },
   chatSessionBurst: { kind: "token bucket", rate: 10, period: MINUTE, capacity: 5 },
   voiceIpDaily: { kind: "fixed window", rate: VOICE_LIMITS.ipDailyCalls, period: DAY },
+  contactIpDaily: { kind: "fixed window", rate: VOICE_LIMITS.contactDailyMessages, period: DAY },
+  contactSessionDaily: { kind: "fixed window", rate: VOICE_LIMITS.contactDailyMessages, period: DAY },
 });
 
 export const checkChatRateLimit = mutation({

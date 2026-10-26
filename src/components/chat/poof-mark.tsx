@@ -4,7 +4,7 @@ import { cn } from "#/lib/utils";
 import { motion, useReducedMotion, useReducedMotionConfig } from "motion/react";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 
-import type { PoofEngine, PoofFrame, PoofState } from "./poof-engine";
+import type { PoofEngine, PoofFrame, PoofLevels, PoofState } from "./poof-engine";
 
 import { createPoofEngine, restFrame } from "./poof-engine";
 import { eyePath } from "./poof-eyes";
@@ -83,6 +83,7 @@ export function PoofMark({
   className,
   entrance = true,
   interrupted = false,
+  levels,
   state,
 }: {
   className?: string;
@@ -93,6 +94,8 @@ export function PoofMark({
   entrance?: boolean;
   /** The visitor stopped this reply: when it settles, Poof is startled instead of pleased. */
   interrupted?: boolean;
+  /** A voice call's loudness, read once per frame rather than passed in, so it never re-renders React. */
+  levels?: () => PoofLevels;
   state: PoofMarkState;
 }) {
   // The OS preference, or a `MotionConfig reducedMotion="always"` above: motion's config hook alone
@@ -113,6 +116,8 @@ export function PoofMark({
     if (greet) greeted = true;
     return createPoofEngine({ entrance, greet, seed: Math.floor(Math.random() * 2 ** 32), state });
   });
+
+  const readLevels = useEffectEvent(() => levels?.());
 
   useEffect(() => {
     const svg = svgRef.current;
@@ -144,6 +149,8 @@ export function PoofMark({
         const unit = rect.width / 48 || 1;
         engine.look(pointer && { x: (pointer.x - rect.left) / unit - 24, y: (pointer.y - rect.top) / unit - 24 });
       }
+      const heard = readLevels();
+      if (heard) engine.hear(heard);
       const frame = engine.step(dt);
       dozing = frame.mood === "sleeping" || frame.mood === "drowsy";
       paint(frame);

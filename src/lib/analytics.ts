@@ -24,6 +24,9 @@ export const AnalyticsEvent = {
   userSignedUp: "user_signed_up",
   userSignupFailed: "user_signup_failed",
   userSignupSubmitted: "user_signup_submitted",
+  voiceCallEnded: "voice_call_ended",
+  voiceCallRefused: "voice_call_refused",
+  voiceCallStarted: "voice_call_started",
 } as const;
 
 type AnalyticsEventName = (typeof AnalyticsEvent)[keyof typeof AnalyticsEvent];

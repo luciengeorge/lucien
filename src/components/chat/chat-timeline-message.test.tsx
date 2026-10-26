@@ -275,3 +275,27 @@ describe("ChatTimelineMessage stopped replies", () => {
     expect(screen.queryByText("Stopped")).toBeNull();
   });
 });
+
+describe("ChatTimelineMessage voice turns", () => {
+  const voiceMetadata = { callId: "call-1", channel: "voice" };
+
+  it("marks a turn said on a call, from either side", () => {
+    for (const role of ["user", "assistant"] as const) {
+      render(
+        <ChatTimelineMessage
+          isActive={false}
+          message={{ id: `voice-${role}`, metadata: voiceMetadata, parts: [textPart("Hello there")], role }}
+          status="ready"
+        />,
+      );
+      expect(screen.getByText("Hello there")).toBeTruthy();
+      expect(screen.getByText("Voice")).toBeTruthy();
+      cleanup();
+    }
+  });
+
+  it("leaves typed turns unmarked", () => {
+    render(<ChatTimelineMessage isActive={false} message={message([textPart("Typed")])} status="ready" />);
+    expect(screen.queryByText("Voice")).toBeNull();
+  });
+});

@@ -92,6 +92,9 @@ export function buildVoiceAgentConfig({
     platform_settings: {
       auth: { enable_auth: true },
       overrides: DISABLED_OVERRIDES,
+      // No audio kept; ElevenLabs deletes its transcript after 30 days (ours lives on in the chat).
+      // Only these two, so the agent's other privacy settings stay as they are.
+      privacy: { record_voice: false, retention_days: 30 },
     },
   };
 }

@@ -9,6 +9,8 @@ const FormSchema = z.object({
 });
 
 export type ChatComposerHandle = {
+  /** Back to the voice button, once a call it opened has closed. */
+  focusVoice: () => void;
   /** Puts text back in the composer (ahead of any draft), focused with the caret at the end. */
   restore: (text: string) => void;
 };
@@ -18,15 +20,22 @@ export function ChatComposerBlock({
   onResumeRequest,
   onSend,
   onStop,
+  onVoice,
+  onVoiceIntent,
   ref,
+  voiceDisabled,
 }: {
   isStreaming: boolean;
   onResumeRequest: () => void;
   onSend: (message: string) => Promise<void>;
   onStop: () => void;
+  onVoice?: () => void;
+  onVoiceIntent?: () => void;
   ref?: React.Ref<ChatComposerHandle>;
+  voiceDisabled?: boolean;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const voiceButtonRef = useRef<HTMLButtonElement>(null);
   const form = useForm({
     defaultValues: {
       message: "",
@@ -44,6 +53,9 @@ export function ChatComposerBlock({
   useImperativeHandle(
     ref,
     () => ({
+      focusVoice() {
+        voiceButtonRef.current?.focus();
+      },
       restore(text) {
         // A draft typed while the reply ran is kept after the restored question, never overwritten.
         const draft = String(form.state.values.message).trim();
@@ -87,7 +99,11 @@ export function ChatComposerBlock({
               onResumeRequest={onResumeRequest}
               onStop={onStop}
               onSubmit={onSubmit}
+              onVoice={onVoice}
+              onVoiceIntent={onVoiceIntent}
               textareaRef={textareaRef}
+              voiceButtonRef={voiceButtonRef}
+              voiceDisabled={voiceDisabled}
             />
           )}
         </form.Field>

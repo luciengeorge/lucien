@@ -104,16 +104,43 @@ export const reserveVoiceCall = mutation({
   },
 });
 
-/** Gives back a reservation no call came of, e.g. when the call token could not be minted. */
+/**
+ * Gives back a reservation no call came of: the token could not be minted, or the browser never
+ * connected. Only the visitor's own active call, and only within `releaseWindowSecs` of reserving
+ * it, so a release sent mid-call refunds a few seconds at most; anything else is a no-op. A call
+ * that did connect is settled to its real duration by the webhook, which overrides a release.
+ */
 export const releaseVoiceCall = mutation({
   args: { callId: v.id("voiceCalls"), serverSecret: v.string(), sessionId: v.string() },
   handler: async (ctx, { callId, serverSecret, sessionId }) => {
     assertServer(serverSecret);
     const call = await ctx.db.get(callId);
-    if (!call) throw new Error("Voice call not found");
-    if (call.sessionId !== sessionId) throw new Error("Voice call access denied");
-    if (call.status === "ended") return;
+    if (!call || call.sessionId !== sessionId || call.status !== "active") return;
+    if (Date.now() - call.startedAt > VOICE_LIMITS.releaseWindowSecs * 1000) return;
     await ctx.db.patch(callId, { durationSecs: 0, status: "ended" });
+  },
+});
+
+/**
+ * Whether the voice contact form may post to Slack: it posts without the model in between, so it
+ * only sends for a session that just had a call, a few times a day per session and per IP.
+ */
+export const allowVoiceContact = mutation({
+  args: { ip: v.string(), serverSecret: v.string(), sessionId: v.string() },
+  handler: async (ctx, { ip, serverSecret, sessionId }): Promise<{ allowed: boolean }> => {
+    assertServer(serverSecret);
+    const recentCall = await ctx.db
+      .query("voiceCalls")
+      .withIndex("by_session_id", (q) =>
+        q.eq("sessionId", sessionId).gte("startedAt", Date.now() - VOICE_LIMITS.contactAfterCallSecs * 1000),
+      )
+      .first();
+    if (!recentCall) return { allowed: false };
+
+    const ipStatus = await rateLimiter.limit(ctx, "contactIpDaily", { key: ip });
+    if (!ipStatus.ok) return { allowed: false };
+    const sessionStatus = await rateLimiter.limit(ctx, "contactSessionDaily", { key: sessionId });
+    return { allowed: sessionStatus.ok };
   },
 });
 

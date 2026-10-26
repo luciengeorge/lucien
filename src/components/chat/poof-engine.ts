@@ -2,15 +2,15 @@ import type { EyeName, EyeShape } from "./poof-eyes";
 
 import { EYES, mixEye, withLid } from "./poof-eyes";
 
-/** What the app tells Poof: what the conversation is doing right now. */
-export type PoofState = "idle" | "thinking" | "working" | "writing" | "confused";
+/** What the app tells Poof: what the conversation is doing right now. `listening` and `talking` are a voice call's turns. */
+export type PoofState = "idle" | "thinking" | "working" | "writing" | "confused" | "listening" | "talking";
 
 /**
  * What Poof is actually expressing. The app only sets the state; Poof layers its own life on
  * top: it listens while you type, is pleased when an answer lands, perks up when a reply starts,
  * dozes off when left alone, and reacts to being poked.
  */
-export type PoofMood = PoofState | "listening" | "happy" | "surprised" | "annoyed" | "drowsy" | "sleeping" | "waking";
+export type PoofMood = PoofState | "happy" | "surprised" | "annoyed" | "drowsy" | "sleeping" | "waking";
 
 export type PoofSignal = "typing" | "activity" | "poke";
 
@@ -35,6 +35,9 @@ export type PoofFrame = {
 
 /** Pointer position relative to the face centre, in viewBox units. */
 export type PoofPoint = { x: number; y: number };
+
+/** How loud each side of a voice call is right now, 0 to 1. */
+export type PoofLevels = { input: number; output: number };
 
 export const SPARK_COUNT = 10;
 export const Z_COUNT = 3;
@@ -80,6 +83,7 @@ const REST: Record<PoofMood, Pose> = {
   drowsy: pose(["heavy", "heavy"], [0, 1], { lid: 0.9, y: 1.2 }),
   sleeping: pose(["sleep", "sleep"], [0, 0.8], { rotate: 7, y: 2.2 }),
   waking: pose(["wide", "wide"], [0, -0.5]),
+  talking: pose(["open", "open"], [0, 1], { scale: 1.02 }),
 };
 
 const BLINK_EVERY: Partial<Record<PoofMood, [number, number]>> = {
@@ -91,6 +95,7 @@ const BLINK_EVERY: Partial<Record<PoofMood, [number, number]>> = {
   confused: [2.2, 4.5],
   annoyed: [3, 5],
   drowsy: [1.6, 3],
+  talking: [2.6, 5],
 };
 
 /** How long a passing reaction holds before Poof drops back to what it was doing. */
@@ -177,6 +182,8 @@ export function restFrame(state: PoofState): PoofFrame {
 export type PoofEngine = {
   /** Asked to greet but has not yet: a face torn down now should hand the greeting to the next one. */
   owesGreeting: () => boolean;
+  /** The call's latest levels, read every frame while listening or talking and ignored otherwise. */
+  hear: (levels: PoofLevels) => void;
   look: (point: PoofPoint | null) => void;
   /** `interrupted`: the visitor stopped the reply, so settling is a startle rather than a celebration. */
   setState: (state: PoofState, options?: { interrupted?: boolean }) => void;
@@ -247,6 +254,9 @@ export function createPoofEngine({
   let pokes: number[] = [];
   let greetAt = greet && initial === "idle" ? 0.35 : Infinity;
   if (entrance && initial === "thinking") transient = { mood: "surprised", until: HOLD.surprised };
+
+  let heard: PoofLevels = { input: 0, output: 0 };
+  const voice: PoofLevels = { input: 0, output: 0 };
 
   const sparks = Array.from({ length: SPARK_COUNT }, idleParticle);
   const zs = Array.from({ length: Z_COUNT }, idleParticle);
@@ -383,6 +393,11 @@ export function createPoofEngine({
     const next = transient?.mood ?? (state === "idle" ? ambient : state);
     if (next !== mood) enter(next);
 
+    // Raw levels flicker frame to frame; a short follow keeps the body from buzzing.
+    const follow = Math.min(1, dt * 14);
+    voice.input += (heard.input - voice.input) * follow;
+    voice.output += (heard.output - voice.output) * follow;
+
     const since = t - enteredAt;
     const r = REST[mood];
     let x = r.x;
@@ -419,11 +434,24 @@ export function createPoofEngine({
       }
       case "listening": {
         rotate += 0.8 * Math.sin(0.8 * t);
+        if (state === "listening") scale += 0.035 * voice.input;
         const reading = wander([0.35, 0.8], 1.2, 0.3, r.gaze.y);
         look = { x: r.gaze.x + reading.x, y: reading.y };
         if (t >= nextSwap) {
           showEyes(chance(0.5) ? ["open", "open"] : ["wide", "wide"]);
           nextSwap = t + range(2, 4);
+        }
+        break;
+      }
+      case "talking": {
+        rotate += 1.2 * Math.sin(0.7 * t);
+        // Taller and a little bigger as it speaks up, like a chest filling with the words.
+        scale += 0.09 * voice.output;
+        squash += 0.05 * voice.output;
+        look = wander([0.9, 2.2], 1.8, 0.8, r.gaze.y);
+        if (t >= nextSwap) {
+          if (chance(0.35)) showEyes(["happy", "happy"], range(0.6, 1.1));
+          nextSwap = t + range(2.5, 4.5);
         }
         break;
       }
@@ -616,6 +644,10 @@ export function createPoofEngine({
 
   return {
     owesGreeting: () => greetAt !== Infinity,
+    hear({ input, output }) {
+      const level = (n: number) => (Number.isFinite(n) ? clamp(n, 0, 1) : 0);
+      heard = { input: level(input), output: level(output) };
+    },
     look(point) {
       pointer = point;
       if (!point) return;

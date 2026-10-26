@@ -78,4 +78,8 @@ describe("buildVoiceAgentConfig", () => {
     expect(overrides.length).toBeGreaterThan(10);
     expect(overrides.every((value) => value === false)).toBe(true);
   });
+
+  it("keeps no audio of a call, and lets ElevenLabs hold its transcript for 30 days", () => {
+    expect(build().platform_settings.privacy).toEqual({ record_voice: false, retention_days: 30 });
+  });
 });
