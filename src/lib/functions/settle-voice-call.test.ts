@@ -87,6 +87,12 @@ describe("settleVoiceCallForRequest", () => {
     expect(await settle()).toEqual({ status: "rejected" });
   });
 
+  it("reports failed, rather than throwing, when Convex cannot record the call", async () => {
+    vi.mocked(fetchAuthMutation).mockRejectedValue(new Error("Could not find public function"));
+
+    expect(await settle()).toEqual({ status: "failed" });
+  });
+
   it("waits out ElevenLabs' processing, then settles", async () => {
     fetchMock
       .mockImplementationOnce(async () => Response.json(conversation({ status: "processing" })))

@@ -63,11 +63,16 @@ export const settleVoiceCallForRequest = createServerOnlyFn(
       if (conversation.status === "failed") return { status: "failed" };
       if (conversation.status !== "done") continue;
 
-      const { settled } = await fetchAuthMutation(api.voiceCalls.settleVoiceCall, {
+      const result = await fetchAuthMutation(api.voiceCalls.settleVoiceCall, {
         ...toVoiceTranscriptArgs(conversation),
         serverSecret,
         sessionId,
+      }).catch((error: unknown) => {
+        logger.error("voice settle failed", { callId, elevenConversationId, error });
+        return null;
       });
+      if (!result) return { status: "failed" };
+      const { settled } = result;
       logger.info("voice call settled", { callId, elevenConversationId, settled });
       return { status: settled ? "settled" : "rejected" };
     }
