@@ -573,6 +573,7 @@ describe("settling a call", () => {
 
 describe("voice resting", () => {
   it("greys the button out and says why when the page loads with voice resting", async () => {
+    checkVoiceResting.mockResolvedValue(true);
     renderChat(vi.fn(), { voiceResting: true });
 
     const button = screen.getByRole("button", { name: "Talk to Poof" });
@@ -599,7 +600,17 @@ describe("voice resting", () => {
     expect(screen.getByRole("button", { name: "Talk to Poof" }).getAttribute("aria-disabled")).toBe("true");
   });
 
+  it("un-greys the button once voice is back, without a reload", async () => {
+    checkVoiceResting.mockResolvedValue(false);
+    renderChat(vi.fn(), { voiceResting: true });
+
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Talk to Poof" }).getAttribute("aria-disabled")).toBeNull(),
+    );
+  });
+
   it("rests the button too when the server says so mid-visit", async () => {
+    checkVoiceResting.mockResolvedValueOnce(false).mockResolvedValue(true);
     startVoiceCall.mockResolvedValue({ ok: false, reason: "resting" });
     renderChat();
     await startCall();

@@ -140,6 +140,18 @@ describe("startVoiceCallForRequest", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it("keeps a good call when lifting the rest fails", async () => {
+    vi.mocked(fetchAuthMutation).mockImplementation(async (...[fn]) => {
+      const name = getFunctionName(fn);
+      if (name === "voiceCalls:reserveVoiceCall") return { allowed: true, callId: "call-1", maxSecs: 240 };
+      if (name === "voiceOutages:clearVoiceOutage") throw new Error("convex blip");
+      return null;
+    });
+
+    expect(await startVoiceCallForRequest("corr")).toMatchObject({ callId: "call-1", ok: true, token: "webrtc-token" });
+    expect(mutationCalls("voiceCalls:releaseVoiceCall")).toEqual([]);
+  });
+
   it("lifts the rest once a token is minted again", async () => {
     await startVoiceCallForRequest("corr");
 

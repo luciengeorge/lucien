@@ -12,8 +12,9 @@ import { AnalyticsEvent, useAnalytics } from "#/lib/analytics";
 import { getTextFromMessage, hasRenderableMessageContent, parseSerializedMessages } from "#/lib/chat-types";
 import { getConversation } from "#/lib/functions/get-conversation";
 import { resumeOrStartConversation, startNewConversation } from "#/lib/functions/start-new-conversation";
+import { checkVoiceResting } from "#/lib/functions/start-voice-call";
 import { useChat } from "@ai-sdk/react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { DefaultChatTransport } from "ai";
 import { Fragment, lazy, startTransition, Suspense, useEffect, useMemo, useRef, useState } from "react";
 
@@ -43,6 +44,7 @@ import { buildVoiceContext, waitForVoiceTranscript } from "./chat-voice.utils";
 import { createRateLimitAwareFetch, entryItemClassName, getSettledAssistantAnalyticsEvents } from "./chat.utils";
 import { createPoofSignals, PoofSignalsContext } from "./poof-signals";
 
+const VOICE_RESTING_QUERY_KEY = ["voice-resting"];
 const loadVoiceCall = () => import("./chat-voice-call");
 const ChatVoiceCall = lazy(loadVoiceCall);
 
@@ -250,9 +252,18 @@ export function ChatConversation({
   // A call whose line failed mid-way: a note sits after the last message from before it ended.
   const [droppedAfterId, setDroppedAfterId] = useState<string | null>(null);
   const transcriptWaitRef = useRef<AbortController | null>(null);
-  // The page loads knowing; a refusal mid-visit greys the button from then on too.
+  // The page loads knowing (so no flash), and a refusal mid-visit greys the button too. Only while
+  // greyed, it asks each minute whether voice is back, so it un-greys without a reload.
+  const queryClient = useQueryClient();
   const [restedThisVisit, setRestedThisVisit] = useState(false);
-  const voiceResting = Boolean(chatState.voiceResting) || restedThisVisit;
+  const mayBeResting = isVoiceEnabled() && (Boolean(chatState.voiceResting) || restedThisVisit);
+  const { data: stillResting = true } = useQuery({
+    enabled: mayBeResting,
+    queryFn: () => checkVoiceResting(),
+    queryKey: VOICE_RESTING_QUERY_KEY,
+    refetchInterval: (query) => (query.state.data === false ? false : 60_000),
+  });
+  const voiceResting = mayBeResting && stillResting;
 
   useEffect(() => () => transcriptWaitRef.current?.abort(), []);
 
@@ -262,7 +273,9 @@ export function ChatConversation({
     setDroppedAfterId(null);
     const call = requestVoiceCall();
     void call.then((result) => {
-      if (!result.ok && result.reason === "resting") setRestedThisVisit(true);
+      if (result.ok || result.reason !== "resting") return;
+      queryClient.setQueryData(VOICE_RESTING_QUERY_KEY, true);
+      setRestedThisVisit(true);
     });
     setVoiceCall({ call, context: buildVoiceContext(visibleMessages) });
   };

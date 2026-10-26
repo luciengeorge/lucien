@@ -93,6 +93,13 @@ describe("settleVoiceCallForRequest", () => {
     expect(await settle()).toEqual({ status: "failed" });
   });
 
+  it("retries a rate-limited read rather than giving up on the call", async () => {
+    fetchMock.mockImplementationOnce(async () => new Response("slow down", { status: 429 }));
+
+    expect(await settle()).toEqual({ status: "settled" });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
   it("waits out ElevenLabs' processing, then settles", async () => {
     fetchMock
       .mockImplementationOnce(async () => Response.json(conversation({ status: "processing" })))

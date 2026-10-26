@@ -85,7 +85,10 @@ export const startVoiceCallForRequest = createServerOnlyFn(
 
     try {
       const token = await mintConversationToken(apiKey);
-      await fetchAuthMutation(api.voiceOutages.clearVoiceOutage, { serverSecret });
+      // The call is good either way: a failed clear only leaves an already lapsed outage row behind.
+      await fetchAuthMutation(api.voiceOutages.clearVoiceOutage, { serverSecret }).catch((error: unknown) => {
+        logger.warn("voice outage clear failed", { callId: reservation.callId, correlationId, error });
+      });
       logger.info("voice call started", {
         callId: reservation.callId,
         conversationId,

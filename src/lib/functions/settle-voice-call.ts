@@ -46,7 +46,8 @@ export const settleVoiceCallForRequest = createServerOnlyFn(
         headers: { "xi-api-key": apiKey },
       }).catch(() => null);
       if (!response) continue;
-      if (response.status >= 400 && response.status < 500) return { status: "rejected" };
+      // A rate limit passes; any other 4xx means this conversation is not ours to read.
+      if (response.status >= 400 && response.status < 500 && response.status !== 429) return { status: "rejected" };
       if (!response.ok) continue;
 
       const parsed = ConversationSchema.safeParse(await response.json().catch(() => null));

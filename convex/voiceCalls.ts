@@ -180,7 +180,7 @@ async function recordTranscript(
     return false;
   }
 
-  const conversation = await ctx.db.get(call.conversationId);
+  const conversation = call.conversationId ? await ctx.db.get(call.conversationId) : null;
   if (conversation) {
     const messages: PersistedMessage[] = transcript.flatMap((turn) => {
       const text = stripDashes(turn.message ?? "").trim();
@@ -210,17 +210,43 @@ async function recordTranscript(
   return true;
 }
 
+/**
+ * ElevenLabs bills a conversation whatever call_id the browser gave it, and a modified client can give
+ * a made-up or old one. Such a conversation still counts against the month: as an ended row with no
+ * session, ip or conversation, so no visitor's own allowance moves and no transcript is written.
+ */
+async function recordOrphan(
+  ctx: MutationCtx,
+  { conversationStartedAtSecs, durationSecs, elevenConversationId }: ObjectType<typeof transcriptArgs>,
+) {
+  const existing = await ctx.db
+    .query("voiceCalls")
+    .withIndex("by_orphan_conversation_id", (q) => q.eq("orphanConversationId", elevenConversationId))
+    .first();
+  if (existing) return;
+  await ctx.db.insert("voiceCalls", {
+    durationSecs,
+    elevenConversationIds: [elevenConversationId],
+    ip: "",
+    maxSecs: durationSecs,
+    orphanConversationId: elevenConversationId,
+    sessionId: "",
+    startedAt: conversationStartedAtSecs === undefined ? Date.now() : conversationStartedAtSecs * 1000,
+    status: "ended",
+  });
+}
+
 /** From ElevenLabs' post-call webhook, signed by ElevenLabs. */
 export const recordVoiceTranscript = internalMutation({
   args: transcriptArgs,
   handler: async (ctx, args) => {
     const id = ctx.db.normalizeId("voiceCalls", args.callId);
     const call = id ? await ctx.db.get(id) : null;
-    if (!call) {
-      console.warn(`Voice transcript for unknown call ${args.callId} (${args.elevenConversationId})`);
-      return;
-    }
-    await recordTranscript(ctx, call, args);
+    if (call && (await recordTranscript(ctx, call, args))) return;
+    console.warn(
+      `Voice transcript ${args.elevenConversationId} matches no call (${args.callId}): counted as an orphan`,
+    );
+    await recordOrphan(ctx, args);
   },
 });
 
