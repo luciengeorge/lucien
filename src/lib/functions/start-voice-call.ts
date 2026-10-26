@@ -6,7 +6,7 @@ import { getOrCreateCorrelationId } from "#/lib/correlation-id";
 import { startConversation } from "#/lib/functions/start-new-conversation";
 import { createLogger } from "#/lib/logger";
 import { VOICE_AGENT_ID } from "#/lib/voice/agent-config";
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createServerOnlyFn } from "@tanstack/react-start";
 import { getRequestHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
 
@@ -41,54 +41,56 @@ async function resolveConversation(correlationId: string) {
   return { conversationId: newConversationId.data, sessionId: newSessionId };
 }
 
-export async function startVoiceCallForRequest(correlationId: string): Promise<StartVoiceCallResult> {
-  const apiKey = process.env.ELEVENLABS_API_KEY;
-  const serverSecret = process.env.VOICE_SERVER_SECRET;
-  if (!apiKey || !serverSecret) {
-    logger.error("voice call unavailable", {
-      correlationId,
-      outcome: apiKey ? "missing_server_secret" : "missing_api_key",
-    });
-    return { ok: false, reason: "unavailable" };
-  }
+export const startVoiceCallForRequest = createServerOnlyFn(
+  async (correlationId: string): Promise<StartVoiceCallResult> => {
+    const apiKey = process.env.ELEVENLABS_API_KEY;
+    const serverSecret = process.env.VOICE_SERVER_SECRET;
+    if (!apiKey || !serverSecret) {
+      logger.error("voice call unavailable", {
+        correlationId,
+        outcome: apiKey ? "missing_server_secret" : "missing_api_key",
+      });
+      return { ok: false, reason: "unavailable" };
+    }
 
-  const { conversationId, sessionId } = await resolveConversation(correlationId);
-  // Not x-vercel-id: it is unique per request, so every call would get a fresh IP allowance.
-  const ip =
-    getRequestHeader("x-forwarded-for")?.split(",")[0]?.trim() || getRequestHeader("x-real-ip")?.trim() || "unknown";
-  const reservation = await fetchAuthMutation(api.voiceCalls.reserveVoiceCall, {
-    conversationId,
-    ip,
-    serverSecret,
-    sessionId,
-  });
-  if (!reservation.allowed) {
-    logger.info("voice call refused", { conversationId, correlationId, reason: reservation.reason });
-    return { ok: false, reason: reservation.reason };
-  }
-
-  try {
-    const token = await mintConversationToken(apiKey);
-    logger.info("voice call started", {
-      callId: reservation.callId,
+    const { conversationId, sessionId } = await resolveConversation(correlationId);
+    // Not x-vercel-id: it is unique per request, so every call would get a fresh IP allowance.
+    const ip =
+      getRequestHeader("x-forwarded-for")?.split(",")[0]?.trim() || getRequestHeader("x-real-ip")?.trim() || "unknown";
+    const reservation = await fetchAuthMutation(api.voiceCalls.reserveVoiceCall, {
       conversationId,
-      correlationId,
-      maxSecs: reservation.maxSecs,
+      ip,
+      serverSecret,
+      sessionId,
     });
-    return {
-      callId: reservation.callId,
-      conversationId,
-      maxSecs: reservation.maxSecs,
-      ok: true,
-      today: formatPromptDate(new Date()),
-      token,
-    };
-  } catch (error) {
-    logger.error("voice call token failed", { callId: reservation.callId, conversationId, correlationId, error });
-    await fetchAuthMutation(api.voiceCalls.releaseVoiceCall, { callId: reservation.callId, serverSecret, sessionId });
-    return { ok: false, reason: "unavailable" };
-  }
-}
+    if (!reservation.allowed) {
+      logger.info("voice call refused", { conversationId, correlationId, reason: reservation.reason });
+      return { ok: false, reason: reservation.reason };
+    }
+
+    try {
+      const token = await mintConversationToken(apiKey);
+      logger.info("voice call started", {
+        callId: reservation.callId,
+        conversationId,
+        correlationId,
+        maxSecs: reservation.maxSecs,
+      });
+      return {
+        callId: reservation.callId,
+        conversationId,
+        maxSecs: reservation.maxSecs,
+        ok: true,
+        today: formatPromptDate(new Date()),
+        token,
+      };
+    } catch (error) {
+      logger.error("voice call token failed", { callId: reservation.callId, conversationId, correlationId, error });
+      await fetchAuthMutation(api.voiceCalls.releaseVoiceCall, { callId: reservation.callId, serverSecret, sessionId });
+      return { ok: false, reason: "unavailable" };
+    }
+  },
+);
 
 export const startVoiceCall = createServerFn({ method: "POST" }).handler(
   async (): Promise<StartVoiceCallResult> =>

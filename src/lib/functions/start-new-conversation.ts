@@ -1,4 +1,4 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createServerOnlyFn } from "@tanstack/react-start";
 import { getRequestHeader } from "@tanstack/react-start/server";
 
 import type { ChatConversationState } from "../chat-types";
@@ -13,7 +13,9 @@ import { createLogger } from "../logger";
 
 const logger = createLogger("conversation.start-new");
 
-export async function startConversation(correlationId: string): Promise<ChatConversationState> {
+// Server-only: the client bundle imports this module for its server functions, and this would drag
+// the `.server` imports in with it.
+export const startConversation = createServerOnlyFn(async (correlationId: string): Promise<ChatConversationState> => {
   const session = await getConversationSession();
   const sessionId = session.data.sessionId ?? crypto.randomUUID();
   const conversation = await createConversationWithIntro(sessionId, correlationId);
@@ -32,7 +34,7 @@ export async function startConversation(correlationId: string): Promise<ChatConv
   });
 
   return conversation;
-}
+});
 
 export const startNewConversation = createServerFn({ method: "POST" }).handler(
   async (): Promise<ChatConversationState> => {
