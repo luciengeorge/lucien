@@ -15,6 +15,8 @@ import type * as http from "../http.js";
 import type * as intro from "../intro.js";
 import type * as migrations from "../migrations.js";
 import type * as rateLimits from "../rateLimits.js";
+import type * as voiceCalls from "../voiceCalls.js";
+import type * as voiceLimits from "../voiceLimits.js";
 
 import type {
   ApiFromModules,
@@ -30,6 +32,8 @@ declare const fullApi: ApiFromModules<{
   intro: typeof intro;
   migrations: typeof migrations;
   rateLimits: typeof rateLimits;
+  voiceCalls: typeof voiceCalls;
+  voiceLimits: typeof voiceLimits;
 }>;
 
 /**

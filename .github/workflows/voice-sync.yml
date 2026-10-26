@@ -1,0 +1,56 @@
+name: Sync voice agent
+
+# Push Poof's prompt (the whole content/ corpus plus content/voice-prompt.md) and
+# settings to the ElevenLabs voice agent after every successful production deploy,
+# so voice answers from the same content visitors are served. Waits for the
+# deploy like intro.yml, so the synced corpus is the deployed one.
+# Also runnable on demand via the Actions tab (workflow_dispatch), from main only.
+on:
+  deployment_status: {}
+  workflow_dispatch: {}
+
+env:
+  PNPM_VERSION: 10.33.0
+  NODE_VERSION: 24
+  HUGEICONS_TOKEN: ${{ secrets.HUGEICONS_TOKEN }}
+
+jobs:
+  sync:
+    name: Sync the voice agent
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
+      (github.event.deployment_status.state == 'success' && github.event.deployment.environment == 'Production')
+    # Job-level, so only runs that pass the `if` join the group (see intro.yml).
+    concurrency:
+      group: voice-sync-prod
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # The commit Vercel just deployed, so the corpus matches what visitors are served.
+          ref: ${{ github.event.deployment.sha || github.sha }}
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Check API key is configured
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+        run: |
+          if [ -z "$ELEVENLABS_API_KEY" ]; then
+            echo "::error::ELEVENLABS_API_KEY secret is not set. Add an ElevenLabs key with ElevenAgents write access as the ELEVENLABS_API_KEY repo secret."
+            exit 1
+          fi
+
+      - name: Sync the voice agent
+        # Called directly rather than `pnpm voice:sync`, which wraps it in `dotenv -e .env.local` (absent in CI).
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+        run: pnpm tsx scripts/voice-sync.ts

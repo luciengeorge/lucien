@@ -25,18 +25,27 @@ describe("renderCorpus", () => {
     ]);
     expect(corpus).not.toContain("You are Poof");
   });
+
+  it("leaves out the voice prompt add-on, which is not content either", () => {
+    const corpus = renderCorpus([
+      { path: "bio.md", text: "Bio." },
+      { path: "voice-prompt.md", text: "This is a live spoken conversation" },
+    ]);
+    expect(corpus).not.toContain("live spoken conversation");
+  });
 });
 
 describe("readCorpusFromDisk", () => {
   /* The eval harness must grade the same corpus the chat route sends. */
-  it("includes every markdown file under content/, nested ones too, except the prompt", () => {
+  it("includes every markdown file under content/, nested ones too, except the prompts", () => {
     const corpus = readCorpusFromDisk(CONTENT_DIR);
     const files = readdirSync(CONTENT_DIR, { recursive: true })
       .map(String)
-      .filter((file) => file.endsWith(".md") && file !== "system-prompt.md");
+      .filter((file) => file.endsWith(".md") && file !== "system-prompt.md" && file !== "voice-prompt.md");
 
     expect(files.length).toBeGreaterThan(10);
     for (const file of files) expect(corpus).toContain(`<document source="${file}">`);
     expect(corpus).not.toContain('source="system-prompt.md"');
+    expect(corpus).not.toContain('source="voice-prompt.md"');
   });
 });

@@ -37,4 +37,13 @@ describe("GET /llms-full.txt", () => {
     expect(workIndex).toBeGreaterThan(-1);
     expect(resumeIndex).toBeGreaterThan(workIndex);
   });
+
+  it("serves content only, never Poof's prompts", async () => {
+    const res = await getHandler()({ request: new Request("http://localhost/llms-full.txt") });
+    const body = await res.text();
+
+    expect(body).not.toContain("<voice>");
+    expect(body).not.toContain("This is a live spoken conversation");
+    expect(body).not.toContain("You are Poof");
+  });
 });

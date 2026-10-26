@@ -1,0 +1,15 @@
+/** Voice is billed per second, so every limit on it lives here. Free of imports so the agent sync can share it. */
+export const VOICE_LIMITS = {
+  /** The voice agent's own max_duration_seconds: the longest any call can run, whatever it was granted. */
+  callMaxSecs: 300,
+  /** Seconds one visitor (session) may talk per UTC day. */
+  visitorDailySecs: 300,
+  /** Seconds all visitors together may talk per UTC calendar month. */
+  globalMonthlySecs: 4500,
+  /** A grant shorter than this is not worth starting a call for. */
+  minGrantSecs: 30,
+  /** Calls one IP may start per day. */
+  ipDailyCalls: 6,
+  /** An active call this long past the call cap never reported its end; it stops blocking new calls. */
+  staleAfterMs: 10 * 60_000,
+};

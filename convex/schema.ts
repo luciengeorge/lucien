@@ -44,4 +44,18 @@ export default defineSchema({
   })
     .index("by_message_id", ["messageId", "order"])
     .index("by_conversation", ["conversationId", "order"]),
+  /** One row per voice call reservation; its seconds count against the limits in voiceLimits.ts. */
+  voiceCalls: defineTable({
+    conversationId: v.id("conversations"),
+    durationSecs: v.optional(v.number()),
+    elevenConversationId: v.optional(v.string()),
+    ip: v.string(),
+    maxSecs: v.number(),
+    sessionId: v.string(),
+    startedAt: v.number(),
+    status: v.union(v.literal("active"), v.literal("ended")),
+  })
+    .index("by_session_id", ["sessionId", "startedAt"])
+    .index("by_started_at", ["startedAt"])
+    .index("by_eleven_conversation_id", ["elevenConversationId"]),
 });

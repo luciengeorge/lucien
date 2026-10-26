@@ -3,12 +3,14 @@ import { v } from "convex/values";
 
 import { components } from "./_generated/api";
 import { mutation } from "./_generated/server";
+import { VOICE_LIMITS } from "./voiceLimits";
 
 // Per-IP daily cap is the real abuse ceiling: sessionIds are minted free by
 // startNewConversation, so the IP limit is what actually bounds spend.
-const rateLimiter = new RateLimiter(components.rateLimiter, {
+export const rateLimiter = new RateLimiter(components.rateLimiter, {
   chatIpDaily: { kind: "fixed window", rate: 60, period: DAY },
   chatSessionBurst: { kind: "token bucket", rate: 10, period: MINUTE, capacity: 5 },
+  voiceIpDaily: { kind: "fixed window", rate: VOICE_LIMITS.ipDailyCalls, period: DAY },
 });
 
 export const checkChatRateLimit = mutation({
