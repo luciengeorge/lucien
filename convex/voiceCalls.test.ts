@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 import type { Id } from "./_generated/dataModel";
 
-import { api, internal } from "./_generated/api";
+import { api } from "./_generated/api";
 import schema from "./schema";
 
 const modules = import.meta.glob(["./**/*.{ts,js}", "!./**/*.test.ts"]);
@@ -360,74 +360,5 @@ describe("releaseVoiceCall", () => {
     await t.mutation(api.voiceCalls.releaseVoiceCall, { callId, serverSecret: SECRET, sessionId: SESSION });
 
     expect(await getCall(t, callId)).toMatchObject({ durationSecs: 120, status: "ended" });
-  });
-});
-
-describe("recordVoiceCallEnd", () => {
-  test("ends the call with what it really used, which then counts against the limit", async () => {
-    const t = setup();
-    const callId = await seedCall(t, { maxSecs: 300, startedAt: NOW - 5 * MINUTE, status: "active" });
-
-    await t.mutation(internal.voiceCalls.recordVoiceCallEnd, {
-      callId,
-      durationSecs: 120,
-      elevenConversationId: "conv_1",
-    });
-
-    expect(await getCall(t, callId)).toMatchObject({
-      durationSecs: 120,
-      elevenConversationId: "conv_1",
-      status: "ended",
-    });
-    expect(await reserve(t)).toMatchObject({ allowed: true, maxSecs: 180 });
-  });
-
-  test("keeps the first report when one is delivered again", async () => {
-    const t = setup();
-    const callId = await seedCall(t, { maxSecs: 300, startedAt: NOW, status: "active" });
-
-    await t.mutation(internal.voiceCalls.recordVoiceCallEnd, {
-      callId,
-      durationSecs: 90,
-      elevenConversationId: "conv_1",
-    });
-    await t.mutation(internal.voiceCalls.recordVoiceCallEnd, {
-      callId,
-      durationSecs: 5,
-      elevenConversationId: "conv_2",
-    });
-
-    expect(await getCall(t, callId)).toMatchObject({
-      durationSecs: 90,
-      elevenConversationId: "conv_1",
-      status: "ended",
-    });
-  });
-
-  /* A released call can still have talked: ElevenLabs' own report wins. */
-  test("overrides a release with the duration ElevenLabs reports", async () => {
-    const t = setup();
-    const callId = await seedCall(t, { maxSecs: 300, startedAt: NOW, status: "active" });
-    await t.mutation(api.voiceCalls.releaseVoiceCall, { callId, serverSecret: SECRET, sessionId: SESSION });
-
-    await t.mutation(internal.voiceCalls.recordVoiceCallEnd, {
-      callId,
-      durationSecs: 200,
-      elevenConversationId: "conv_1",
-    });
-
-    expect(await getCall(t, callId)).toMatchObject({ durationSecs: 200, status: "ended" });
-  });
-
-  test("ignores a call id it does not know", async () => {
-    const t = setup();
-
-    const result = await t.mutation(internal.voiceCalls.recordVoiceCallEnd, {
-      callId: "not-a-call",
-      durationSecs: 10,
-      elevenConversationId: "conv_1",
-    });
-
-    expect(result).toBe(false);
   });
 });

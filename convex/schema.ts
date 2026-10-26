@@ -48,7 +48,8 @@ export default defineSchema({
   voiceCalls: defineTable({
     conversationId: v.id("conversations"),
     durationSecs: v.optional(v.number()),
-    elevenConversationId: v.optional(v.string()),
+    /** ElevenLabs conversations already settled against this call, so a redelivery counts nothing twice. */
+    elevenConversationIds: v.optional(v.array(v.string())),
     ip: v.string(),
     maxSecs: v.number(),
     sessionId: v.string(),
@@ -56,6 +57,5 @@ export default defineSchema({
     status: v.union(v.literal("active"), v.literal("ended")),
   })
     .index("by_session_id", ["sessionId", "startedAt"])
-    .index("by_started_at", ["startedAt"])
-    .index("by_eleven_conversation_id", ["elevenConversationId"]),
+    .index("by_started_at", ["startedAt"]),
 });

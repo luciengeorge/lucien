@@ -3,7 +3,9 @@ import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 
 import { internalMutation, mutation } from "./_generated/server";
+import { deriveConversationTitle, type PersistedMessage, storeMessage } from "./conversations";
 import { rateLimiter } from "./rateLimits";
+import { stripDashes } from "./stripDashes";
 import { VOICE_LIMITS } from "./voiceLimits";
 
 type Reservation =
@@ -29,7 +31,7 @@ function constantTimeEqual(a: string, b: string) {
 
 /**
  * Seconds a call holds against the limits. An active call holds the agent's whole call cap, since a
- * modified client can ignore a partial grant; it settles to its real duration when recordVoiceCallEnd
+ * modified client can ignore a partial grant; it settles to its real duration when recordVoiceTranscript
  * runs (from the post-call webhook).
  */
 function secondsHeld(call: Doc<"voiceCalls">) {
@@ -116,18 +118,68 @@ export const releaseVoiceCall = mutation({
 });
 
 /**
- * Records what a call really used, as ElevenLabs reports it. The first report wins, so a redelivered
- * webhook changes nothing, but it does override a release, since a released call may still have
- * connected. Returns false for an id that is not a known call.
+ * Puts what was said on a call into the visitor's chat and settles the call, from ElevenLabs'
+ * post-call webhook. Each ElevenLabs conversation counts once, so a redelivery changes nothing, and
+ * its reported time replaces a release, since a released call may still have connected.
  */
-export const recordVoiceCallEnd = internalMutation({
-  args: { callId: v.string(), durationSecs: v.number(), elevenConversationId: v.string() },
-  handler: async (ctx, { callId, durationSecs, elevenConversationId }) => {
+export const recordVoiceTranscript = internalMutation({
+  args: {
+    callId: v.string(),
+    conversationStartedAtSecs: v.optional(v.number()),
+    durationSecs: v.number(),
+    elevenConversationId: v.string(),
+    transcript: v.array(
+      v.object({
+        index: v.number(),
+        message: v.union(v.string(), v.null()),
+        role: v.union(v.literal("agent"), v.literal("user")),
+        timeInCallSecs: v.number(),
+      }),
+    ),
+  },
+  handler: async (ctx, { callId, conversationStartedAtSecs, durationSecs, elevenConversationId, transcript }) => {
     const id = ctx.db.normalizeId("voiceCalls", callId);
     const call = id ? await ctx.db.get(id) : null;
-    if (!call) return false;
-    if (call.elevenConversationId !== undefined) return true;
-    await ctx.db.patch(call._id, { durationSecs, elevenConversationId, status: "ended" });
-    return true;
+    if (!call) {
+      console.warn(`Voice transcript for unknown call ${callId} (${elevenConversationId})`);
+      return;
+    }
+    const settled = call.elevenConversationIds ?? [];
+    if (settled.includes(elevenConversationId)) return;
+
+    const conversationStartedAt =
+      conversationStartedAtSecs === undefined ? call.startedAt : conversationStartedAtSecs * 1000;
+    if (conversationStartedAt < call.startedAt - 60_000 || conversationStartedAt > staleAt(call)) {
+      console.warn(`Voice transcript ${elevenConversationId} started outside call ${callId}`);
+      return;
+    }
+
+    const conversation = await ctx.db.get(call.conversationId);
+    if (conversation) {
+      const messages: PersistedMessage[] = transcript.flatMap((turn) => {
+        const text = stripDashes(turn.message ?? "").trim();
+        if (!text) return [];
+        return {
+          createdAt: conversationStartedAt + turn.timeInCallSecs * 1000,
+          id: `voice-${elevenConversationId}-${turn.index}`,
+          metadata: { callId: call._id, channel: "voice" },
+          parts: [{ text, type: "text" }],
+          role: turn.role === "agent" ? "assistant" : "user",
+        };
+      });
+      for (const message of messages) {
+        await storeMessage(ctx, conversation, message);
+      }
+      await ctx.db.patch(conversation._id, {
+        title: conversation.title ?? deriveConversationTitle(messages),
+        updatedAt: Date.now(),
+      });
+    }
+
+    await ctx.db.patch(call._id, {
+      durationSecs: (settled.length > 0 ? (call.durationSecs ?? 0) : 0) + durationSecs,
+      elevenConversationIds: [...settled, elevenConversationId],
+      status: "ended",
+    });
   },
 });
