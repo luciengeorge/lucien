@@ -23,6 +23,7 @@ vi.mock("#/lib/functions/start-new-conversation", () => ({
   resumeOrStartConversation: vi.fn(),
   startNewConversation: vi.fn(),
 }));
+vi.mock("#/lib/functions/get-conversation", () => ({ getConversation: vi.fn() }));
 const releaseVoiceCall = vi.fn();
 vi.mock("#/lib/functions/release-voice-call", () => ({
   releaseVoiceCall: (options: unknown) => releaseVoiceCall(options),
