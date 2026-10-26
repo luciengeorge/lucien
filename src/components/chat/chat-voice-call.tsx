@@ -17,6 +17,7 @@ import {
 import { releaseUnusedCall } from "./chat-voice-start";
 import { ChatVoiceWaveform, type VoiceWaveformHandle } from "./chat-voice-waveform";
 import { formatCountdown } from "./chat-voice.utils";
+import { useSettledSpeaking } from "./use-settled-speaking";
 
 /** Refusals that are nobody's fault get a calm face; the rest look puzzled. */
 const CALM_REFUSALS: ReadonlySet<VoiceRefusal> = new Set(["call_active", "global_limit", "ip_limit", "visitor_limit"]);
@@ -217,13 +218,14 @@ function VoiceCall({
     else finish("visitor");
   };
 
-  const hearsVisitor = phase === "live" && !conversation.isSpeaking;
+  const agentTalking = useSettledSpeaking(conversation.isSpeaking);
+  const hearsVisitor = phase === "live" && !agentTalking;
   const poof: PoofState = refused
     ? CALM_REFUSALS.has(refused)
       ? "idle"
       : "confused"
     : phase === "live"
-      ? conversation.isSpeaking
+      ? agentTalking
         ? "talking"
         : "listening"
       : "thinking";
@@ -246,9 +248,7 @@ function VoiceCall({
       onEscape={handleEscape}
       panel={isContactOpen ? <ChatVoiceContactForm onClose={closeContact} /> : null}
       poof={poof}
-      status={
-        refused ? undefined : phase === "live" ? (conversation.isSpeaking ? "Talking" : "Listening") : "Connecting"
-      }
+      status={refused ? undefined : phase === "live" ? (agentTalking ? "Talking" : "Listening") : "Connecting"}
     >
       {secsLeft === null ? null : (
         <p className="font-mono text-sm text-neutral-500 tabular-nums">{`${formatCountdown(secsLeft)} left`}</p>

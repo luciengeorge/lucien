@@ -139,14 +139,15 @@ export function ChatComposer({
               <TooltipTrigger
                 render={
                   <Button
-                    className="h-9 shrink-0 gap-1.5 rounded-full text-neutral-700 hover:bg-neutral-950/6 hover:text-neutral-950 max-sm:w-9 max-sm:px-0 sm:h-10 sm:px-3"
+                    aria-label="Resume"
+                    className="size-9 shrink-0 rounded-full text-neutral-700 hover:bg-neutral-950/6 hover:text-neutral-950 sm:size-10"
                     disabled={isStreaming}
                     onClick={onResumeRequest}
+                    size="icon"
                     type="button"
                     variant="ghost"
                   >
                     <HugeiconsIcon icon={File01Icon} size={18} />
-                    <span className="max-sm:sr-only">Resume</span>
                   </Button>
                 }
               />
