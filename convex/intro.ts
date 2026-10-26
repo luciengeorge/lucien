@@ -6,6 +6,7 @@ import type { QueryCtx } from "./_generated/server";
 
 import { internal } from "./_generated/api";
 import { action, internalAction, internalMutation, internalQuery } from "./_generated/server";
+import { stripDashes } from "./stripDashes";
 
 /** Bump when the prompt or model changes, so the next refresh writes a new intro for unchanged content. */
 const INTRO_VERSION = "portfolio-intro:gpt-5.6-luna:v6";
@@ -23,35 +24,6 @@ Requirements:
 
 Everything published about Lucien (the same content the chat answers from):
 {corpus}`;
-
-const DASH = /(\s*)([–—])(\s*)/g;
-
-/** A digit on both sides means a range ("2020–2024"), where a tight hyphen is correct. */
-function isNumericRange(text: string, dashIndex: number, matchLength: number): boolean {
-  const before = text[dashIndex - 1];
-  const after = text[dashIndex + matchLength];
-  return before !== undefined && after !== undefined && /\d/.test(before) && /\d/.test(after);
-}
-
-/*
- * Mirrors src/lib/strip-dashes.ts, kept local since convex/ bundles separately
- * from src/. The behaviour is covered by src/lib/strip-dashes.test.ts; if you
- * change one copy, change both.
- *
- * Only a numeric range keeps a tight hyphen. Everywhere else the hyphen is
- * spaced, because a tight dash between words welds them: this function
- * generated the live homepage intro reading "his own ventures-including
- * Impact Lebanon, Skyla, and Localista-Lucien focuses on...".
- */
-function stripDashes(text: string): string {
-  return text.replace(DASH, (match, before: string, _dash: string, after: string, offset: number) => {
-    if (isNumericRange(text, offset, match.length)) return "-";
-
-    const left = before.length > 0 || /\w/.test(text[offset - 1] ?? "") ? " " : "";
-    const right = after.length > 0 || /\w/.test(text[offset + match.length] ?? "") ? " " : "";
-    return `${left}-${right}`;
-  });
-}
 
 /**
  * Run by CI whenever content/ lands on main (scripts/refresh-intro.ts), with the corpus built

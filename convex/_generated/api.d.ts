@@ -15,8 +15,11 @@ import type * as http from "../http.js";
 import type * as intro from "../intro.js";
 import type * as migrations from "../migrations.js";
 import type * as rateLimits from "../rateLimits.js";
+import type * as stripDashes from "../stripDashes.js";
+import type * as voiceAgent from "../voiceAgent.js";
 import type * as voiceCalls from "../voiceCalls.js";
 import type * as voiceLimits from "../voiceLimits.js";
+import type * as voiceWebhook from "../voiceWebhook.js";
 
 import type {
   ApiFromModules,
@@ -32,8 +35,11 @@ declare const fullApi: ApiFromModules<{
   intro: typeof intro;
   migrations: typeof migrations;
   rateLimits: typeof rateLimits;
+  stripDashes: typeof stripDashes;
+  voiceAgent: typeof voiceAgent;
   voiceCalls: typeof voiceCalls;
   voiceLimits: typeof voiceLimits;
+  voiceWebhook: typeof voiceWebhook;
 }>;
 
 /**

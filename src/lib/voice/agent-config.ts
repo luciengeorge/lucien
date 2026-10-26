@@ -2,7 +2,7 @@ import { formatPromptDate, renderSystemPrompt } from "#/lib/chat/system-prompt";
 
 import { VOICE_LIMITS } from "../../../convex/voiceLimits";
 
-export const VOICE_AGENT_ID = "agent_8501m5vtrvnsf12t1ww0qy5j42ws";
+export { VOICE_AGENT_ID } from "../../../convex/voiceAgent";
 
 const TODAY_VARIABLE = "today";
 
