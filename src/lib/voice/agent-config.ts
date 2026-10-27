@@ -7,10 +7,31 @@ export { VOICE_AGENT_ID } from "../../../convex/voiceAgent";
 
 const TODAY_VARIABLE = "today";
 
+/** Names speech-to-text mishears, such as Lucien as Lucian. */
+export const ASR_KEYWORDS = ["Lucien", "Lucien George", "Fyxer", "Localista", "Skyla", "Le Wagon", "McGill"];
+
 export const CONTACT_FORM_TOOL = {
-  description: "Open a contact form on the visitor's screen so they can send Lucien a message.",
+  description:
+    "Open a contact form on the visitor's screen so they can send Lucien a message. Pass anything the visitor has already said, so the form opens filled in.",
   expects_response: false,
   name: "show_contact_form",
+  parameters: {
+    properties: {
+      contact: {
+        description:
+          "How to reach the visitor: an email address, phone number or profile link. Leave out if not given.",
+        type: "string",
+      },
+      message: {
+        description:
+          "What the visitor wants to tell Lucien, in their words and in the first person. Leave out if not given.",
+        type: "string",
+      },
+      name: { description: "The visitor's name. Leave out if not given.", type: "string" },
+    },
+    required: [],
+    type: "object",
+  },
   type: "client",
 };
 
@@ -104,6 +125,7 @@ export function buildVoiceAgentConfig({
         first_message: "Hey, I'm Poof, Lucien's assistant. What would you like to know about him?",
         prompt: { max_tokens: -1, prompt, tools: [CONTACT_FORM_TOOL, MOOD_TOOL] },
       },
+      asr: { keywords: ASR_KEYWORDS },
       conversation: { max_duration_seconds: VOICE_LIMITS.callMaxSecs },
       // Max reasons before it speaks, which the long prompt and the scope rules need.
       realtime_model: "eleven_realtime_v1_max",

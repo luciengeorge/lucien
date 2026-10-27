@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as audioTags from "../audioTags.js";
 import type * as conversations from "../conversations.js";
 import type * as crons from "../crons.js";
 import type * as digest from "../digest.js";
@@ -30,6 +31,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  audioTags: typeof audioTags;
   conversations: typeof conversations;
   crons: typeof crons;
   digest: typeof digest;

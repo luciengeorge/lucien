@@ -67,17 +67,40 @@ describe("buildVoiceAgentConfig", () => {
     expect(build().conversation_config.vad).toEqual({ background_voice_detection: true });
   });
 
+  it("biases speech-to-text toward the names it mishears", () => {
+    expect(build().conversation_config.asr.keywords).toEqual([
+      "Lucien",
+      "Lucien George",
+      "Fyxer",
+      "Localista",
+      "Skyla",
+      "Le Wagon",
+      "McGill",
+    ]);
+  });
+
   it("keeps the agent's current voice by not sending tts", () => {
     expect(build().conversation_config).not.toHaveProperty("tts");
   });
 
   it("offers two client tools: the contact form, and the mood Poof's face shows", () => {
     expect(build().conversation_config.agent.prompt.tools).toEqual([CONTACT_FORM_TOOL, MOOD_TOOL]);
-    expect(CONTACT_FORM_TOOL).toEqual({
-      description: "Open a contact form on the visitor's screen so they can send Lucien a message.",
+    expect(CONTACT_FORM_TOOL).toMatchObject({
       expects_response: false,
       name: "show_contact_form",
       type: "client",
+    });
+  });
+
+  it("lets the contact form tool pass what the visitor already said, all optional", () => {
+    expect(CONTACT_FORM_TOOL.parameters).toEqual({
+      properties: {
+        contact: { description: expect.any(String), type: "string" },
+        message: { description: expect.any(String), type: "string" },
+        name: { description: expect.any(String), type: "string" },
+      },
+      required: [],
+      type: "object",
     });
   });
 

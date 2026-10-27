@@ -294,6 +294,27 @@ describe("ChatTimelineMessage voice turns", () => {
     }
   });
 
+  it("shows a voice turn saved with an audio tag without it, and leaves typed text alone", () => {
+    render(
+      <ChatTimelineMessage
+        isActive={false}
+        message={{
+          id: "old-voice",
+          metadata: voiceMetadata,
+          parts: [textPart("[thoughtful] He studied at McGill.")],
+          role: "assistant",
+        }}
+        status="ready"
+      />,
+    );
+    expect(screen.getByText("He studied at McGill.")).toBeTruthy();
+    cleanup();
+    render(
+      <ChatTimelineMessage isActive={false} message={message([textPart("Typed [thoughtful] text")])} status="ready" />,
+    );
+    expect(screen.getByText("Typed [thoughtful] text")).toBeTruthy();
+  });
+
   it("leaves typed turns unmarked", () => {
     render(<ChatTimelineMessage isActive={false} message={message([textPart("Typed")])} status="ready" />);
     expect(screen.queryByText("Voice")).toBeNull();

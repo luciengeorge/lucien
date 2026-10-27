@@ -3,6 +3,7 @@ import { type ObjectType, v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 
 import { internalMutation, mutation, type MutationCtx } from "./_generated/server";
+import { cleanVoiceText } from "./audioTags";
 import { deriveConversationTitle, type PersistedMessage, storeMessage } from "./conversations";
 import { rateLimiter } from "./rateLimits";
 import { stripDashes } from "./stripDashes";
@@ -183,7 +184,7 @@ async function recordTranscript(
   const conversation = call.conversationId ? await ctx.db.get(call.conversationId) : null;
   if (conversation) {
     const messages: PersistedMessage[] = transcript.flatMap((turn) => {
-      const text = stripDashes(turn.message ?? "").trim();
+      const text = stripDashes(cleanVoiceText(turn.message ?? "", turn.role)).trim();
       if (!text) return [];
       return {
         createdAt: conversationStartedAt + turn.timeInCallSecs * 1000,
