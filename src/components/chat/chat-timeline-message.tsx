@@ -1,4 +1,5 @@
 import { moodOf } from "#/lib/chat/mood";
+import { cleanVoiceText } from "#/lib/strip-audio-tags";
 import { cn } from "#/lib/utils";
 import { AudioWave01Icon } from "@hugeicons-pro/core-stroke-rounded";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -112,7 +113,7 @@ export function ChatTimelineMessage({
       .with({ type: "text" }, (textPart) => [
         {
           key: `${message.id}-text-${index}`,
-          text: textPart.text,
+          text: isVoiceMessage(message) ? cleanVoiceText(textPart.text, role) : textPart.text,
         },
       ])
       .otherwise(() => []),

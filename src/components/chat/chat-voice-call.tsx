@@ -1,5 +1,5 @@
 import { AnalyticsEvent, useAnalytics } from "#/lib/analytics";
-import { moodOf } from "#/lib/chat/mood";
+import { moodOf, parseMood } from "#/lib/chat/mood";
 import { settleVoiceCall } from "#/lib/functions/settle-voice-call";
 import { ConversationProvider, useConversation } from "@elevenlabs/react";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
@@ -18,7 +18,7 @@ import {
 } from "./chat-voice-screen";
 import { microphoneRefusal, releaseUnusedCall } from "./chat-voice-start";
 import { ChatVoiceWaveform, type VoiceWaveformHandle } from "./chat-voice-waveform";
-import { formatCountdown } from "./chat-voice.utils";
+import { contactPrefillOf, formatCountdown, type ContactPrefill } from "./chat-voice.utils";
 import { useSettledSpeaking } from "./use-settled-speaking";
 
 /** Refusals that are nobody's fault get a calm face; the rest look puzzled. */
@@ -67,7 +67,7 @@ function VoiceCall({
   const { capture } = useAnalytics();
   const [phase, setPhase] = useState<Phase>("connecting");
   const [secsLeft, setSecsLeft] = useState<number | null>(null);
-  const [isContactOpen, setIsContactOpen] = useState(false);
+  const [contactPrefill, setContactPrefill] = useState<ContactPrefill | null>(null);
   const [mood, setMood] = useState<PoofMoodCue>();
   // Refs, not state: the SDK's callbacks can land before React has rendered the last change.
   const callRef = useRef<{
@@ -137,6 +137,12 @@ function VoiceCall({
       }
       finish(details.reason === "agent" ? "agent" : details.reason === "error" ? "error" : "visitor");
     },
+    onMessage: ({ message, role }) => {
+      if (role !== "agent") return;
+      const tag = /^\s*\[([a-z]+)\]/i.exec(message);
+      const next = parseMood(tag?.[1]);
+      if (next) setMood({ mood: next });
+    },
     onError: (_message, error) => {
       if (callRef.current?.connectedAt) finish("error");
       else refuse(microphoneRefusal(error) ?? "connect_failed");
@@ -159,8 +165,8 @@ function VoiceCall({
     try {
       conversation.startSession({
         clientTools: {
-          show_contact_form: () => {
-            setIsContactOpen(true);
+          show_contact_form: (parameters: unknown) => {
+            setContactPrefill(contactPrefillOf(parameters));
           },
           set_mood: (parameters: unknown) => {
             const next = moodOf(parameters);
@@ -216,11 +222,11 @@ function VoiceCall({
   const refused = typeof phase === "object" ? phase.refused : null;
   const back = () => onClose(null);
   const closeContact = () => {
-    setIsContactOpen(false);
+    setContactPrefill(null);
     endButtonRef.current?.focus();
   };
   const handleEscape = () => {
-    if (isContactOpen) closeContact();
+    if (contactPrefill) closeContact();
     else if (refused) back();
     else finish("visitor");
   };
@@ -253,7 +259,7 @@ function VoiceCall({
       message={refused ? VOICE_REFUSAL_COPY[refused] : undefined}
       note={phase === "connecting" ? VOICE_PRIVACY_NOTE : undefined}
       onEscape={handleEscape}
-      panel={isContactOpen ? <ChatVoiceContactForm onClose={closeContact} /> : null}
+      panel={contactPrefill ? <ChatVoiceContactForm onClose={closeContact} prefill={contactPrefill} /> : null}
       mood={mood}
       poof={poof}
       status={refused ? undefined : phase === "live" ? (agentTalking ? "Talking" : "Listening") : "Connecting"}

@@ -10,6 +10,28 @@ const CONTEXT_HEADER = "Before this call, the visitor chatted with you by text. 
 
 const VoiceMetadataSchema = z.object({ callId: z.string().optional(), channel: z.literal("voice") });
 
+export type ContactPrefill = { contact?: string; message?: string; name?: string };
+
+const prefillField = (max: number) => z.string().trim().max(max).min(1);
+
+/** What `show_contact_form` may carry, held to the form's own limits. A bad field is dropped, not the rest. */
+export function contactPrefillOf(parameters: unknown): ContactPrefill {
+  const fields = z.object({ contact: z.unknown(), message: z.unknown(), name: z.unknown() }).safeParse(parameters);
+  if (!fields.success) return {};
+  const keep = (value: unknown, max: number) => {
+    const parsed = prefillField(max).safeParse(value);
+    return parsed.success ? parsed.data : undefined;
+  };
+  const prefill: ContactPrefill = {};
+  const contact = keep(fields.data.contact, 200);
+  const message = keep(fields.data.message, 2000);
+  const name = keep(fields.data.name, 120);
+  if (contact) prefill.contact = contact;
+  if (message) prefill.message = message;
+  if (name) prefill.name = name;
+  return prefill;
+}
+
 export function isVoiceMessage(message: UIMessage): boolean {
   return VoiceMetadataSchema.safeParse(message.metadata).success;
 }

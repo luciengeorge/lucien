@@ -92,6 +92,27 @@ describe("settleVoiceCall", () => {
     ).toMatchObject({ allowed: true, maxSecs: 264 });
   });
 
+  test("stores agent turns without the audio tags ElevenLabs leaves in them", async () => {
+    const t = setup();
+    const { callId, conversationId } = await seedCall(t);
+    const args = toVoiceTranscriptArgs({
+      conversation_id: "conv_1",
+      conversation_initiation_client_data: { dynamic_variables: { call_id: callId } },
+      metadata: { call_duration_secs: 36, start_time_unix_secs: (STARTED_AT + 2000) / 1000 },
+      transcript: [
+        { message: "[thoughtful] Lucien studied at McGill.", role: "agent", time_in_call_secs: 0 },
+        { message: "Where did Lucian study?", role: "user", time_in_call_secs: 4 },
+      ],
+    });
+
+    await settle(t, args);
+
+    const stored = (await voiceMessages(t, conversationId)).join("");
+    expect(stored).toContain("Lucien studied at McGill.");
+    expect(stored).not.toContain("[thoughtful]");
+    expect(stored).toContain("Where did Lucien study?");
+  });
+
   test("changes nothing for another visitor's call", async () => {
     const t = setup();
     const { callId, conversationId } = await seedCall(t);

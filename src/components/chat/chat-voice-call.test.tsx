@@ -73,6 +73,7 @@ type SdkProps = {
   onConnect?: (props: { conversationId: string }) => void;
   onDisconnect?: (details: { reason: string }) => void;
   onError?: (message: string, context?: unknown) => void;
+  onMessage?: (props: { message: string; role: "agent" | "user" }) => void;
 };
 type SessionOptions = {
   clientTools: Record<string, (parameters?: unknown) => unknown>;
@@ -295,6 +296,70 @@ describe("voice call", () => {
     expect(screen.getByRole("dialog", { name: "Voice call with Poof" })).toBeTruthy();
   });
 
+  describe("show_contact_form parameters", () => {
+    async function openForm(parameters?: unknown) {
+      renderChat();
+      await connect();
+      const show = (next?: unknown) =>
+        act(() => {
+          sdk.startSession.mock.calls[0]?.[0].clientTools.show_contact_form?.(next);
+        });
+      show(parameters);
+      return show;
+    }
+    const field = (label: string | RegExp) => screen.getByLabelText(label);
+
+    it("opens the form filled in with what the visitor already said, still editable", async () => {
+      await openForm({ contact: " ada@example.com ", message: "Let's talk about a role.", name: "Ada" });
+
+      expect(field("Message")).toHaveProperty("value", "Let's talk about a role.");
+      expect(field(/How to reach you/)).toHaveProperty("value", "ada@example.com");
+      expect(field(/Your name/)).toHaveProperty("value", "Ada");
+      fireEvent.change(field(/Your name/), { target: { value: "Ada L" } });
+      expect(field(/Your name/)).toHaveProperty("value", "Ada L");
+    });
+
+    it("sends the prefilled values", async () => {
+      sendContactMessage.mockResolvedValue({ status: "sent" });
+      await openForm({ contact: "ada@example.com", message: "Hi Lucien", name: "Ada" });
+
+      fireEvent.click(screen.getByRole("button", { name: "Send to Lucien" }));
+
+      await screen.findByText("Message sent to Lucien");
+      expect(sendContactMessage).toHaveBeenCalledWith({
+        data: { contact: "ada@example.com", message: "Hi Lucien", name: "Ada" },
+      });
+    });
+
+    it("ignores values that are not strings or are over the form's limits, keeping the rest", async () => {
+      await openForm({ contact: "x".repeat(201), message: "Hello", name: 42 });
+
+      expect(field("Message")).toHaveProperty("value", "Hello");
+      expect(field(/How to reach you/)).toHaveProperty("value", "");
+      expect(field(/Your name/)).toHaveProperty("value", "");
+    });
+
+    it("opens an empty form when called with nothing, or with junk", async () => {
+      await openForm(null);
+
+      expect(field("Message")).toHaveProperty("value", "");
+      expect(field(/How to reach you/)).toHaveProperty("value", "");
+      expect(field(/Your name/)).toHaveProperty("value", "");
+    });
+
+    it("on a second call fills only the empty fields, never what the visitor typed", async () => {
+      const show = await openForm({ name: "Ada" });
+      fireEvent.change(field("Message"), { target: { value: "My own words" } });
+      fireEvent.change(field(/Your name/), { target: { value: "Ada L" } });
+
+      show({ contact: "ada@example.com", message: "Poof's version", name: "Ada" });
+
+      expect(field("Message")).toHaveProperty("value", "My own words");
+      expect(field(/Your name/)).toHaveProperty("value", "Ada L");
+      expect(field(/How to reach you/)).toHaveProperty("value", "ada@example.com");
+    });
+  });
+
   it("shows the mood Poof sets on the call's face, and ignores moods it does not know", async () => {
     renderChat();
     await connect();
@@ -311,6 +376,24 @@ describe("voice call", () => {
     setMood({ mood: "grumpy" });
     setMood(null);
     expect(face()?.getAttribute("data-feeling")).toBe("excited");
+  });
+
+  it("takes the mood from an audio tag opening the agent's turn, and ignores unknown tags", async () => {
+    renderChat();
+    await connect();
+    const face = () =>
+      screen.getByRole("dialog", { name: "Voice call with Poof" }).querySelector('[data-slot="poof-mark"]');
+    const say = (message: string, role: "agent" | "user" = "agent") =>
+      act(() => {
+        sdk.props.onMessage?.({ message, role });
+      });
+
+    say("[Thoughtful] Lucien studied at McGill.");
+    expect(face()?.getAttribute("data-feeling")).toBe("thoughtful");
+    say("[grumpy] Hmm.");
+    say("[excited] Not the visitor.", "user");
+    say("Yes [excited] there.");
+    expect(face()?.getAttribute("data-feeling")).toBe("thoughtful");
   });
 
   it("ends on Escape", async () => {

@@ -11,6 +11,8 @@ import { useForm } from "@tanstack/react-form";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 
+import type { ContactPrefill } from "./chat-voice.utils";
+
 import { ChatContactCard } from "./chat-contact-card";
 
 const ContactFormSchema = z.object({
@@ -22,9 +24,10 @@ const ContactFormSchema = z.object({
 /**
  * What the voice agent's `show_contact_form` tool opens: the chat's contact message, typed rather
  * than dictated, so a name or an email address arrives spelled right. It sits over the call, which
- * carries on behind it.
+ * carries on behind it. `prefill` is what the visitor already told Poof; a newer one only fills
+ * fields still empty, so it never overwrites what they typed.
  */
-export function ChatVoiceContactForm({ onClose }: { onClose: () => void }) {
+export function ChatVoiceContactForm({ onClose, prefill }: { onClose: () => void; prefill: ContactPrefill }) {
   const { capture } = useAnalytics();
   const [status, setStatus] = useState<"failed" | "sent" | null>(null);
   // Focus moves to the form, not its first field: a field would raise a phone's keyboard over the call.
@@ -34,7 +37,7 @@ export function ChatVoiceContactForm({ onClose }: { onClose: () => void }) {
   }, []);
   const form = useForm({
     formId: "voice-contact",
-    defaultValues: { contact: "", message: "", name: "" },
+    defaultValues: { contact: prefill.contact ?? "", message: prefill.message ?? "", name: prefill.name ?? "" },
     validators: {
       onSubmit: ContactFormSchema,
       onSubmitAsync: async ({ value }) => {
@@ -46,6 +49,13 @@ export function ChatVoiceContactForm({ onClose }: { onClose: () => void }) {
       },
     },
   });
+
+  useEffect(() => {
+    for (const key of ["contact", "message", "name"] as const) {
+      const next = prefill[key];
+      if (next && !form.getFieldValue(key)) form.setFieldValue(key, next);
+    }
+  }, [form, prefill]);
 
   const onSubmit = (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
