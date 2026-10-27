@@ -14,7 +14,7 @@ import {
   VoiceBackButton,
   VoiceEndButton,
 } from "./chat-voice-screen";
-import { releaseUnusedCall } from "./chat-voice-start";
+import { microphoneRefusal, releaseUnusedCall } from "./chat-voice-start";
 import { ChatVoiceWaveform, type VoiceWaveformHandle } from "./chat-voice-waveform";
 import { formatCountdown } from "./chat-voice.utils";
 import { useSettledSpeaking } from "./use-settled-speaking";
@@ -31,13 +31,6 @@ const COUNTDOWN_FROM_SECS = 30;
 
 type EndedBy = "agent" | "error" | "timer" | "visitor";
 type Phase = "connecting" | "live" | { refused: VoiceRefusal };
-
-function isMicrophoneError(context: unknown): VoiceRefusal | null {
-  if (!(context instanceof DOMException)) return null;
-  if (context.name === "NotAllowedError" || context.name === "SecurityError") return "mic_denied";
-  if (context.name === "NotFoundError") return "mic_missing";
-  return null;
-}
 
 /**
  * A voice call with Poof, over the whole chat. Loaded on the first click, so the ElevenLabs SDK costs
@@ -143,7 +136,7 @@ function VoiceCall({
     },
     onError: (_message, error) => {
       if (callRef.current?.connectedAt) finish("error");
-      else refuse(isMicrophoneError(error) ?? "connect_failed");
+      else refuse(microphoneRefusal(error) ?? "connect_failed");
     },
   });
 

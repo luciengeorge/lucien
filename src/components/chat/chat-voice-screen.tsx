@@ -18,8 +18,11 @@ export const VOICE_REFUSAL_COPY: Record<VoiceRefusal, string> = {
   connect_failed: `The call couldn't connect. ${STILL_TYPING}`,
   global_limit: `Poof's voice is resting for the month. ${STILL_TYPING}`,
   ip_limit: `That's all the talking for today. ${STILL_TYPING}`,
+  mic_blocked_system:
+    "Your computer is keeping the microphone from this browser. Allow it in your privacy settings, then try again, or keep typing.",
+  mic_busy: "Another app is using your microphone. Close it and try again, or keep typing.",
   mic_denied:
-    "Poof can't hear you yet. To let it, click the icon next to the address bar, allow the microphone for this site, then try again.",
+    "Poof can't hear you yet. To let it, click the icon at the left of the address bar, allow the microphone for this site, then try again.",
   resting: "Poof's voice is resting for now. The chat still works.",
   mic_missing: "Poof can't find a microphone. Plug one in and try again, or keep typing.",
   unavailable: `Voice isn't available right now. ${STILL_TYPING}`,
