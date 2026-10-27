@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { stripMoodTags } from "./mood";
+
 /**
  * An ElevenLabs conversation, as both its post-call webhook (`data`) and its conversations API
  * return it. Only what settling the call needs is required; odd turns are skipped, not refused.
@@ -35,7 +37,11 @@ export function toVoiceTranscriptArgs(conversation: ElevenConversation) {
       if (!turn.success) return [];
       return {
         index,
-        message: turn.data.message ?? null,
+        // The agent reads the text chat's rules too, so a mood tag it says by mistake is dropped here.
+        message:
+          turn.data.role === "agent" && turn.data.message
+            ? stripMoodTags(turn.data.message)
+            : (turn.data.message ?? null),
         role: turn.data.role,
         timeInCallSecs: turn.data.time_in_call_secs,
       };

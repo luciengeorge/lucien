@@ -21,6 +21,10 @@ export const EYES = {
   angry: { bottom: 4.4, dy: 0.6, tilt: -26, top: 0.3, w: 5.4 },
   squeeze: { bottom: -0.5, dy: 0.6, tilt: -16, top: 2.4, w: 5.6 },
   doubt: { bottom: 3, dy: 1, tilt: -10, top: 0.8, w: 4.8 },
+  pop: { bottom: 6.4, dy: -0.8, tilt: 0, top: 6.4, w: 6.4 },
+  beam: { bottom: -3.4, dy: 0, tilt: 8, top: 7.2, w: 7.6 },
+  smug: { bottom: 3.8, dy: 0.5, tilt: -4, top: 0.7, w: 5.8 },
+  shy: { bottom: 3.4, dy: 0.9, tilt: 12, top: 1.8, w: 4.4 },
 } satisfies Record<string, EyeShape>;
 
 export type EyeName = keyof typeof EYES;

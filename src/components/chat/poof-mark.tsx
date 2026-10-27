@@ -1,3 +1,4 @@
+import type { Mood } from "#/lib/chat/mood";
 import type { Transition } from "motion/react";
 
 import { cn } from "#/lib/utils";
@@ -6,11 +7,14 @@ import { useEffect, useEffectEvent, useRef, useState } from "react";
 
 import type { PoofEngine, PoofFrame, PoofLevels, PoofState } from "./poof-engine";
 
-import { createPoofEngine, restFrame } from "./poof-engine";
+import { createPoofEngine, MOOD_HOLD, restFrame } from "./poof-engine";
 import { eyePath } from "./poof-eyes";
 import { usePoofSignals } from "./poof-signals";
 
 export type PoofMarkState = PoofState;
+
+/** A mood to show. Each new cue sets it afresh, so the same mood twice keeps it from wearing off. */
+export type PoofMoodCue = { mood: Mood };
 
 const EASE_OUT: [number, number, number, number] = [0.22, 1, 0.36, 1];
 const EYE_Y = 24;
@@ -18,6 +22,7 @@ const EYE_Y = 24;
 const FOOT = 39;
 const SPARK = "M0 -1Q.18 -.18 1 0Q.18 .18 0 1Q-.18 .18 -1 0Q-.18 -.18 0 -1Z";
 const ZED = "M-.8 -.8H.8L-.8 .8H.8";
+const CHEEK_OPACITY = 0.9;
 
 /** The first face on a page says hello. The transcript remounts when a conversation is created, and a second hello there reads as a glitch. */
 let greeted = false;
@@ -39,7 +44,10 @@ function painter(svg: SVGSVGElement) {
   const [gaze] = all("poof-mark-gaze");
   const eyes = all("poof-mark-eye");
   const particles = all("poof-mark-particle");
+  const cheeks = all("poof-mark-cheek");
   let mood = svg.getAttribute("data-mood");
+  let feeling = svg.getAttribute("data-feeling");
+  let blush = "0";
   const opacities = particles.map(() => "0");
   return (frame: PoofFrame) => {
     figure?.setAttribute("transform", figureTransform(frame));
@@ -59,6 +67,15 @@ function painter(svg: SVGSVGElement) {
       mood = frame.mood;
       svg.setAttribute("data-mood", mood);
     }
+    if (frame.feeling !== feeling) {
+      feeling = frame.feeling;
+      svg.setAttribute("data-feeling", feeling);
+    }
+    const cheek = String(round(frame.blush * CHEEK_OPACITY));
+    if (cheek !== blush) {
+      blush = cheek;
+      for (const element of cheeks) element.setAttribute("opacity", cheek);
+    }
   };
 }
 
@@ -70,7 +87,8 @@ function painter(svg: SVGSVGElement) {
  * slow overlapping sine waves so idle motion never visibly loops, and random timers for blinks,
  * glances and expression changes. On top of the app's state it adds its own life: it follows the
  * cursor, listens while you type, is pleased when an answer lands, dozes off when left alone and
- * reacts to being poked. Under prefers-reduced-motion it shows each state's still face instead.
+ * reacts to being poked. Over all of that it wears the conversation's mood for a few seconds
+ * (`mood`). Under prefers-reduced-motion it shows each state's still face, in its mood, instead.
  *
  * Every frame is a handful of attribute writes on one small SVG, and the loop pauses while the
  * face is off screen or the tab is hidden. The exit is the one motion-library animation: the face
@@ -84,6 +102,7 @@ export function PoofMark({
   entrance = true,
   interrupted = false,
   levels,
+  mood,
   state,
 }: {
   className?: string;
@@ -96,6 +115,8 @@ export function PoofMark({
   interrupted?: boolean;
   /** A voice call's loudness, read once per frame rather than passed in, so it never re-renders React. */
   levels?: () => PoofLevels;
+  /** The conversation's mood, laid over the state until it wears off. */
+  mood?: PoofMoodCue;
   state: PoofMarkState;
 }) {
   // The OS preference, or a `MotionConfig reducedMotion="always"` above: motion's config hook alone
@@ -109,7 +130,10 @@ export function PoofMark({
   // While animating, React only ever renders the mount frame: later frames are painted directly,
   // and rendering a new frame on a state change would fight the engine for one frame.
   const [mountFrame] = useState(() => restFrame(state));
-  const frame = still ? restFrame(state) : mountFrame;
+  // A still face has no engine to wear a mood off, so it holds the cue until a timer lets it go.
+  const [wornOff, setWornOff] = useState<PoofMoodCue | null>(null);
+  const stillFeeling = mood && mood !== wornOff ? mood.mood : "neutral";
+  const frame = still ? restFrame(state, stillFeeling) : mountFrame;
 
   const createEngine = useEffectEvent(() => {
     const greet = !greeted && state === "idle";
@@ -217,6 +241,17 @@ export function PoofMark({
     live.current.paint(live.current.engine.step(0));
   }, [interrupted, state]);
 
+  useEffect(() => {
+    if (!mood) return;
+    if (live.current) {
+      live.current.engine.feel(mood.mood);
+      live.current.paint(live.current.engine.step(0));
+      return;
+    }
+    const timer = setTimeout(() => setWornOff(mood), MOOD_HOLD * 1000);
+    return () => clearTimeout(timer);
+  }, [mood, still]);
+
   const poke = () => {
     if (!live.current) return;
     live.current.engine.signal("poke");
@@ -244,6 +279,7 @@ export function PoofMark({
         data-slot="poof-mark"
         data-state={state}
         data-mood={frame.mood}
+        data-feeling={frame.feeling}
         aria-hidden="true"
         onPointerDown={poke}
         initial={still || !entrance ? false : { opacity: 0, scale: 0.85 }}
@@ -254,6 +290,18 @@ export function PoofMark({
         <g key={still ? "still-figure" : "live-figure"} data-slot="poof-mark-figure" transform={figureTransform(frame)}>
           <rect className="fill-primary" data-slot="poof-mark-body" x="7" y="9" width="34" height="30" rx="13" />
           <g data-slot="poof-mark-gaze" transform={gazeTransform(frame)}>
+            {[0, 1].map((index) => (
+              <ellipse
+                key={index}
+                className="fill-rose-300"
+                cx={index === 0 ? 14.5 : 33.5}
+                cy={30.5}
+                data-slot="poof-mark-cheek"
+                opacity={round(frame.blush * CHEEK_OPACITY)}
+                rx={2.4}
+                ry={1.3}
+              />
+            ))}
             {[0, 1].map((index) => (
               <path key={index} className="fill-primary-foreground" data-slot="poof-mark-eye" d={eyeD(frame, index)} />
             ))}

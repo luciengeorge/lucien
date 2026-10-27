@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import type { Mood } from "../src/lib/chat/mood";
+
 export const EvalCategorySchema = z.enum(["factual", "adversarial", "edge-case"]);
 export type EvalCategory = z.infer<typeof EvalCategorySchema>;
 
@@ -21,6 +23,8 @@ export type EvalCase = z.infer<typeof EvalCaseSchema>;
 export interface ActorResult {
   case: EvalCase;
   answer: string;
+  /** The mood tag the raw reply opened with; null when it had none, which fails the case. */
+  mood: Mood | null;
   retrievedContext: string;
   contextLength: number;
   durationMs: number;

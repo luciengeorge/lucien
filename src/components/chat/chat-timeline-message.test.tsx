@@ -299,3 +299,41 @@ describe("ChatTimelineMessage voice turns", () => {
     expect(screen.queryByText("Voice")).toBeNull();
   });
 });
+
+describe("ChatTimelineMessage mood", () => {
+  function face(container: HTMLElement) {
+    return container.querySelector('[data-slot="poof-mark"]');
+  }
+
+  it("puts the reply's mood on Poof's face as the reply arrives", () => {
+    const { container } = render(
+      <ChatTimelineMessage
+        isActive
+        message={{ ...message([textPart("He shipped it in a week.")]), metadata: { mood: "proud" } }}
+        status="streaming"
+      />,
+    );
+    expect(face(container)?.getAttribute("data-feeling")).toBe("proud");
+  });
+
+  it("leaves the face neutral for a reply with no mood, like a call's transcript", () => {
+    const { container } = render(
+      <ChatTimelineMessage
+        isActive
+        message={{ ...message([textPart("Hi.")]), metadata: { callId: "c1", channel: "voice" } }}
+        status="ready"
+      />,
+    );
+    expect(face(container)?.getAttribute("data-feeling")).toBe("neutral");
+  });
+});
+
+describe("ChatTimelineMessage empty text", () => {
+  /* A step whose text was only the mood tag leaves a text part with nothing in it. */
+  it("treats a text part with nothing in it as no text, so the fallback still shows", () => {
+    render(
+      <ChatTimelineMessage isActive message={message([{ state: "done", text: "", type: "text" }])} status="ready" />,
+    );
+    expect(screen.getByText("Sorry, I didn't catch that. Mind rephrasing?")).toBeTruthy();
+  });
+});

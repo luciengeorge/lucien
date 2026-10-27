@@ -1,3 +1,5 @@
+import type { Mood } from "#/lib/chat/mood";
+
 import type { EyeName, EyeShape } from "./poof-eyes";
 
 import { EYES, mixEye, withLid } from "./poof-eyes";
@@ -24,10 +26,14 @@ export type PoofParticle = {
 };
 
 export type PoofFrame = {
+  /** How pink the cheeks are, 0 to 1. */
+  blush: number;
   /** Applied around the bottom centre of the body, so Poof sways and squashes like it stands on something. */
   body: { rotate: number; scaleX: number; scaleY: number; x: number; y: number };
   eyes: [EyeShape, EyeShape];
   gaze: { x: number; y: number };
+  /** The conversation's mood, laid over whatever the state is doing. Neutral once it has worn off. */
+  feeling: Mood;
   mood: PoofMood;
   /** A fixed pool, in a fixed order, so a renderer can keep one element per slot. */
   particles: PoofParticle[];
@@ -85,6 +91,67 @@ const REST: Record<PoofMood, Pose> = {
   waking: pose(["wide", "wide"], [0, -0.5]),
   talking: pose(["open", "open"], [0, 1], { scale: 1.02 }),
 };
+
+type Feeling = {
+  blush: number;
+  eyes: [EyeName, EyeName];
+  gaze: [number, number];
+  rotate: number;
+  scale: number;
+  squash: number;
+  y: number;
+};
+
+const feeling = (eyes: [EyeName, EyeName], gaze: [number, number], body: Partial<Feeling> = {}): Feeling => ({
+  blush: 0,
+  eyes,
+  gaze,
+  rotate: 0,
+  scale: 1,
+  squash: 1,
+  y: 0,
+  ...body,
+});
+
+/**
+ * Each mood as an offset on top of the state's pose, so a mood never hides what Poof is doing:
+ * it still swells as it talks and leans in as it listens. Like REST, these are also the
+ * reduced-motion faces, so each one reads on its own without the bounce.
+ */
+const FEELINGS: Record<Exclude<Mood, "neutral">, Feeling> = {
+  happy: feeling(["happy", "happy"], [0, -0.6], { scale: 1.03, y: -0.4 }),
+  excited: feeling(["beam", "beam"], [0, -0.8], { scale: 1.03, squash: 1.02, y: -1 }),
+  curious: feeling(["wide", "open"], [1.8, -0.8], { rotate: -10, scale: 1.03, y: -0.4 }),
+  thoughtful: feeling(["half", "half"], [-2.4, -2.6], { rotate: 6, y: 0.3 }),
+  surprised: feeling(["pop", "pop"], [0, -0.4], { scale: 1.02, squash: 1.03, y: -1.2 }),
+  proud: feeling(["smug", "smug"], [0, -2], { scale: 1.02, squash: 1.03, y: -0.8 }),
+  sheepish: feeling(["shy", "shy"], [-2, 2.4], { blush: 1, rotate: 5, scale: 0.96, squash: 0.97, y: 0.6 }),
+};
+
+/** Moods that can share in the "answer landed" celebration; the rest settle quietly. */
+const CHEERFUL: ReadonlySet<Mood> = new Set(["happy", "excited", "proud"]);
+/** Seconds a mood holds before it wears off, unless it is set again. */
+export const MOOD_HOLD = 6;
+const MOOD_IN = 0.3;
+const MOOD_OUT = 0.9;
+/** How far a mood's gaze pulls away from where the state is looking. */
+const GAZE_PULL = 0.8;
+
+type Lean = { gaze: { x: number; y: number }; rotate: number; scale: number; squash: number; y: number };
+
+/** Lays a mood over a pose, `w` of the way. */
+function feelPose(pose: Lean, f: Feeling, w: number): Lean {
+  return {
+    gaze: {
+      x: pose.gaze.x + (f.gaze[0] - pose.gaze.x) * w * GAZE_PULL,
+      y: pose.gaze.y + (f.gaze[1] - pose.gaze.y) * w * GAZE_PULL,
+    },
+    rotate: pose.rotate + f.rotate * w,
+    scale: pose.scale + (f.scale - 1) * w,
+    squash: pose.squash + (f.squash - 1) * w,
+    y: pose.y + f.y * w,
+  };
+}
 
 const BLINK_EVERY: Partial<Record<PoofMood, [number, number]>> = {
   idle: [2.4, 6],
@@ -147,8 +214,9 @@ type Particle = {
 };
 const idleParticle = (): Particle => ({ life: 1, max: 0, rot: 0, size: 0, vr: 0, vx: 0, vy: 0, x: 0, y: 0 });
 
-function frameOf(mood: PoofMood, rest: Pose, eyes: [EyeShape, EyeShape], lid: number): PoofFrame {
+function frameOf(mood: PoofMood, rest: Pose, eyes: [EyeShape, EyeShape], lid: number, felt: Mood): PoofFrame {
   return {
+    blush: felt === "neutral" ? 0 : FEELINGS[felt].blush,
     body: {
       rotate: rest.rotate,
       scaleX: rest.scale * squashWidth(rest.squash),
@@ -158,6 +226,7 @@ function frameOf(mood: PoofMood, rest: Pose, eyes: [EyeShape, EyeShape], lid: nu
     },
     eyes: [withLid(eyes[0], lid), withLid(eyes[1], lid)],
     gaze: { ...rest.gaze },
+    feeling: felt,
     mood,
     particles: [
       ...Array.from({ length: SPARK_COUNT }, () => hidden("spark")),
@@ -173,10 +242,12 @@ function squashWidth(squash: number) {
   return 1 + (1 - squash) * 0.7;
 }
 
-/** The still face for a state: what a fresh face starts from, and all that reduced motion shows. */
-export function restFrame(state: PoofState): PoofFrame {
+/** The still face for a state, in a mood: what a fresh face starts from, and all that reduced motion shows. */
+export function restFrame(state: PoofState, felt: Mood = "neutral"): PoofFrame {
   const rest = REST[state];
-  return frameOf(state, rest, [EYES[rest.eyes[0]], EYES[rest.eyes[1]]], rest.lid);
+  if (felt === "neutral") return frameOf(state, rest, [EYES[rest.eyes[0]], EYES[rest.eyes[1]]], rest.lid, felt);
+  const f = FEELINGS[felt];
+  return frameOf(state, { ...rest, ...feelPose(rest, f, 1) }, [EYES[f.eyes[0]], EYES[f.eyes[1]]], rest.lid, felt);
 }
 
 export type PoofEngine = {
@@ -185,6 +256,8 @@ export type PoofEngine = {
   /** The call's latest levels, read every frame while listening or talking and ignored otherwise. */
   hear: (levels: PoofLevels) => void;
   look: (point: PoofPoint | null) => void;
+  /** The conversation's mood: eases in, holds for a few seconds unless set again, then wears off. */
+  feel: (mood: Mood) => void;
   /** `interrupted`: the visitor stopped the reply, so settling is a startle rather than a celebration. */
   setState: (state: PoofState, options?: { interrupted?: boolean }) => void;
   signal: (signal: PoofSignal) => void;
@@ -258,6 +331,15 @@ export function createPoofEngine({
   let heard: PoofLevels = { input: 0, output: 0 };
   const voice: PoofLevels = { input: 0, output: 0 };
 
+  let felt: Mood = "neutral";
+  let feltAt = 0;
+  let feelUntil = -Infinity;
+  let feltness = 0;
+  let feltEyesFrom: [EyeShape, EyeShape] = [EYES.open, EYES.open];
+  let feltEyesTo = feltEyesFrom;
+  let feltMorph = 1;
+  let nextFeltSpark = Infinity;
+
   const sparks = Array.from({ length: SPARK_COUNT }, idleParticle);
   const zs = Array.from({ length: Z_COUNT }, idleParticle);
 
@@ -302,6 +384,11 @@ export function createPoofEngine({
       });
       made++;
     }
+  };
+
+  const feltEyes = (): [EyeShape, EyeShape] => {
+    const p = easeOut(clamp(feltMorph, 0, 1));
+    return [mixEye(feltEyesFrom[0], feltEyesTo[0], p), mixEye(feltEyesFrom[1], feltEyesTo[1], p)];
   };
 
   const react = (next: PoofMood, hold: number) => {
@@ -372,6 +459,53 @@ export function createPoofEngine({
       nextSaccade = t + range(...every);
     }
     return saccade;
+  };
+
+  const feel = (next: Mood) => {
+    activity();
+    if (next === "neutral") {
+      feelUntil = Math.min(feelUntil, t);
+      return;
+    }
+    feelUntil = t + MOOD_HOLD;
+    if (next === felt) return;
+    const f = FEELINGS[next];
+    const to: [EyeShape, EyeShape] = [EYES[f.eyes[0]], EYES[f.eyes[1]]];
+    feltEyesFrom = feltness > 0 ? feltEyes() : to;
+    feltEyesTo = to;
+    feltMorph = feltness > 0 ? 0 : 1;
+    felt = next;
+    feltAt = t;
+    switch (next) {
+      case "happy":
+        body.y.v -= 24;
+        body.squash.v += 1.6;
+        break;
+      case "excited":
+        body.y.v -= 36;
+        body.squash.v += 1.4;
+        burst(7);
+        nextFeltSpark = t + 0.9;
+        break;
+      case "curious":
+        body.rotate.v -= 45;
+        body.scale.v += 1;
+        break;
+      case "surprised":
+        body.scale.v += 1;
+        body.squash.v += 1;
+        body.y.v -= 28;
+        break;
+      case "proud":
+        body.squash.v += 1.2;
+        body.y.v -= 16;
+        burst(3, 0.5);
+        break;
+      case "sheepish":
+        body.scale.v -= 1.4;
+        body.squash.v -= 1;
+        break;
+    }
   };
 
   arm();
@@ -564,6 +698,43 @@ export function createPoofEngine({
       }
     }
 
+    feltness = t < feelUntil ? Math.min(1, feltness + dt / MOOD_IN) : Math.max(0, feltness - dt / MOOD_OUT);
+    if (feltness === 0 && t >= feelUntil) felt = "neutral";
+    const fw = feltness * feltness * (3 - 2 * feltness);
+    const f = felt === "neutral" || fw === 0 ? null : FEELINGS[felt];
+    if (f) {
+      ({ gaze: look, rotate, scale, squash, y } = feelPose({ gaze: look, rotate, scale, squash, y }, f, fw));
+      const since = t - feltAt;
+      switch (felt) {
+        case "happy":
+          rotate += 2.4 * Math.sin(3 * t) * fw;
+          break;
+        case "excited": {
+          const hop = Math.abs(Math.sin(Math.PI * 1.6 * since));
+          y -= 1.6 * hop * fw;
+          squash += 0.02 * hop * fw;
+          if (t >= nextFeltSpark && t < feelUntil) {
+            burst(2);
+            nextFeltSpark = t + range(0.9, 1.5);
+          }
+          break;
+        }
+        case "curious":
+          rotate += 1.6 * Math.sin(1.3 * t) * fw;
+          break;
+        case "thoughtful":
+          rotate += 1.4 * Math.sin(0.5 * t) * fw;
+          look = { x: look.x + 0.8 * Math.sin(0.35 * t) * fw, y: look.y };
+          break;
+        case "proud":
+          rotate += 0.8 * Math.sin(0.8 * t) * fw;
+          break;
+        case "sheepish":
+          rotate += 1.4 * Math.sin(2.4 * t) * fw;
+          break;
+      }
+    }
+
     if (t >= eyesBackAt) showEyes(REST[mood].eyes);
     if (t >= nextBlink) blink();
     if (t >= secondBlinkAt) {
@@ -580,10 +751,15 @@ export function createPoofEngine({
     stepSpring(gaze.y, look.y, dt);
     stepSpring(lid, lidTarget, dt);
     morph += dt / 0.18;
+    feltMorph += dt / 0.22;
 
     const blinkT = (t - blinkAt) / (mood === "drowsy" ? 0.34 : 0.17);
     const blinkLid = blinkAt < 0 || blinkT >= 1 ? 1 : blinkT < 0.4 ? 1 - blinkT / 0.4 : easeOut((blinkT - 0.4) / 0.6);
-    const eyes = currentEyes();
+    const stateEyes = currentEyes();
+    const moodEyes = f ? feltEyes() : null;
+    const eyes: [EyeShape, EyeShape] = moodEyes
+      ? [mixEye(stateEyes[0], moodEyes[0], fw), mixEye(stateEyes[1], moodEyes[1], fw)]
+      : stateEyes;
     const openness = clamp(lid.x, 0, 1.1) * blinkLid;
 
     for (const spark of sparks) {
@@ -605,6 +781,7 @@ export function createPoofEngine({
     const squashed = clamp(body.squash.x, 0.8, 1.2);
     const scaled = clamp(body.scale.x, 0.85, 1.2);
     return {
+      blush: f ? f.blush * fw : 0,
       body: {
         rotate: body.rotate.x,
         scaleX: scaled * squashWidth(squashed),
@@ -614,6 +791,7 @@ export function createPoofEngine({
       },
       eyes: [withLid(eyes[0], openness), withLid(eyes[1], openness)],
       gaze: { x: clamp(gaze.x.x + body.x.x * 0.6, -4.5, 4.5), y: clamp(gaze.y.x, -4.5, 4.5) },
+      feeling: felt,
       mood,
       particles: [
         ...sparks.map((p): PoofParticle => {
@@ -643,6 +821,7 @@ export function createPoofEngine({
   };
 
   return {
+    feel,
     owesGreeting: () => greetAt !== Infinity,
     hear({ input, output }) {
       const level = (n: number) => (Number.isFinite(n) ? clamp(n, 0, 1) : 0);
@@ -663,8 +842,10 @@ export function createPoofEngine({
       if (next === "idle") {
         ambient = "idle";
         idleFor = 0;
+        const subdued = feltness > 0 && !CHEERFUL.has(felt);
         if (previous === "writing" || previous === "working" || previous === "thinking") {
-          react(interrupted ? "surprised" : "happy", interrupted ? HOLD.surprised : HOLD.landed);
+          if (interrupted) react("surprised", HOLD.surprised);
+          else if (!subdued) react("happy", HOLD.landed);
         }
       } else if (next === "thinking" && previous === "idle") {
         react("surprised", HOLD.surprised);

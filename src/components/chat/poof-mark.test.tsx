@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MotionConfig } from "motion/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -9,6 +9,7 @@ import { createPoofSignals, PoofSignalsContext } from "./poof-signals";
 
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
 });
 
 function mark(container: HTMLElement): Element | null {
@@ -119,5 +120,46 @@ describe("PoofMark", () => {
     expect(container.querySelector('[data-slot="poof-mark-figure"]')?.getAttribute("transform")).toContain(
       `scale(${restFrame("talking").body.scaleX} ${restFrame("talking").body.scaleY})`,
     );
+  });
+
+  it("takes on the mood it is given, and starts out neutral", () => {
+    const { container, rerender } = render(<PoofMark state="writing" />);
+    expect(mark(container)?.getAttribute("data-feeling")).toBe("neutral");
+
+    rerender(<PoofMark mood={{ mood: "sheepish" }} state="writing" />);
+    expect(mark(container)?.getAttribute("data-feeling")).toBe("sheepish");
+  });
+
+  it("blushes when it is sheepish", async () => {
+    const { container } = render(<PoofMark mood={{ mood: "sheepish" }} state="writing" />);
+    const cheeks = container.querySelectorAll('[data-slot="poof-mark-cheek"]');
+    expect(cheeks).toHaveLength(2);
+    await waitFor(() => expect(Number(cheeks[0]?.getAttribute("opacity"))).toBeGreaterThan(0));
+  });
+
+  it("holds a mood as a still face when motion is reduced, then lets it go", () => {
+    vi.useFakeTimers();
+    const { container } = render(
+      <MotionConfig reducedMotion="always">
+        <PoofMark mood={{ mood: "proud" }} state="writing" />
+      </MotionConfig>,
+    );
+    const proud = restFrame("writing", "proud");
+    expect(eyes(container)).toEqual([
+      eyePath(proud.eyes[0], 18.5, 24, "left"),
+      eyePath(proud.eyes[1], 29.5, 24, "right"),
+    ]);
+    expect(container.querySelector('[data-slot="poof-mark-figure"]')?.getAttribute("transform")).toContain(
+      `scale(${Math.round(proud.body.scaleX * 100) / 100} ${Math.round(proud.body.scaleY * 100) / 100})`,
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(6500);
+    });
+    const neutral = restFrame("writing");
+    expect(eyes(container)).toEqual([
+      eyePath(neutral.eyes[0], 18.5, 24, "left"),
+      eyePath(neutral.eyes[1], 29.5, 24, "right"),
+    ]);
   });
 });

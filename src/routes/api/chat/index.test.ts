@@ -360,6 +360,113 @@ describe("POST /api/chat", () => {
     });
   });
 
+  describe("mood", () => {
+    type Part = TextStreamPart<ToolSet>;
+    type MessageMetadata = (options: { part: Part }) => unknown;
+
+    async function streamReply(parts: Part[]) {
+      let messageMetadata: MessageMetadata | undefined;
+      vi.mocked(streamText, { partial: true }).mockReturnValue({
+        toUIMessageStreamResponse: (options?: { messageMetadata?: MessageMetadata }) => {
+          messageMetadata = options?.messageMetadata;
+          return new Response("stream", { status: 200 });
+        },
+      });
+      await invokePost(postRequest(validBody));
+      const transform = vi.mocked(streamText).mock.calls[0]?.[0].experimental_transform;
+      if (typeof transform !== "function") throw new Error("no experimental_transform");
+      const stream: TransformStream<Part, Part> = transform({ stopStream: () => {}, tools: {} });
+      const out: Part[] = [];
+      const metadata: unknown[] = [];
+      const reading = (async () => {
+        const reader = stream.readable.getReader();
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) return;
+          out.push(value);
+          const meta = messageMetadata?.({ part: value });
+          if (meta !== undefined) metadata.push(meta);
+        }
+      })();
+      const writer = stream.writable.getWriter();
+      for (const part of parts) await writer.write(part);
+      await writer.close();
+      await reading;
+      const text = out.flatMap((part) => (part.type === "text-delta" ? [part.text] : [])).join("");
+      return { metadata, out, text };
+    }
+
+    const delta = (text: string): Part => ({ id: "t1", text, type: "text-delta" });
+
+    it("strips the opening mood tag, even split across chunks, and sends the mood as message metadata once", async () => {
+      const { metadata, text } = await streamReply([
+        { id: "t1", type: "text-start" },
+        delta("<mo"),
+        delta("od>proud</mo"),
+        delta("od>\n\nHe built it"),
+        delta(" — twice."),
+        { id: "t1", type: "text-end" },
+      ]);
+      expect(text).toBe("He built it - twice.");
+      expect(metadata).toEqual([{ mood: "proud" }]);
+    });
+
+    it("sends no mood when the reply has no tag or names an unknown one", async () => {
+      expect((await streamReply([delta("Hello.")])).metadata).toEqual([]);
+      const unknown = await streamReply([delta("<mood>grumpy</mood>Hello.")]);
+      expect(unknown.text).toBe("Hello.");
+      expect(unknown.metadata).toEqual([]);
+    });
+
+    it("releases held-back text before its text block ends", async () => {
+      const { out } = await streamReply([
+        { id: "t1", type: "text-start" },
+        delta("Hearts: <m"),
+        { id: "t1", type: "text-end" },
+      ]);
+      expect(out.map((part) => (part.type === "text-delta" ? part.text : part.type))).toEqual([
+        "text-start",
+        "Hearts: ",
+        "<m",
+        "text-end",
+      ]);
+    });
+
+    it("releases held-back text when the stream ends without closing its text block", async () => {
+      const { text } = await streamReply([{ id: "t1", type: "text-start" }, delta("Hearts: <m")]);
+      expect(text).toBe("Hearts: <m");
+    });
+
+    it("persists the reply without its mood tag or mood", async () => {
+      let captured: UIMessageStreamOnFinishCallback<UIMessage> | undefined;
+      vi.mocked(streamText, { partial: true }).mockReturnValue({
+        toUIMessageStreamResponse: (options?: { onFinish?: UIMessageStreamOnFinishCallback<UIMessage> }) => {
+          captured = options?.onFinish;
+          return new Response("stream", { status: 200 });
+        },
+      });
+
+      await invokePost(postRequest(validBody));
+      await captured?.({
+        isAborted: false,
+        isContinuation: false,
+        messages: [],
+        responseMessage: {
+          id: "asst-1",
+          metadata: { mood: "happy" },
+          parts: [{ text: "<mood>happy</mood>Hi there.", type: "text" }],
+          role: "assistant",
+        },
+      });
+
+      expect(vi.mocked(fetchAuthMutation)).toHaveBeenCalledWith(expect.anything(), {
+        conversationId: "conv-123",
+        messageJson: JSON.stringify({ id: "asst-1", parts: [{ text: "Hi there.", type: "text" }], role: "assistant" }),
+        sessionId: "sess-1",
+      });
+    });
+  });
+
   describe("tools", () => {
     const execOptions = { messages: [], toolCallId: "test-call" };
 

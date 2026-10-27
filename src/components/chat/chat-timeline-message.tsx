@@ -1,12 +1,14 @@
+import { moodOf } from "#/lib/chat/mood";
 import { cn } from "#/lib/utils";
 import { AudioWave01Icon } from "@hugeicons-pro/core-stroke-rounded";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { AnimatePresence } from "motion/react";
+import { useMemo } from "react";
 import { match } from "ts-pattern";
 import { z } from "zod";
 
 import type { ChatMessage, ChatStatus } from "./chat.types";
-import type { PoofMarkState } from "./poof-mark";
+import type { PoofMarkState, PoofMoodCue } from "./poof-mark";
 
 import { ChatContactCard } from "./chat-contact-card";
 import { ChatMarkdown } from "./chat-markdown";
@@ -81,6 +83,10 @@ export function ChatTimelineMessage({
   wasStopped?: boolean;
 }) {
   const role = message.role === "user" ? "user" : "assistant";
+  // Only a reply streamed in this visit has a mood: it is not saved, so call transcripts and
+  // replies from before a reload leave the face as it was.
+  const mood = moodOf(message.metadata);
+  const moodCue = useMemo<PoofMoodCue | undefined>(() => (mood ? { mood } : undefined), [mood]);
   // gpt-5.6-luna emits a reasoning part whose text is empty. A "Thinking" header over nothing
   // reads as a stuck status and outlives the answer, so only text that can actually be shown counts.
   const reasoningParts = message.parts.flatMap((part, index) =>
@@ -103,12 +109,17 @@ export function ChatTimelineMessage({
     message.parts.some((part) => part.type === "reasoning" && part.state === "streaming");
   const textParts = message.parts.flatMap((part, index) =>
     match(part)
-      .with({ type: "text" }, (textPart) => [
-        {
-          key: `${message.id}-text-${index}`,
-          text: textPart.text,
-        },
-      ])
+      // A step whose text was only the mood tag leaves an empty part behind; it is not text to show.
+      .with({ type: "text" }, (textPart) =>
+        textPart.text.trim().length > 0
+          ? [
+              {
+                key: `${message.id}-text-${index}`,
+                text: textPart.text,
+              },
+            ]
+          : [],
+      )
       .otherwise(() => []),
   );
   const resumeToolParts = message.parts.flatMap((part, index) => {
@@ -204,7 +215,7 @@ export function ChatTimelineMessage({
       <div className="flex items-center">
         <AnimatePresence>
           {isLatestAssistantTurn ? (
-            <PoofMark key="poof" entrance={false} interrupted={wasStopped} state={markState} />
+            <PoofMark key="poof" entrance={false} interrupted={wasStopped} mood={moodCue} state={markState} />
           ) : null}
         </AnimatePresence>
         <p className="font-mono text-sm tracking-wide text-neutral-500 uppercase">{role === "user" ? "You" : "Poof"}</p>

@@ -14,6 +14,7 @@ import type * as digest from "../digest.js";
 import type * as http from "../http.js";
 import type * as intro from "../intro.js";
 import type * as migrations from "../migrations.js";
+import type * as mood from "../mood.js";
 import type * as rateLimits from "../rateLimits.js";
 import type * as stripDashes from "../stripDashes.js";
 import type * as voiceAgent from "../voiceAgent.js";
@@ -36,6 +37,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   intro: typeof intro;
   migrations: typeof migrations;
+  mood: typeof mood;
   rateLimits: typeof rateLimits;
   stripDashes: typeof stripDashes;
   voiceAgent: typeof voiceAgent;
