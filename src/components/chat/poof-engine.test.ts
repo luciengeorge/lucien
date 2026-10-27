@@ -1,3 +1,4 @@
+import { MOODS } from "#/lib/chat/mood";
 import { describe, expect, it } from "vitest";
 
 import type { PoofFrame, PoofMood, PoofState } from "./poof-engine";
@@ -251,5 +252,156 @@ describe("Poof rest frames", () => {
       expect(first.gaze).toEqual(restFrame(state).gaze);
       expect(first.eyes).toEqual(restFrame(state).eyes);
     }
+  });
+});
+
+describe("Poof's moods", () => {
+  const FEELINGS = MOODS.filter((mood) => mood !== "neutral");
+
+  function feeling(state: PoofState, mood: (typeof MOODS)[number], seed = 31) {
+    const engine = createPoofEngine({ seed, state });
+    run(engine, 1);
+    engine.feel(mood);
+    return engine;
+  }
+
+  /* Blinks squeeze an eye's height, so its width and tilt are what tell the shape. */
+  function shape(frame: PoofFrame) {
+    return frame.eyes.map((eye) => [Number(eye.w.toFixed(2)), Number(eye.tilt.toFixed(2))]);
+  }
+
+  it("shows each mood on its face, easing in rather than snapping", () => {
+    for (const mood of FEELINGS) {
+      const engine = feeling("writing", mood);
+      const first = engine.step(1 / FPS);
+      expect(first.feeling).toBe(mood);
+      expect(shape(first)).not.toEqual(shape(restFrame("writing", mood)));
+      const settled = run(engine, 1);
+      expect(settled.feeling).toBe(mood);
+      expect(shape(settled)).toEqual(shape(restFrame("writing", mood)));
+    }
+  });
+
+  it("keeps swelling with its voice while it talks in a mood", () => {
+    function tallest(levels: { input: number; output: number }) {
+      const engine = feeling("talking", "excited", 41);
+      engine.hear(levels);
+      let max = 0;
+      run(engine, 2, (frame) => {
+        max = Math.max(max, frame.body.scaleY);
+      });
+      return max;
+    }
+    expect(tallest({ input: 0, output: 1 })).toBeGreaterThan(tallest({ input: 0, output: 0 }) + 0.04);
+  });
+
+  it("keeps answering the visitor's voice while it listens in a mood", () => {
+    function tallest(levels: { input: number; output: number }) {
+      const engine = feeling("listening", "curious", 42);
+      engine.hear(levels);
+      let max = 0;
+      run(engine, 2, (frame) => {
+        max = Math.max(max, frame.body.scaleY);
+      });
+      return max;
+    }
+    expect(tallest({ input: 1, output: 0 })).toBeGreaterThan(tallest({ input: 0, output: 0 }) + 0.01);
+  });
+
+  it("drifts back to neutral about six seconds after the last mood", () => {
+    const engine = feeling("writing", "curious");
+    expect(run(engine, 5).feeling).toBe("curious");
+    const after = run(engine, 2.5);
+    expect(after.feeling).toBe("neutral");
+    expect(shape(after)).toEqual(shape(restFrame("writing")));
+  });
+
+  it("holds a mood for as long as it keeps being set", () => {
+    const engine = feeling("writing", "proud");
+    run(engine, 4);
+    engine.feel("proud");
+    expect(run(engine, 4.5).feeling).toBe("proud");
+  });
+
+  it("goes back to neutral early when told to", () => {
+    const engine = feeling("writing", "sheepish");
+    run(engine, 1);
+    engine.feel("neutral");
+    expect(run(engine, 1.5).feeling).toBe("neutral");
+  });
+
+  it("moves from one mood straight into the next", () => {
+    const engine = feeling("idle", "happy");
+    run(engine, 1);
+    engine.feel("thoughtful");
+    const frame = run(engine, 1);
+    expect(frame.feeling).toBe("thoughtful");
+    expect(shape(frame)).toEqual(shape(restFrame("idle", "thoughtful")));
+  });
+
+  it("blushes when it is sheepish, and only then", () => {
+    for (const mood of FEELINGS) {
+      const frame = run(feeling("idle", mood), 1);
+      if (mood === "sheepish") expect(frame.blush).toBeGreaterThan(0.9);
+      else expect(frame.blush).toBe(0);
+    }
+    expect(run(createPoofEngine({ seed: 1, state: "idle" }), 1).blush).toBe(0);
+  });
+
+  it("bounces and sparkles when excited", () => {
+    function bounce(mood: (typeof MOODS)[number]) {
+      const engine = feeling("writing", mood, 43);
+      let low = Infinity;
+      let high = -Infinity;
+      let sparkled = false;
+      run(engine, 3, (frame) => {
+        low = Math.min(low, frame.body.y);
+        high = Math.max(high, frame.body.y);
+        sparkled ||= frame.particles.some((particle) => particle.kind === "spark" && particle.opacity > 0);
+      });
+      return { range: high - low, sparkled };
+    }
+    const excited = bounce("excited");
+    expect(excited.sparkled).toBe(true);
+    expect(excited.range).toBeGreaterThan(bounce("thoughtful").range + 0.8);
+  });
+
+  it("does not celebrate a landed answer it was sheepish about", () => {
+    const engine = feeling("writing", "sheepish");
+    run(engine, 1);
+    engine.setState("idle");
+    let sparkled = false;
+    run(engine, 2, (frame) => {
+      sparkled ||= frame.particles.some((particle) => particle.kind === "spark" && particle.opacity > 0);
+    });
+    expect(sparkled).toBe(false);
+  });
+
+  it("stays on the face whatever moods are thrown at it", () => {
+    const engine = createPoofEngine({ seed: 44, state: "talking" });
+    engine.hear({ input: 1, output: 1 });
+    for (const mood of [...FEELINGS, ...FEELINGS]) {
+      engine.feel(mood);
+      run(engine, 0.7, (frame) => {
+        expect(Object.values(frame.body).every(Number.isFinite)).toBe(true);
+        expect(frame.body.scaleY).toBeGreaterThan(0.75);
+        expect(frame.body.scaleY).toBeLessThan(1.3);
+        expect(Math.abs(frame.gaze.x)).toBeLessThanOrEqual(4.5);
+        expect(Math.abs(frame.gaze.y)).toBeLessThanOrEqual(4.5);
+      });
+    }
+  });
+
+  it("keeps every mood legible as a still face, for reduced motion", () => {
+    for (const a of MOODS) {
+      for (const b of MOODS) {
+        if (a === b) continue;
+        const fa = restFrame("idle", a);
+        const fb = restFrame("idle", b);
+        expect([fa.eyes, fa.gaze, fa.body]).not.toEqual([fb.eyes, fb.gaze, fb.body]);
+      }
+    }
+    expect(restFrame("idle", "sheepish").blush).toBe(1);
+    expect(restFrame("talking", "proud").feeling).toBe("proud");
   });
 });

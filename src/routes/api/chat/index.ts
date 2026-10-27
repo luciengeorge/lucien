@@ -1,12 +1,15 @@
+import type { Mood } from "#/lib/chat/mood";
 import type { TextStreamPart, ToolSet, UIMessage } from "ai";
 
 import { fetchAuthMutation, fetchAuthQuery } from "#/lib/auth-server";
 import {
   ChatRequestSchema,
+  getTextFromMessage,
   hasRenderableMessageContent,
   MAX_HISTORY_MESSAGES,
   parseSerializedMessages,
 } from "#/lib/chat-types";
+import { classifyMood } from "#/lib/chat/classify-mood";
 import { renderCorpus } from "#/lib/chat/corpus";
 import { renderSystemPrompt } from "#/lib/chat/system-prompt";
 import { buildChatTools } from "#/lib/chat/tools";
@@ -34,19 +37,39 @@ const corpus = renderCorpus(
 
 /**
  * Rewrites streamed text-delta chunks through stripDashes so the client never sees
- * an em-dash or en-dash, even mid-stream. Non-text chunks pass through unchanged.
+ * an em-dash or en-dash, even mid-stream. A reply that finished cleanly has its mood worked out
+ * (`onReply`) before its finish goes on, so the mood can ride on the finish; the words
+ * themselves are never held. Other chunks pass through unchanged.
  */
-function stripDashesFromStream<Tools extends ToolSet>(): TransformStream<TextStreamPart<Tools>, TextStreamPart<Tools>> {
-  return new TransformStream({
-    transform(chunk, controller) {
-      controller.enqueue(chunk.type === "text-delta" ? { ...chunk, text: stripDashes(chunk.text) } : chunk);
-    },
-  });
+function cleanReplyStream(onReply: (reply: string) => Promise<void>) {
+  return <Tools extends ToolSet>(): TransformStream<TextStreamPart<Tools>, TextStreamPart<Tools>> => {
+    let reply = "";
+    return new TransformStream({
+      async transform(chunk, controller) {
+        if (chunk.type === "text-delta") {
+          const text = stripDashes(chunk.text);
+          reply += text;
+          controller.enqueue({ ...chunk, text });
+          return;
+        }
+        if (chunk.type === "finish" && chunk.finishReason === "stop" && reply.trim()) await onReply(reply);
+        controller.enqueue(chunk);
+      },
+    });
+  };
+}
+
+/** The mood only shows on the face as the reply arrives, so it is not kept. */
+function withoutMood(metadata: unknown): unknown {
+  if (typeof metadata !== "object" || metadata === null || !("mood" in metadata)) return metadata;
+  const { mood: _mood, ...rest } = metadata;
+  return Object.keys(rest).length > 0 ? rest : undefined;
 }
 
 function sanitizeMessageForPersistence(message: UIMessage): UIMessage {
   return {
     ...message,
+    metadata: withoutMood(message.metadata),
     parts: message.parts.map((part) => (part.type === "text" ? { ...part, text: stripDashes(part.text) } : part)),
   };
 }
@@ -129,6 +152,7 @@ export const Route = createFileRoute("/api/chat/")({
 
         const prompt = renderSystemPrompt(systemPrompt, { context: corpus, today: new Date() });
         const modelMessages = messages.slice(-MAX_HISTORY_MESSAGES);
+        let mood: Mood | null = null;
 
         const result = streamText({
           model: openai("gpt-5.6-luna"),
@@ -136,7 +160,9 @@ export const Route = createFileRoute("/api/chat/")({
           messages: await convertToModelMessages(modelMessages),
           stopWhen: stepCountIs(3),
           abortSignal: request.signal,
-          experimental_transform: stripDashesFromStream,
+          experimental_transform: cleanReplyStream(async (reply) => {
+            mood = await classifyMood({ question: getTextFromMessage(message), reply, signal: request.signal });
+          }),
           onFinish: ({ finishReason, steps, text, toolCalls, usage }) => {
             const hadText = text.length > 0;
             const hadToolCall = toolCalls.length > 0;
@@ -169,6 +195,7 @@ export const Route = createFileRoute("/api/chat/")({
 
         return result.toUIMessageStreamResponse({
           generateMessageId: generateId,
+          messageMetadata: ({ part }) => (part.type === "finish" && mood ? { mood } : undefined),
           onFinish: async ({ isAborted, responseMessage }) => {
             try {
               await userMessageWrite;

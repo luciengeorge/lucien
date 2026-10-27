@@ -2,7 +2,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { buildVoiceAgentConfig, CONTACT_FORM_TOOL } from "./agent-config";
+import { MOODS } from "../chat/mood";
+import { buildVoiceAgentConfig, CONTACT_FORM_TOOL, MOOD_TOOL } from "./agent-config";
 
 const CONTENT_DIR = join(import.meta.dirname, "..", "..", "..", "content");
 const systemPromptTemplate = readFileSync(join(CONTENT_DIR, "system-prompt.md"), "utf-8");
@@ -70,9 +71,30 @@ describe("buildVoiceAgentConfig", () => {
     expect(build().conversation_config).not.toHaveProperty("tts");
   });
 
-  it("offers one client tool that opens the contact form", () => {
-    expect(build().conversation_config.agent.prompt.tools).toEqual([CONTACT_FORM_TOOL]);
-    expect(CONTACT_FORM_TOOL).toMatchObject({ expects_response: false, name: "show_contact_form", type: "client" });
+  it("offers two client tools: the contact form, and the mood Poof's face shows", () => {
+    expect(build().conversation_config.agent.prompt.tools).toEqual([CONTACT_FORM_TOOL, MOOD_TOOL]);
+    expect(CONTACT_FORM_TOOL).toEqual({
+      description: "Open a contact form on the visitor's screen so they can send Lucien a message.",
+      expects_response: false,
+      name: "show_contact_form",
+      type: "client",
+    });
+  });
+
+  /* Fire and forget: waiting on a response would hold up the answer it opens. */
+  it("sets the mood with one enum parameter and expects no response", () => {
+    expect(MOOD_TOOL).toMatchObject({ expects_response: false, name: "set_mood", type: "client" });
+    expect(MOOD_TOOL.parameters).toEqual({
+      properties: { mood: { description: expect.any(String), enum: [...MOODS], type: "string" } },
+      required: ["mood"],
+      type: "object",
+    });
+  });
+
+  it("tells Max to set the mood as an answer starts, at most once, without mentioning it", () => {
+    expect(voicePrompt).toContain("`set_mood`");
+    expect(voicePrompt).toMatch(/at most once per answer/);
+    expect(voicePrompt).not.toContain("<mood>");
   });
 
   it("only accepts calls with a server-minted token and lets the client override nothing", () => {

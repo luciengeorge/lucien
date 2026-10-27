@@ -1,10 +1,12 @@
 import { AnalyticsEvent, useAnalytics } from "#/lib/analytics";
+import { moodOf } from "#/lib/chat/mood";
 import { settleVoiceCall } from "#/lib/functions/settle-voice-call";
 import { ConversationProvider, useConversation } from "@elevenlabs/react";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 
 import type { VoiceCallStart, VoiceRefusal } from "./chat-voice-start";
 import type { PoofState } from "./poof-engine";
+import type { PoofMoodCue } from "./poof-mark";
 
 import { ChatVoiceContactForm } from "./chat-voice-contact-form";
 import {
@@ -66,6 +68,7 @@ function VoiceCall({
   const [phase, setPhase] = useState<Phase>("connecting");
   const [secsLeft, setSecsLeft] = useState<number | null>(null);
   const [isContactOpen, setIsContactOpen] = useState(false);
+  const [mood, setMood] = useState<PoofMoodCue>();
   // Refs, not state: the SDK's callbacks can land before React has rendered the last change.
   const callRef = useRef<{
     callId: string;
@@ -159,6 +162,10 @@ function VoiceCall({
           show_contact_form: () => {
             setIsContactOpen(true);
           },
+          set_mood: (parameters: unknown) => {
+            const next = moodOf(parameters);
+            if (next) setMood({ mood: next });
+          },
         },
         connectionType: "webrtc",
         conversationToken: result.token,
@@ -247,6 +254,7 @@ function VoiceCall({
       note={phase === "connecting" ? VOICE_PRIVACY_NOTE : undefined}
       onEscape={handleEscape}
       panel={isContactOpen ? <ChatVoiceContactForm onClose={closeContact} /> : null}
+      mood={mood}
       poof={poof}
       status={refused ? undefined : phase === "live" ? (agentTalking ? "Talking" : "Listening") : "Connecting"}
     >

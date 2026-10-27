@@ -8,6 +8,7 @@ vi.mock("#/lib/auth-server", () => ({
 vi.mock("#/lib/conversation-session.server", () => ({ getConversationSession: vi.fn() }));
 vi.mock("#/lib/notify-slack", () => ({ postContactToSlack: vi.fn() }));
 vi.mock("@vercel/functions", () => ({ waitUntil: vi.fn() }));
+vi.mock("#/lib/chat/classify-mood", () => ({ classifyMood: vi.fn() }));
 vi.mock("ai", async (importOriginal) => {
   const actual = await importOriginal<typeof import("ai")>();
   return { ...actual, generateText: vi.fn(), streamText: vi.fn(), validateUIMessages: vi.fn() };
@@ -16,6 +17,7 @@ vi.mock("ai", async (importOriginal) => {
 import type { TextStreamPart, ToolSet, UIMessage, UIMessageStreamOnFinishCallback } from "ai";
 
 import { fetchAuthAction, fetchAuthMutation, fetchAuthQuery } from "#/lib/auth-server";
+import { classifyMood } from "#/lib/chat/classify-mood";
 import { getConversationSession } from "#/lib/conversation-session.server";
 import { postContactToSlack } from "#/lib/notify-slack";
 import { waitUntil } from "@vercel/functions";
@@ -78,6 +80,7 @@ describe("POST /api/chat", () => {
     vi.mocked(generateText, { partial: true }).mockResolvedValue({ text: "expanded query" });
     vi.mocked(fetchAuthAction).mockResolvedValue("CTX");
     vi.mocked(fetchAuthMutation).mockResolvedValue({ allowed: true, retryAfter: 0 });
+    vi.mocked(classifyMood).mockResolvedValue(null);
     vi.mocked(streamText, { partial: true }).mockReturnValue({
       toUIMessageStreamResponse: () => new Response("stream", { status: 200 }),
     });
@@ -357,6 +360,147 @@ describe("POST /api/chat", () => {
       const { value } = await readPromise;
       expect(value).toEqual({ id: "t1", text: "Yes - I've sent it.", type: "text-delta" });
       await writer.close();
+    });
+  });
+
+  describe("mood", () => {
+    type Part = TextStreamPart<ToolSet>;
+    type MessageMetadata = (options: { part: Part }) => unknown;
+
+    const usage = {
+      inputTokenDetails: { cacheReadTokens: 0, cacheWriteTokens: 0, noCacheTokens: 0 },
+      inputTokens: 0,
+      outputTokenDetails: { reasoningTokens: 0, textTokens: 0 },
+      outputTokens: 0,
+      totalTokens: 0,
+    };
+    const delta = (text: string): Part => ({ id: "t1", text, type: "text-delta" });
+    const finish = (finishReason: "error" | "stop"): Part => ({
+      finishReason,
+      rawFinishReason: finishReason,
+      totalUsage: usage,
+      type: "finish",
+    });
+
+    /** Runs parts through the route's transform and its messageMetadata, as toUIMessageStream does. */
+    async function openReply() {
+      let messageMetadata: MessageMetadata | undefined;
+      vi.mocked(streamText, { partial: true }).mockReturnValue({
+        toUIMessageStreamResponse: (options?: { messageMetadata?: MessageMetadata }) => {
+          messageMetadata = options?.messageMetadata;
+          return new Response("stream", { status: 200 });
+        },
+      });
+      await invokePost(postRequest(validBody));
+      const transform = vi.mocked(streamText).mock.calls[0]?.[0].experimental_transform;
+      if (typeof transform !== "function") throw new Error("no experimental_transform");
+      const stream: TransformStream<Part, Part> = transform({ stopStream: () => {}, tools: {} });
+      const out: { metadata: unknown; part: Part }[] = [];
+      const reader = stream.readable.getReader();
+      const reading = (async () => {
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) return;
+          out.push({ metadata: messageMetadata?.({ part: value }), part: value });
+        }
+      })();
+      const writer = stream.writable.getWriter();
+      return {
+        out,
+        async end() {
+          await writer.close();
+          await reading;
+        },
+        write: (part: Part) => writer.write(part),
+      };
+    }
+
+    it("classifies the finished reply from the visitor's question, and sends the mood with the finish", async () => {
+      vi.mocked(classifyMood).mockResolvedValue("sheepish");
+      const reply = await openReply();
+      for (const part of [delta("I don't"), delta(" know that one."), finish("stop")]) await reply.write(part);
+      await reply.end();
+
+      expect(vi.mocked(classifyMood)).toHaveBeenCalledWith({
+        question: "hello",
+        reply: "I don't know that one.",
+        signal: expect.any(AbortSignal),
+      });
+      expect(reply.out.map(({ metadata }) => metadata)).toEqual([undefined, undefined, { mood: "sheepish" }]);
+    });
+
+    it("streams the words without waiting for the mood", async () => {
+      let resolveMood: (mood: "happy") => void = () => {};
+      vi.mocked(classifyMood).mockReturnValue(
+        new Promise((resolve) => {
+          resolveMood = resolve;
+        }),
+      );
+      const reply = await openReply();
+      await reply.write(delta("Hello"));
+      await reply.write(delta(" there."));
+      const finishing = reply.write(finish("stop"));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(reply.out.map(({ part }) => part.type)).toEqual(["text-delta", "text-delta"]);
+      resolveMood("happy");
+      await finishing;
+      await reply.end();
+      expect(reply.out.at(-1)).toEqual({ metadata: { mood: "happy" }, part: finish("stop") });
+    });
+
+    it("finishes the reply untouched, with no mood, when classifying fails or times out", async () => {
+      vi.mocked(classifyMood).mockResolvedValue(null);
+      const reply = await openReply();
+      for (const part of [delta("Hello."), finish("stop")]) await reply.write(part);
+      await reply.end();
+
+      expect(reply.out).toEqual([
+        { metadata: undefined, part: delta("Hello.") },
+        { metadata: undefined, part: finish("stop") },
+      ]);
+    });
+
+    it("does not classify a reply that ended in an error, or one with no words", async () => {
+      const errored = await openReply();
+      for (const part of [delta("Hel"), finish("error")]) await errored.write(part);
+      await errored.end();
+      vi.mocked(streamText).mockClear();
+
+      const wordless = await openReply();
+      await wordless.write(finish("stop"));
+      await wordless.end();
+
+      expect(vi.mocked(classifyMood)).not.toHaveBeenCalled();
+    });
+
+    it("never saves the mood", async () => {
+      let captured: UIMessageStreamOnFinishCallback<UIMessage> | undefined;
+      vi.mocked(streamText, { partial: true }).mockReturnValue({
+        toUIMessageStreamResponse: (options?: { onFinish?: UIMessageStreamOnFinishCallback<UIMessage> }) => {
+          captured = options?.onFinish;
+          return new Response("stream", { status: 200 });
+        },
+      });
+
+      await invokePost(postRequest(validBody));
+      await captured?.({
+        isAborted: false,
+        isContinuation: false,
+        messages: [],
+        responseMessage: {
+          id: "asst-1",
+          metadata: { mood: "happy" },
+          parts: [{ text: "Hi there.", type: "text" }],
+          role: "assistant",
+        },
+      });
+
+      expect(vi.mocked(fetchAuthMutation)).toHaveBeenCalledWith(expect.anything(), {
+        conversationId: "conv-123",
+        messageJson: JSON.stringify({ id: "asst-1", parts: [{ text: "Hi there.", type: "text" }], role: "assistant" }),
+        sessionId: "sess-1",
+      });
     });
   });
 

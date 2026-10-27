@@ -8,6 +8,7 @@ import { createPortal } from "react-dom";
 
 import type { VoiceRefusal } from "./chat-voice-start";
 import type { PoofLevels, PoofState } from "./poof-engine";
+import type { PoofMoodCue } from "./poof-mark";
 
 import { PoofMark } from "./poof-mark";
 
@@ -57,6 +58,7 @@ export function ChatVoiceScreen({
   children,
   levels,
   message,
+  mood,
   note,
   onEscape,
   panel,
@@ -71,6 +73,8 @@ export function ChatVoiceScreen({
   children: ReactNode;
   levels?: () => PoofLevels;
   message?: ReactNode;
+  /** The mood Poof set for what it is saying. */
+  mood?: PoofMoodCue;
   note?: ReactNode;
   onEscape: () => void;
   /** Something the call opened on top of itself, like the contact form. */
@@ -111,7 +115,7 @@ export function ChatVoiceScreen({
       role="dialog"
     >
       <div className="flex min-h-0 grow flex-col items-center justify-center gap-5 text-center">
-        <PoofMark className="mr-0 size-36 sm:size-44" levels={levels} state={poof} />
+        <PoofMark className="mr-0 size-36 sm:size-44" levels={levels} mood={mood} state={poof} />
         <div className="-mt-2 flex h-6 items-center justify-center">{belowPoof}</div>
         <p aria-hidden="true" className="h-5 font-mono text-sm tracking-wide text-neutral-500 uppercase">
           {status}

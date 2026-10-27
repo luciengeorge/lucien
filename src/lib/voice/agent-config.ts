@@ -1,3 +1,4 @@
+import { MOODS } from "#/lib/chat/mood";
 import { formatPromptDate, renderSystemPrompt } from "#/lib/chat/system-prompt";
 
 import { VOICE_LIMITS } from "../../../convex/voiceLimits";
@@ -10,6 +11,24 @@ export const CONTACT_FORM_TOOL = {
   description: "Open a contact form on the visitor's screen so they can send Lucien a message.",
   expects_response: false,
   name: "show_contact_form",
+  type: "client",
+};
+
+export const MOOD_TOOL = {
+  description: "Set the expression on Poof's face to match the tone of the answer you are about to give.",
+  expects_response: false,
+  name: "set_mood",
+  parameters: {
+    properties: {
+      mood: {
+        description: "The mood that fits the answer. sheepish is for when you do not know.",
+        enum: [...MOODS],
+        type: "string",
+      },
+    },
+    required: ["mood"],
+    type: "object",
+  },
   type: "client",
 };
 
@@ -83,7 +102,7 @@ export function buildVoiceAgentConfig({
           dynamic_variable_placeholders: { call_id: "dashboard-test", [TODAY_VARIABLE]: formatPromptDate(syncedAt) },
         },
         first_message: "Hey, I'm Poof, Lucien's assistant. What would you like to know about him?",
-        prompt: { max_tokens: -1, prompt, tools: [CONTACT_FORM_TOOL] },
+        prompt: { max_tokens: -1, prompt, tools: [CONTACT_FORM_TOOL, MOOD_TOOL] },
       },
       conversation: { max_duration_seconds: VOICE_LIMITS.callMaxSecs },
       // Max reasons before it speaks, which the long prompt and the scope rules need.

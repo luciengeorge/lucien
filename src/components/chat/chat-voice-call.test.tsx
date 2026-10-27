@@ -75,7 +75,7 @@ type SdkProps = {
   onError?: (message: string, context?: unknown) => void;
 };
 type SessionOptions = {
-  clientTools: Record<string, () => unknown>;
+  clientTools: Record<string, (parameters?: unknown) => unknown>;
   connectionType: string;
   conversationToken: string;
   dynamicVariables: Record<string, string>;
@@ -199,14 +199,15 @@ describe("voice call", () => {
     await startCall();
 
     expect(screen.getByText(/processed by ElevenLabs/)).toBeTruthy();
-    await waitFor(() => expect(sdk.startSession).toHaveBeenCalledTimes(1));
+    // The first test to open a call also pays for compiling the lazily loaded call code.
+    await waitFor(() => expect(sdk.startSession).toHaveBeenCalledTimes(1), { timeout: 5000 });
     const options = sdk.startSession.mock.calls[0]?.[0];
     expect(options).toMatchObject({
       connectionType: "webrtc",
       conversationToken: "webrtc-token",
       dynamicVariables: { call_id: "call-1", today: "Monday, 26 October 2026" },
     });
-    expect(Object.keys(options?.clientTools ?? {})).toEqual(["show_contact_form"]);
+    expect(Object.keys(options?.clientTools ?? {})).toEqual(["show_contact_form", "set_mood"]);
   });
 
   it.each([
@@ -292,6 +293,24 @@ describe("voice call", () => {
     });
     expect(sdk.endSession).not.toHaveBeenCalled();
     expect(screen.getByRole("dialog", { name: "Voice call with Poof" })).toBeTruthy();
+  });
+
+  it("shows the mood Poof sets on the call's face, and ignores moods it does not know", async () => {
+    renderChat();
+    await connect();
+    const face = () =>
+      screen.getByRole("dialog", { name: "Voice call with Poof" }).querySelector('[data-slot="poof-mark"]');
+    const setMood = (parameters: unknown) =>
+      act(() => {
+        sdk.startSession.mock.calls[0]?.[0].clientTools.set_mood?.(parameters);
+      });
+
+    expect(face()?.getAttribute("data-feeling")).toBe("neutral");
+    setMood({ mood: "excited" });
+    expect(face()?.getAttribute("data-feeling")).toBe("excited");
+    setMood({ mood: "grumpy" });
+    setMood(null);
+    expect(face()?.getAttribute("data-feeling")).toBe("excited");
   });
 
   it("ends on Escape", async () => {
