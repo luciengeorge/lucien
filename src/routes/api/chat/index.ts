@@ -4,12 +4,13 @@ import type { TextStreamPart, ToolSet, UIMessage } from "ai";
 import { fetchAuthMutation, fetchAuthQuery } from "#/lib/auth-server";
 import {
   ChatRequestSchema,
+  getTextFromMessage,
   hasRenderableMessageContent,
   MAX_HISTORY_MESSAGES,
   parseSerializedMessages,
 } from "#/lib/chat-types";
+import { classifyMood } from "#/lib/chat/classify-mood";
 import { renderCorpus } from "#/lib/chat/corpus";
-import { createMoodTagFilter, stripMoodTags } from "#/lib/chat/mood";
 import { renderSystemPrompt } from "#/lib/chat/system-prompt";
 import { buildChatTools } from "#/lib/chat/tools";
 import { getConversationSession } from "#/lib/conversation-session.server";
@@ -35,34 +36,24 @@ const corpus = renderCorpus(
 );
 
 /**
- * Cleans streamed text so the client never sees an em-dash or en-dash, or the `<mood>` tag the
- * reply opens with, even mid-stream. The tag's mood goes to `onMood`. A possible tag is held back
- * until it resolves, and released before its text block or the stream ends. Non-text chunks pass through.
+ * Rewrites streamed text-delta chunks through stripDashes so the client never sees
+ * an em-dash or en-dash, even mid-stream. A reply that finished cleanly has its mood worked out
+ * (`onReply`) before its finish goes on, so the mood can ride on the finish; the words
+ * themselves are never held. Other chunks pass through unchanged.
  */
-function cleanReplyStream(onMood: (mood: Mood) => void) {
+function cleanReplyStream(onReply: (reply: string) => Promise<void>) {
   return <Tools extends ToolSet>(): TransformStream<TextStreamPart<Tools>, TextStreamPart<Tools>> => {
-    const moodTags = createMoodTagFilter();
-    let textId = "";
+    let reply = "";
     return new TransformStream({
-      transform(chunk, controller) {
-        if (chunk.type === "text-start") textId = chunk.id;
+      async transform(chunk, controller) {
         if (chunk.type === "text-delta") {
-          textId = chunk.id;
-          const { mood, text } = moodTags.push(chunk.text);
-          if (mood) onMood(mood);
-          if (text) controller.enqueue({ ...chunk, text: stripDashes(text) });
+          const text = stripDashes(chunk.text);
+          reply += text;
+          controller.enqueue({ ...chunk, text });
           return;
         }
-        if (chunk.type === "text-end") {
-          const held = moodTags.flush();
-          if (held) controller.enqueue({ id: chunk.id, text: stripDashes(held), type: "text-delta" });
-        }
+        if (chunk.type === "finish" && chunk.finishReason === "stop" && reply.trim()) await onReply(reply);
         controller.enqueue(chunk);
-      },
-      // A stream cut off mid-block never sends text-end, and what was held back would be lost.
-      flush(controller) {
-        const held = moodTags.flush();
-        if (held) controller.enqueue({ id: textId, text: stripDashes(held), type: "text-delta" });
       },
     });
   };
@@ -79,9 +70,7 @@ function sanitizeMessageForPersistence(message: UIMessage): UIMessage {
   return {
     ...message,
     metadata: withoutMood(message.metadata),
-    parts: message.parts.map((part) =>
-      part.type === "text" ? { ...part, text: stripDashes(stripMoodTags(part.text)) } : part,
-    ),
+    parts: message.parts.map((part) => (part.type === "text" ? { ...part, text: stripDashes(part.text) } : part)),
   };
 }
 
@@ -163,8 +152,7 @@ export const Route = createFileRoute("/api/chat/")({
 
         const prompt = renderSystemPrompt(systemPrompt, { context: corpus, today: new Date() });
         const modelMessages = messages.slice(-MAX_HISTORY_MESSAGES);
-        // Set by the stream transform once the reply's mood tag arrives, then sent once as metadata.
-        let unsentMood: Mood | null = null;
+        let mood: Mood | null = null;
 
         const result = streamText({
           model: openai("gpt-5.6-luna"),
@@ -172,8 +160,8 @@ export const Route = createFileRoute("/api/chat/")({
           messages: await convertToModelMessages(modelMessages),
           stopWhen: stepCountIs(3),
           abortSignal: request.signal,
-          experimental_transform: cleanReplyStream((mood) => {
-            unsentMood = mood;
+          experimental_transform: cleanReplyStream(async (reply) => {
+            mood = await classifyMood({ question: getTextFromMessage(message), reply, signal: request.signal });
           }),
           onFinish: ({ finishReason, steps, text, toolCalls, usage }) => {
             const hadText = text.length > 0;
@@ -207,12 +195,7 @@ export const Route = createFileRoute("/api/chat/")({
 
         return result.toUIMessageStreamResponse({
           generateMessageId: generateId,
-          messageMetadata: () => {
-            if (!unsentMood) return undefined;
-            const mood = unsentMood;
-            unsentMood = null;
-            return { mood };
-          },
+          messageMetadata: ({ part }) => (part.type === "finish" && mood ? { mood } : undefined),
           onFinish: async ({ isAborted, responseMessage }) => {
             try {
               await userMessageWrite;

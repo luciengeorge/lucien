@@ -91,10 +91,10 @@ describe("buildVoiceAgentConfig", () => {
     });
   });
 
-  it("tells Max to set the mood instead of writing the text chat's mood tag", () => {
+  it("tells Max to set the mood as an answer starts, at most once, without mentioning it", () => {
     expect(voicePrompt).toContain("`set_mood`");
     expect(voicePrompt).toMatch(/at most once per answer/);
-    expect(voicePrompt).toMatch(/`<mood>` tag/);
+    expect(voicePrompt).not.toContain("<mood>");
   });
 
   it("only accepts calls with a server-minted token and lets the client override nothing", () => {

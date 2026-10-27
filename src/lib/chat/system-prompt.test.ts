@@ -2,7 +2,6 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { MOODS } from "./mood";
 import { formatPromptDate, renderSystemPrompt } from "./system-prompt";
 
 const template = readFileSync(join(import.meta.dirname, "..", "..", "..", "content", "system-prompt.md"), "utf-8");
@@ -38,16 +37,6 @@ describe("renderSystemPrompt", () => {
   it("takes a preformatted today as is", () => {
     const prompt = renderSystemPrompt(template, { context: "ctx", today: "{{today}}" });
     expect(prompt).toContain("Today is {{today}}.");
-  });
-});
-
-describe("the mood tag", () => {
-  /* The route strips the tag and the face shows it; a mood the prompt never names never shows. */
-  it("asks for a mood tag at the start of every reply, naming every mood", () => {
-    expect(template).toContain("<mood>NAME</mood>");
-    // In backticks, the model wraps its real tag in them too, and the route no longer sees a tag.
-    expect(template).not.toContain("`<mood>");
-    for (const mood of MOODS) expect(template).toContain(mood);
   });
 });
 

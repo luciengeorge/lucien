@@ -109,17 +109,12 @@ export function ChatTimelineMessage({
     message.parts.some((part) => part.type === "reasoning" && part.state === "streaming");
   const textParts = message.parts.flatMap((part, index) =>
     match(part)
-      // A step whose text was only the mood tag leaves an empty part behind; it is not text to show.
-      .with({ type: "text" }, (textPart) =>
-        textPart.text.trim().length > 0
-          ? [
-              {
-                key: `${message.id}-text-${index}`,
-                text: textPart.text,
-              },
-            ]
-          : [],
-      )
+      .with({ type: "text" }, (textPart) => [
+        {
+          key: `${message.id}-text-${index}`,
+          text: textPart.text,
+        },
+      ])
       .otherwise(() => []),
   );
   const resumeToolParts = message.parts.flatMap((part, index) => {

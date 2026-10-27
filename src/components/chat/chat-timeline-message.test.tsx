@@ -327,13 +327,3 @@ describe("ChatTimelineMessage mood", () => {
     expect(face(container)?.getAttribute("data-feeling")).toBe("neutral");
   });
 });
-
-describe("ChatTimelineMessage empty text", () => {
-  /* A step whose text was only the mood tag leaves a text part with nothing in it. */
-  it("treats a text part with nothing in it as no text, so the fallback still shows", () => {
-    render(
-      <ChatTimelineMessage isActive message={message([{ state: "done", text: "", type: "text" }])} status="ready" />,
-    );
-    expect(screen.getByText("Sorry, I didn't catch that. Mind rephrasing?")).toBeTruthy();
-  });
-});

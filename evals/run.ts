@@ -10,7 +10,6 @@ import type { ActorResult, CategorySummary, EvalCase, EvalCategory, EvalReport, 
 
 import { renderSystemPrompt } from "../src/lib/chat/system-prompt";
 import { buildChatTools } from "../src/lib/chat/tools";
-import { gradedAnswer, passes, replyMood } from "./answer";
 import { readCorpusFromDisk } from "./corpus";
 import { judge } from "./judge";
 import { DEFAULT_ACTOR_MODEL, DEFAULT_JUDGE_MODEL } from "./models";
@@ -63,7 +62,7 @@ async function actorRun({
   const start = performance.now();
 
   const system = renderSystemPrompt(systemPromptTemplate, { context: corpus, today: evalToday(evalCase) });
-  const { steps, text } = await generateText({
+  const { text } = await generateText({
     model: openai(ACTOR_MODEL),
     system,
     messages: [
@@ -82,9 +81,7 @@ async function actorRun({
 
   return {
     case: evalCase,
-    answer: gradedAnswer(text),
-    // Across every step, as the chat route reads the stream: a tool call can come before the words.
-    mood: replyMood(steps.map((step) => step.text).join("")),
+    answer: text,
     retrievedContext: corpus,
     contextLength: corpus.length,
     durationMs: performance.now() - start,
@@ -150,10 +147,6 @@ function buildMarkdownSummary(report: EvalReport): string {
       lines.push(`### ${f.case.id} (${f.case.category}/${f.case.subcategory}) - score ${score}`);
       lines.push("");
       lines.push(`**Q**: ${f.case.question}`);
-      if (!f.actor.mood) {
-        lines.push("");
-        lines.push("**Mood tag**: missing or invalid, so the face would not react.");
-      }
       lines.push("");
       lines.push(`**A**: ${f.actor.answer.replace(/\n+/g, " ").slice(0, 400)}`);
       lines.push("");
@@ -193,11 +186,9 @@ async function main() {
     process.stdout.write(`[evals] ${evalCase.id} … `);
     const actor = await actorRun({ systemPromptTemplate, corpus, evalCase });
     const verdict = await judge({ actor, model: JUDGE_MODEL });
-    const passed = passes(verdict, actor.mood);
+    const passed = "score" in verdict ? verdict.score >= 0.85 : false;
     results.push({ case: evalCase, actor, judge: verdict, passed });
-    console.log(
-      `${passed ? "PASS" : "FAIL"} (${"score" in verdict ? verdict.score.toFixed(2) : "ERR"})${actor.mood ? "" : " no mood tag"}`,
-    );
+    console.log(`${passed ? "PASS" : "FAIL"} (${"score" in verdict ? verdict.score.toFixed(2) : "ERR"})`);
   }
 
   const categories = summariseByCategory(results, thresholds);
