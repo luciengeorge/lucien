@@ -6,6 +6,8 @@ import { checkVoiceResting, startVoiceCall } from "#/lib/functions/start-voice-c
 export type VoiceRefusal =
   | Extract<StartVoiceCallResult, { ok: false }>["reason"]
   | "connect_failed"
+  | "mic_blocked_system"
+  | "mic_busy"
   | "mic_denied"
   | "mic_missing";
 
@@ -13,6 +15,16 @@ export type VoiceCallStart = Extract<StartVoiceCallResult, { ok: true }> | { ok:
 
 export function isVoiceEnabled(): boolean {
   return import.meta.env.VITE_VOICE_ENABLED === "true";
+}
+
+export function microphoneRefusal(error: unknown): VoiceRefusal | null {
+  if (!(error instanceof DOMException)) return null;
+  // Chrome's wording when macOS or Windows privacy settings block the browser itself.
+  if (error.name === "NotAllowedError" && /system/i.test(error.message)) return "mic_blocked_system";
+  if (error.name === "NotAllowedError" || error.name === "SecurityError") return "mic_denied";
+  if (error.name === "NotFoundError") return "mic_missing";
+  if (error.name === "NotReadableError") return "mic_busy";
+  return null;
 }
 
 /** Asks for the microphone and lets it go again: the SDK opens its own stream once the call connects. */
@@ -23,10 +35,7 @@ async function requestMicrophone(): Promise<"granted" | VoiceRefusal> {
     for (const track of stream.getTracks()) track.stop();
     return "granted";
   } catch (error) {
-    if (!(error instanceof DOMException)) return "unavailable";
-    if (error.name === "NotAllowedError" || error.name === "SecurityError") return "mic_denied";
-    if (error.name === "NotFoundError") return "mic_missing";
-    return "unavailable";
+    return microphoneRefusal(error) ?? "unavailable";
   }
 }
 
