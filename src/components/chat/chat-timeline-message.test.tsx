@@ -57,6 +57,31 @@ describe("ChatTimelineMessage render order", () => {
     expect(textEl.compareDocumentPosition(cardEl) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
+  it("keeps finished tool cards back while the answer is still being written, so they never sit under a growing bubble", () => {
+    render(
+      <ChatTimelineMessage
+        isActive
+        message={message([resumeOutputPart(), { text: "Here is his resume, and", type: "text" }])}
+        status="streaming"
+      />,
+    );
+
+    expect(screen.queryByText("resume.pdf")).toBeNull();
+    expect(screen.queryByText("Getting Lucien's resume…")).toBeNull();
+  });
+
+  it("brings the tool cards in once the answer has finished", () => {
+    render(
+      <ChatTimelineMessage
+        isActive
+        message={message([resumeOutputPart(), { text: "Here is his resume.", type: "text" }])}
+        status="ready"
+      />,
+    );
+
+    expect(screen.getByText("resume.pdf")).not.toBeNull();
+  });
+
   it("holds the finished tool card until text has started on the active streaming turn", () => {
     render(<ChatTimelineMessage isActive message={message([resumeOutputPart()])} status="streaming" />);
 
