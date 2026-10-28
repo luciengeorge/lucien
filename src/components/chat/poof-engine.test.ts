@@ -3,7 +3,8 @@ import { describe, expect, it } from "vitest";
 
 import type { PoofFrame, PoofMood, PoofState } from "./poof-engine";
 
-import { createPoofEngine, restFrame } from "./poof-engine";
+import { createPoofEngine, GAZE_LIMIT, PEER_SCALE, pickGlance, restFrame } from "./poof-engine";
+import { EYES } from "./poof-eyes";
 
 const FPS = 60;
 const STATES: PoofState[] = ["idle", "thinking", "working", "writing", "confused", "listening", "talking"];
@@ -50,8 +51,8 @@ describe("Poof engine", () => {
           ...frame.eyes.flatMap((eye) => Object.values(eye)),
         ];
         expect(values.every(Number.isFinite)).toBe(true);
-        expect(Math.abs(frame.gaze.x)).toBeLessThanOrEqual(4.5);
-        expect(Math.abs(frame.gaze.y)).toBeLessThanOrEqual(4.5);
+        expect(Math.abs(frame.gaze.x)).toBeLessThanOrEqual(GAZE_LIMIT.x);
+        expect(Math.abs(frame.gaze.y)).toBeLessThanOrEqual(GAZE_LIMIT.y);
         expect(frame.body.scaleY).toBeGreaterThan(0.75);
         expect(frame.body.scaleY).toBeLessThan(1.3);
       });
@@ -386,8 +387,8 @@ describe("Poof's moods", () => {
         expect(Object.values(frame.body).every(Number.isFinite)).toBe(true);
         expect(frame.body.scaleY).toBeGreaterThan(0.75);
         expect(frame.body.scaleY).toBeLessThan(1.3);
-        expect(Math.abs(frame.gaze.x)).toBeLessThanOrEqual(4.5);
-        expect(Math.abs(frame.gaze.y)).toBeLessThanOrEqual(4.5);
+        expect(Math.abs(frame.gaze.x)).toBeLessThanOrEqual(GAZE_LIMIT.x);
+        expect(Math.abs(frame.gaze.y)).toBeLessThanOrEqual(GAZE_LIMIT.y);
       });
     }
   });
@@ -403,5 +404,194 @@ describe("Poof's moods", () => {
     }
     expect(restFrame("idle", "sheepish").blush).toBe(1);
     expect(restFrame("talking", "proud").feeling).toBe("proud");
+  });
+});
+
+describe("Poof's glances", () => {
+  const FACE = 34;
+
+  function draws(state: Parameters<typeof pickGlance>[0], n = 400) {
+    const rand = mulberry(99);
+    let side = 1;
+    return Array.from({ length: n }, () => {
+      const glance = pickGlance(state, rand, side);
+      if (!glance) throw new Error(`no glances for ${state}`);
+      side = glance.side;
+      return glance;
+    });
+  }
+
+  function mulberry(seed: number) {
+    let a = seed >>> 0;
+    return () => {
+      a = (a + 0x6d2b79f5) >>> 0;
+      let t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  const mean = (ns: number[]) => ns.reduce((sum, n) => sum + n, 0) / ns.length;
+
+  it("holds each idle glance for 1.5 to 4 seconds", () => {
+    for (const glance of draws("idle")) {
+      expect(glance.hold).toBeGreaterThanOrEqual(1.5);
+      expect(glance.hold).toBeLessThanOrEqual(4);
+    }
+  });
+
+  it("looks clearly away when it glances, but never off the face", () => {
+    const away = draws("idle").filter((glance) => glance.x !== 0);
+    expect(away.length).toBeGreaterThan(200);
+    for (const glance of away) {
+      expect(Math.abs(glance.x) / FACE).toBeGreaterThanOrEqual(0.09);
+      expect(Math.abs(glance.x) / FACE).toBeLessThanOrEqual(0.18);
+    }
+    for (const state of ["idle", "thinking", "working", "listening", "talking"] as const) {
+      for (const glance of draws(state)) {
+        expect(Math.abs(glance.x)).toBeLessThanOrEqual(GAZE_LIMIT.x);
+        expect(Math.abs(glance.y)).toBeLessThanOrEqual(GAZE_LIMIT.y);
+      }
+    }
+  });
+
+  it("glances more often and upward while it thinks", () => {
+    const idle = draws("idle");
+    const thinking = draws("thinking");
+    expect(mean(thinking.map((g) => g.hold))).toBeLessThan(mean(idle.map((g) => g.hold)) - 0.5);
+    expect(mean(thinking.map((g) => g.y))).toBeLessThan(-2);
+    expect(mean(draws("working").map((g) => g.hold))).toBeLessThan(mean(idle.map((g) => g.hold)) - 0.5);
+  });
+
+  it("swaps sides on every busy glance, so the slant can flip with it", () => {
+    for (const state of ["thinking", "working"] as const) {
+      const glances = draws(state, 40);
+      for (let i = 1; i < glances.length; i++) expect(glances[i]?.side).toBe(-(glances[i - 1]?.side ?? 0));
+    }
+  });
+
+  it("keeps its eyes mostly on the visitor while it listens, and glances least while it talks", () => {
+    const listening = draws("listening");
+    const near = listening.filter((g) => Math.abs(g.x - restFrame("listening").gaze.x) < 1.5);
+    expect(near.length / listening.length).toBeGreaterThan(0.6);
+    expect(mean(draws("talking").map((g) => g.hold))).toBeGreaterThan(mean(draws("idle").map((g) => g.hold)));
+  });
+
+  it("darts quickly to each idle glance, then holds still", () => {
+    const engine = createPoofEngine({ seed: 17, state: "idle" });
+    const xs: number[] = [];
+    run(engine, 20, (frame) => xs.push(frame.gaze.x));
+    const starts: number[] = [];
+    let lastMoving = -Infinity;
+    for (let i = 1; i < xs.length; i++) {
+      if (Math.abs((xs[i] ?? 0) - (xs[i - 1] ?? 0)) <= 0.01) continue;
+      if (i - lastMoving > 0.3 * FPS) starts.push(i);
+      lastMoving = i;
+    }
+    expect(starts.length).toBeGreaterThanOrEqual(5);
+    expect(starts.length).toBeLessThanOrEqual(14);
+    for (let i = 0; i < starts.length - 1; i++) {
+      const start = starts[i] ?? 0;
+      const next = starts[i + 1] ?? 0;
+      expect((next - start) / FPS).toBeGreaterThanOrEqual(1.4);
+      const held = xs[next - 1] ?? 0;
+      expect(Math.abs((xs[start + Math.round(0.26 * FPS)] ?? 0) - held)).toBeLessThan(0.15);
+    }
+    expect(Math.max(...xs.map(Math.abs))).toBeGreaterThan(3.2);
+  });
+
+  it("lets the pointer win over its own glances", () => {
+    const engine = createPoofEngine({ seed: 18, state: "idle" });
+    run(engine, 0.4);
+    engine.look({ x: 120, y: 0 });
+    run(engine, 0.3);
+    for (let i = 0; i < 5; i++) {
+      engine.look({ x: 120, y: 0 });
+      run(engine, 1, (frame) => expect(frame.gaze.x).toBeGreaterThan(3));
+    }
+  });
+
+  it("slants its eyes while it works, flipping the slant from glance to glance", () => {
+    const engine = createPoofEngine({ seed: 19, state: "working" });
+    const slants: number[] = [];
+    run(engine, 8, (frame) => slants.push(frame.eyes[0].slant));
+    expect(Math.max(...slants)).toBeGreaterThan(12);
+    expect(Math.min(...slants)).toBeLessThan(-12);
+    for (const frame of [run(createPoofEngine({ seed: 19, state: "idle" }), 3)]) {
+      expect(frame.eyes[0].slant).toBe(0);
+    }
+  });
+
+  it("morphs to a new eye shape in about a fifth of a second", () => {
+    const engine = createPoofEngine({ seed: 20, state: "idle" });
+    run(engine, 1);
+    engine.setState("working");
+    const settled = run(engine, 0.26);
+    expect(settled.eyes[0].w).toBeCloseTo(EYES.pill.w, 1);
+  });
+});
+
+describe("Poof's body moments", () => {
+  function scales(engine: ReturnType<typeof createPoofEngine>, seconds: number) {
+    const seen: number[] = [];
+    run(engine, seconds, (frame) => seen.push(frame.body.scaleY));
+    return seen;
+  }
+
+  it("shrinks to peer once it starts thinking about a question", () => {
+    const engine = createPoofEngine({ entrance: true, seed: 24, state: "thinking" });
+    const seen = scales(engine, 2);
+    expect(seen.at(-1)).toBeLessThan(PEER_SCALE + 0.03);
+    expect(seen.at(-1)).toBeGreaterThan(PEER_SCALE - 0.03);
+    expect(Math.min(...seen)).toBeGreaterThan(PEER_SCALE - 0.03);
+  });
+
+  it("is already peering when it takes over from the face that started thinking", () => {
+    const first = createPoofEngine({ seed: 25, state: "thinking" }).step(0);
+    expect(first.body.scaleY).toBeCloseTo(PEER_SCALE, 2);
+  });
+
+  it("pops back past full size when the answer starts, then settles", () => {
+    for (const next of ["writing", "talking"] as const) {
+      const engine = createPoofEngine({ seed: 26, state: "thinking" });
+      run(engine, 1.5);
+      engine.setState(next);
+      const seen = scales(engine, 0.6);
+      expect(Math.max(...seen)).toBeGreaterThan(1.02);
+      const after = scales(engine, 1.5);
+      expect(Math.abs((after.at(-1) ?? 0) - restFrame(next).body.scaleY)).toBeLessThan(0.03);
+    }
+  });
+
+  it("stays full size when it is not thinking", () => {
+    for (const state of ["idle", "working", "writing", "listening", "talking"] as const) {
+      // Working squats a little (squash), which is not the same as shrinking.
+      const seen = scales(createPoofEngine({ seed: 27, state }), 3);
+      expect(Math.min(...seen)).toBeGreaterThan(0.93);
+    }
+  });
+
+  it("perks up when it starts talking on a call", () => {
+    const engine = createPoofEngine({ seed: 28, state: "listening" });
+    const before = Math.max(...scales(engine, 1.5));
+    engine.setState("talking");
+    expect(Math.max(...scales(engine, 0.5))).toBeGreaterThan(before + 0.02);
+  });
+});
+
+describe("Poof's calm idle", () => {
+  it("sways only a little while idle, so its glances stand out", () => {
+    const engine = createPoofEngine({ seed: 29, state: "idle" });
+    run(engine, 0.5);
+    const rotations: number[] = [];
+    const sizes: number[] = [];
+    run(engine, 20, (frame) => {
+      rotations.push(frame.body.rotate);
+      sizes.push(frame.body.scaleY);
+    });
+    expect(Math.max(...rotations.map(Math.abs))).toBeLessThanOrEqual(1.6);
+    expect(Math.max(...sizes)).toBeLessThanOrEqual(1.011);
+    expect(Math.min(...sizes)).toBeGreaterThanOrEqual(0.989);
   });
 });

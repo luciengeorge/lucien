@@ -128,8 +128,9 @@ export function PoofMark({
   const svgRef = useRef<SVGSVGElement>(null);
   const live = useRef<{ engine: PoofEngine; paint: (frame: PoofFrame) => void } | null>(null);
   // While animating, React only ever renders the mount frame: later frames are painted directly,
-  // and rendering a new frame on a state change would fight the engine for one frame.
-  const [mountFrame] = useState(() => restFrame(state));
+  // and rendering a new frame on a state change would fight the engine for one frame. It is the
+  // engine's own first frame, so a face that starts mid-moment (peering) never flashes full size.
+  const [mountFrame] = useState(() => createPoofEngine({ entrance, state }).step(0));
   // A still face has no engine to wear a mood off, so it holds the cue until a timer lets it go.
   const [wornOff, setWornOff] = useState<PoofMoodCue | null>(null);
   const stillFeeling = mood && mood !== wornOff ? mood.mood : "neutral";

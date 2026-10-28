@@ -1,8 +1,9 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MotionConfig } from "motion/react";
+import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { restFrame } from "./poof-engine";
+import { PEER_SCALE, restFrame } from "./poof-engine";
 import { eyePath } from "./poof-eyes";
 import { PoofMark } from "./poof-mark";
 import { createPoofSignals, PoofSignalsContext } from "./poof-signals";
@@ -77,6 +78,27 @@ describe("PoofMark", () => {
     expect(container.querySelector('[data-slot="poof-mark-gaze"]')?.getAttribute("transform")).toBe(
       `translate(${frame.gaze.x} ${frame.gaze.y})`,
     );
+  });
+
+  it("is already peering when it takes over a reply that is still thinking, from its very first paint", () => {
+    expect(renderToString(<PoofMark entrance={false} state="thinking" />)).toContain(
+      `scale(${PEER_SCALE} ${PEER_SCALE})`,
+    );
+  });
+
+  it("holds its resting face still when motion is reduced: no glances, no peering, no sway", async () => {
+    const { container } = render(
+      <MotionConfig reducedMotion="always">
+        <PoofMark entrance={false} state="thinking" />
+      </MotionConfig>,
+    );
+    const figure = () => container.querySelector('[data-slot="poof-mark-figure"]')?.getAttribute("transform");
+    const gaze = () => container.querySelector('[data-slot="poof-mark-gaze"]')?.getAttribute("transform");
+    const before = [figure(), gaze(), ...eyes(container)];
+
+    await new Promise((resolve) => setTimeout(resolve, 120));
+    expect([figure(), gaze(), ...eyes(container)]).toEqual(before);
+    expect(figure()).toContain("scale(1 1)");
   });
 
   it("is pleased to be poked", () => {
