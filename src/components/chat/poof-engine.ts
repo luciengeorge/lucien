@@ -48,6 +48,13 @@ export type PoofLevels = { input: number; output: number };
 export const SPARK_COUNT = 10;
 export const Z_COUNT = 3;
 
+/** How far the eyes may travel from centre, in viewBox units: far enough to read at 36px, never off the face. */
+export const GAZE_LIMIT = { x: 5.8, y: 4.5 };
+/** How small Poof gets while it peers at a question, before popping back for the answer. */
+export const PEER_SCALE = 0.78;
+/** From the feet, which the body scales around, up to the middle of the face. */
+const PEER_LIFT = 15;
+
 type Pose = {
   eyes: [EyeName, EyeName];
   gaze: { x: number; y: number };
@@ -187,6 +194,48 @@ function stepSpring(s: Spring, target: number, dt: number) {
 }
 
 const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
+
+type GlanceStyle = {
+  /** Seconds each glance holds before the next. */
+  every: [number, number];
+  /** Chance a glance comes back to centre instead of looking away. */
+  home: number;
+  /** How far from centre a glance looks, either way. */
+  x: [number, number];
+  /** Up (negative) or down from centre. */
+  y: [number, number];
+  /** Busy glances swing from side to side every time, and the slanted eyes swing with them. */
+  swing?: boolean;
+};
+
+/** Each glance is a quick dart then a still hold, the way a person looks around. Centre is the mood's resting gaze. */
+const GLANCES: Partial<Record<PoofMood, GlanceStyle>> = {
+  idle: { every: [1.5, 4], home: 0.25, x: [3.2, 5.6], y: [-2.6, 2] },
+  thinking: { every: [0.9, 2.2], home: 0, x: [1.6, 4.6], y: [-1.2, 1.2], swing: true },
+  working: { every: [0.9, 2], home: 0, x: [2.6, 5.4], y: [-1.6, 1.6], swing: true },
+  listening: { every: [1.2, 3], home: 0.7, x: [1.6, 3], y: [-1.4, 0.6] },
+  talking: { every: [2.5, 5], home: 0.55, x: [1.6, 3.4], y: [-1.6, 0.8] },
+};
+
+/** Degrees the busy eyes lean, flipping side with each glance. */
+const SLANT: Partial<Record<PoofMood, number>> = { thinking: 12, working: 22 };
+
+/** Where to look next and for how long, or null for a mood that keeps its own gaze. `side` is -1 (left) or 1. */
+export function pickGlance(mood: PoofMood, rand: () => number, side: number) {
+  const style = GLANCES[mood];
+  if (!style) return null;
+  const between = ([lo, hi]: [number, number]) => lo + (hi - lo) * rand();
+  const centre = REST[mood].gaze;
+  const hold = between(style.every);
+  if (!style.swing && rand() < style.home) return { hold, side, x: centre.x, y: centre.y };
+  const next = style.swing || rand() < 0.7 ? -side : side;
+  return {
+    hold,
+    side: next,
+    x: clamp(centre.x + next * between(style.x), -GAZE_LIMIT.x, GAZE_LIMIT.x),
+    y: clamp(centre.y + between(style.y), -GAZE_LIMIT.y, GAZE_LIMIT.y),
+  };
+}
 const easeOut = (t: number) => 1 - (1 - t) ** 3;
 
 /** mulberry32: small, fast, and seedable, so a face can be replayed exactly. */
@@ -296,7 +345,12 @@ export function createPoofEngine({
     x: spring(rest.x, 90, 11),
     y: spring(rest.y, 120, 12),
   };
-  const gaze = { x: spring(rest.gaze.x, 320, 30), y: spring(rest.gaze.y, 320, 30) };
+  // Critically damped and stiff: a glance lands in about 0.2s with no wobble, then holds.
+  const gaze = { x: spring(rest.gaze.x, 729, 54), y: spring(rest.gaze.y, 729, 54) };
+  const slant = spring(0, 729, 54);
+  let slantTo = 0;
+  // Shrinks smoothly, pops back with a little overshoot: the damping follows where it is heading.
+  const peer = spring(initial === "thinking" && !entrance ? PEER_SCALE : 1, 180, 27);
   const lid = spring(rest.lid, 400, 40);
 
   let eyesFrom: [EyeShape, EyeShape] = [EYES[rest.eyes[0]], EYES[rest.eyes[1]]];
@@ -315,6 +369,9 @@ export function createPoofEngine({
   let nextSwap = Infinity;
   let nextSaccade = 0;
   let saccade = { x: 0, y: 0 };
+  let nextLook = 0;
+  let looking = { ...rest.gaze };
+  let lookSide = 1;
   let side = 1;
   let glanceUntil = 0;
   let nextGlance = Infinity;
@@ -401,6 +458,8 @@ export function createPoofEngine({
     scheduleBlink();
     nextSwap = t + range(2, 4);
     nextSaccade = t;
+    nextLook = t + range(0.4, 0.9);
+    looking = { ...REST[mood].gaze };
     nextGlance = t + range(4, 7);
     nodAt = t + range(3.5, 5.5);
     nextZ = t + 0.8;
@@ -412,6 +471,12 @@ export function createPoofEngine({
     arm();
     showEyes(REST[next].eyes);
     switch (next) {
+      case "thinking":
+        showEyes(["dot", "dot"]);
+        break;
+      case "working":
+        showEyes(["pill", "pill"]);
+        break;
       case "happy":
         body.y.v -= 38;
         body.squash.v += 2.4;
@@ -448,7 +513,19 @@ export function createPoofEngine({
     if (!pointer || t - pointerAt > POINTER_STALE || t < ignoringUntil) return null;
     const distance = Math.hypot(pointer.x, pointer.y);
     const reach = Math.min(1, distance / 36) / Math.max(distance, 1);
-    return { x: pointer.x * reach * 3.4, y: pointer.y * reach * 3 };
+    return { x: pointer.x * reach * 4.4, y: pointer.y * reach * 3.4 };
+  };
+
+  const glance = () => {
+    if (t < nextLook) return looking;
+    const next = pickGlance(mood, rand, lookSide);
+    if (!next) return looking;
+    if (Math.hypot(next.x - looking.x, next.y - looking.y) > 3 && chance(0.2)) blink();
+    looking = { x: next.x, y: next.y };
+    lookSide = next.side;
+    nextLook = t + next.hold;
+    slantTo = -next.side * (SLANT[mood] ?? 0);
+    return looking;
   };
 
   const wander = (every: [number, number], spanX: number, spanY: number, centreY = 0) => {
@@ -554,23 +631,25 @@ export function createPoofEngine({
 
     switch (mood) {
       case "idle": {
-        rotate += 1.6 * Math.sin(0.5 * t) + 0.7 * Math.sin(0.17 * t);
-        y += 0.5 * Math.sin(0.9 * t);
-        scale += 0.012 * Math.sin(1.3 * t);
+        rotate += Math.sin(0.5 * t) + 0.5 * Math.sin(0.17 * t);
+        y += 0.3 * Math.sin(0.9 * t);
+        scale += 0.01 * Math.sin(1.3 * t);
         const followed = pointerGaze();
         lean(followed);
-        look = followed ?? wander([1.2, 3.5], 2.4, 1.8);
+        look = followed ?? glance();
         if (t >= nextSwap) {
-          if (chance(0.3)) showEyes(["happy", "happy"], range(1, 1.6));
-          nextSwap = t + range(7, 13);
+          const pick = rand();
+          if (pick < 0.3) showEyes(["happy", "happy"], range(1, 1.6));
+          else if (pick < 0.55) showEyes(["dot", "dot"], range(1, 2));
+          else if (pick < 0.7) showEyes(["wide", "wide"], range(0.8, 1.4));
+          nextSwap = t + range(4, 8);
         }
         break;
       }
       case "listening": {
-        rotate += 0.8 * Math.sin(0.8 * t);
+        rotate += 0.6 * Math.sin(0.8 * t);
         if (state === "listening") scale += 0.035 * voice.input;
-        const reading = wander([0.35, 0.8], 1.2, 0.3, r.gaze.y);
-        look = { x: r.gaze.x + reading.x, y: reading.y };
+        look = glance();
         if (t >= nextSwap) {
           showEyes(chance(0.5) ? ["open", "open"] : ["wide", "wide"]);
           nextSwap = t + range(2, 4);
@@ -578,11 +657,11 @@ export function createPoofEngine({
         break;
       }
       case "talking": {
-        rotate += 1.2 * Math.sin(0.7 * t);
+        rotate += 0.8 * Math.sin(0.7 * t);
         // Taller and a little bigger as it speaks up, like a chest filling with the words.
         scale += 0.09 * voice.output;
         squash += 0.05 * voice.output;
-        look = wander([0.9, 2.2], 1.8, 0.8, r.gaze.y);
+        look = glance();
         if (t >= nextSwap) {
           if (chance(0.35)) showEyes(["happy", "happy"], range(0.6, 1.1));
           nextSwap = t + range(2.5, 4.5);
@@ -590,14 +669,15 @@ export function createPoofEngine({
         break;
       }
       case "thinking": {
-        rotate += 3 * Math.sin(0.35 * t);
-        y += 0.4 * Math.sin(0.6 * t);
-        look = { x: 2.4 * Math.sin(0.45 * t) + 0.6 * Math.sin(1.3 * t), y: r.gaze.y + 0.3 * Math.sin(0.7 * t) };
+        rotate += 1.5 * Math.sin(0.35 * t);
+        y += 0.25 * Math.sin(0.6 * t);
+        look = glance();
         if (t >= nextSwap) {
           const pool: [EyeName, EyeName][] = [
+            ["dot", "dot"],
+            ["dot", "dot"],
             ["half", "half"],
-            ["open", "open"],
-            ["doubt", "half"],
+            ["pill", "pill"],
           ];
           showEyes(pool[Math.floor(range(0, pool.length))]);
           nextSwap = t + range(1.8, 3.4);
@@ -606,21 +686,21 @@ export function createPoofEngine({
       }
       case "working": {
         const pump = Math.max(0, Math.sin(Math.PI * 3.2 * t));
-        rotate += 2 + 1.2 * Math.sin(1.7 * t);
-        y += 0.6 * pump;
-        squash -= 0.035 * pump;
-        look = wander([0.22, 0.55], 3, 0.9, 0.5);
+        rotate += 1.2 * Math.sin(0.9 * t);
+        y += 0.3 * pump;
+        squash -= 0.015 * pump;
+        look = glance();
         if (t >= nextSwap) {
-          showEyes(chance(0.75) ? ["focus", "focus"] : ["open", "open"]);
+          showEyes(chance(0.7) ? ["pill", "pill"] : ["focus", "focus"]);
           nextSwap = t + range(1.8, 3.2);
         }
         break;
       }
       case "writing": {
         const nod = Math.max(0, Math.sin(2 * Math.PI * 1.4 * t));
-        y += 0.9 * nod;
-        squash -= 0.02 * nod;
-        rotate += 1.2 * Math.sin(0.6 * t);
+        y += 0.5 * nod;
+        squash -= 0.012 * nod;
+        rotate += 0.8 * Math.sin(0.6 * t);
         if (t >= nextSaccade) {
           lineX = lineX >= 2.6 ? -2.6 : lineX + 0.9;
           nextSaccade = t + (lineX === -2.6 ? 0.45 : range(0.28, 0.4));
@@ -749,13 +829,19 @@ export function createPoofEngine({
     stepSpring(body.squash, squash, dt);
     stepSpring(gaze.x, look.x, dt);
     stepSpring(gaze.y, look.y, dt);
+    stepSpring(slant, SLANT[mood] ? slantTo : 0, dt);
+    const peerTo = mood === "thinking" ? PEER_SCALE : 1;
+    peer.c = peerTo < 1 ? 27 : 12;
+    stepSpring(peer, peerTo, dt);
     stepSpring(lid, lidTarget, dt);
     morph += dt / 0.18;
     feltMorph += dt / 0.22;
 
     const blinkT = (t - blinkAt) / (mood === "drowsy" ? 0.34 : 0.17);
     const blinkLid = blinkAt < 0 || blinkT >= 1 ? 1 : blinkT < 0.4 ? 1 - blinkT / 0.4 : easeOut((blinkT - 0.4) / 0.6);
-    const stateEyes = currentEyes();
+    const slanted = (eye: EyeShape): EyeShape => (slant.x ? { ...eye, slant: eye.slant + slant.x } : eye);
+    const [left, right] = currentEyes();
+    const stateEyes: [EyeShape, EyeShape] = [slanted(left), slanted(right)];
     const moodEyes = f ? feltEyes() : null;
     const eyes: [EyeShape, EyeShape] = moodEyes
       ? [mixEye(stateEyes[0], moodEyes[0], fw), mixEye(stateEyes[1], moodEyes[1], fw)]
@@ -779,7 +865,7 @@ export function createPoofEngine({
     }
 
     const squashed = clamp(body.squash.x, 0.8, 1.2);
-    const scaled = clamp(body.scale.x, 0.85, 1.2);
+    const scaled = clamp(body.scale.x, 0.85, 1.2) * clamp(peer.x, 0.7, 1.1);
     return {
       blush: f ? f.blush * fw : 0,
       body: {
@@ -787,10 +873,14 @@ export function createPoofEngine({
         scaleX: scaled * squashWidth(squashed),
         scaleY: scaled * squashed,
         x: body.x.x,
-        y: body.y.x,
+        // The body scales around its feet; lifting it as it shrinks makes it shrink around the face instead.
+        y: body.y.x - PEER_LIFT * (1 - peer.x),
       },
       eyes: [withLid(eyes[0], openness), withLid(eyes[1], openness)],
-      gaze: { x: clamp(gaze.x.x + body.x.x * 0.6, -4.5, 4.5), y: clamp(gaze.y.x, -4.5, 4.5) },
+      gaze: {
+        x: clamp(gaze.x.x + body.x.x * 0.6, -GAZE_LIMIT.x, GAZE_LIMIT.x),
+        y: clamp(gaze.y.x, -GAZE_LIMIT.y, GAZE_LIMIT.y),
+      },
       feeling: felt,
       mood,
       particles: [
@@ -849,6 +939,8 @@ export function createPoofEngine({
         }
       } else if (next === "thinking" && previous === "idle") {
         react("surprised", HOLD.surprised);
+      } else if (next === "talking" && previous === "listening") {
+        body.scale.v += 1.1;
       }
     },
     signal(signal) {

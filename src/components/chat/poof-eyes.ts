@@ -5,26 +5,29 @@
  * each other by blending them.
  *
  * `tilt` is in degrees and mirrored per side: positive raises both inner corners (worried, sad),
- * negative lowers them (stern). `dy` shifts the eye down.
+ * negative lowers them (stern). `slant` is also in degrees but turns both eyes the same way, like
+ * a glance with the whole face behind it (busy, mid-task). `dy` shifts the eye down.
  */
-export type EyeShape = { bottom: number; dy: number; tilt: number; top: number; w: number };
+export type EyeShape = { bottom: number; dy: number; slant: number; tilt: number; top: number; w: number };
 
 export const EYES = {
-  open: { bottom: 5, dy: 0, tilt: 0, top: 5, w: 4.2 },
-  wide: { bottom: 5.6, dy: -0.6, tilt: 0, top: 6.2, w: 5.2 },
-  half: { bottom: 3.6, dy: 0.4, tilt: 0, top: 2.4, w: 4.6 },
-  focus: { bottom: 1.7, dy: 0.6, tilt: 0, top: 1.9, w: 4.8 },
-  heavy: { bottom: 3.8, dy: 1.2, tilt: 6, top: 0.3, w: 4.8 },
-  happy: { bottom: -2.7, dy: 0.4, tilt: 0, top: 5.8, w: 6.6 },
-  sleep: { bottom: 2.6, dy: 1.6, tilt: 0, top: -1.5, w: 5.8 },
-  sad: { bottom: 4.4, dy: 1, tilt: 20, top: 0.6, w: 4.8 },
-  angry: { bottom: 4.4, dy: 0.6, tilt: -26, top: 0.3, w: 5.4 },
-  squeeze: { bottom: -0.5, dy: 0.6, tilt: -16, top: 2.4, w: 5.6 },
-  doubt: { bottom: 3, dy: 1, tilt: -10, top: 0.8, w: 4.8 },
-  pop: { bottom: 6.4, dy: -0.8, tilt: 0, top: 6.4, w: 6.4 },
-  beam: { bottom: -3.4, dy: 0, tilt: 8, top: 7.2, w: 7.6 },
-  smug: { bottom: 3.8, dy: 0.5, tilt: -4, top: 0.7, w: 5.8 },
-  shy: { bottom: 3.4, dy: 0.9, tilt: 12, top: 1.8, w: 4.4 },
+  open: { bottom: 5, dy: 0, slant: 0, tilt: 0, top: 5, w: 4.2 },
+  wide: { bottom: 5.6, dy: -0.6, slant: 0, tilt: 0, top: 6.2, w: 5.2 },
+  half: { bottom: 3.6, dy: 0.4, slant: 0, tilt: 0, top: 2.4, w: 4.6 },
+  focus: { bottom: 1.7, dy: 0.6, slant: 0, tilt: 0, top: 1.9, w: 4.8 },
+  heavy: { bottom: 3.8, dy: 1.2, slant: 0, tilt: 6, top: 0.3, w: 4.8 },
+  happy: { bottom: -2.7, dy: 0.4, slant: 0, tilt: 0, top: 5.8, w: 6.6 },
+  sleep: { bottom: 2.6, dy: 1.6, slant: 0, tilt: 0, top: -1.5, w: 5.8 },
+  sad: { bottom: 4.4, dy: 1, slant: 0, tilt: 20, top: 0.6, w: 4.8 },
+  angry: { bottom: 4.4, dy: 0.6, slant: 0, tilt: -26, top: 0.3, w: 5.4 },
+  squeeze: { bottom: -0.5, dy: 0.6, slant: 0, tilt: -16, top: 2.4, w: 5.6 },
+  doubt: { bottom: 3, dy: 1, slant: 0, tilt: -10, top: 0.8, w: 4.8 },
+  pop: { bottom: 6.4, dy: -0.8, slant: 0, tilt: 0, top: 6.4, w: 6.4 },
+  beam: { bottom: -3.4, dy: 0, slant: 0, tilt: 8, top: 7.2, w: 7.6 },
+  smug: { bottom: 3.8, dy: 0.5, slant: 0, tilt: -4, top: 0.7, w: 5.8 },
+  shy: { bottom: 3.4, dy: 0.9, slant: 0, tilt: 12, top: 1.8, w: 4.4 },
+  dot: { bottom: 1.9, dy: -0.2, slant: 0, tilt: 0, top: 1.9, w: 3.6 },
+  pill: { bottom: 4.6, dy: 0.2, slant: 0, tilt: 0, top: 4.6, w: 3.6 },
 } satisfies Record<string, EyeShape>;
 
 export type EyeName = keyof typeof EYES;
@@ -41,6 +44,7 @@ export function mixEye(a: EyeShape, b: EyeShape, t: number): EyeShape {
   return {
     bottom: lerp(a.bottom, b.bottom, t),
     dy: lerp(a.dy, b.dy, t),
+    slant: lerp(a.slant, b.slant, t),
     tilt: lerp(a.tilt, b.tilt, t),
     top: lerp(a.top, b.top, t),
     w: lerp(a.w, b.w, t),
@@ -57,7 +61,7 @@ export function withLid(shape: EyeShape, lid: number): EyeShape {
 export function eyePath(shape: EyeShape, cx: number, cy: number, side: "left" | "right"): string {
   const half = shape.w / 2;
   const y = cy + shape.dy;
-  const angle = ((side === "left" ? -shape.tilt : shape.tilt) * Math.PI) / 180;
+  const angle = (((side === "left" ? -shape.tilt : shape.tilt) + shape.slant) * Math.PI) / 180;
   const cos = Math.cos(angle);
   const sin = Math.sin(angle);
   const at = (x: number, py: number) => {

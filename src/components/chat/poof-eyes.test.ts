@@ -28,6 +28,27 @@ describe("eye geometry", () => {
     expect(shut.top + shut.bottom).toBeLessThan(1.5);
   });
 
+  it("starts every named shape unslanted, so slant only shows where it is asked for", () => {
+    for (const shape of Object.values(EYES)) expect(shape.slant).toBe(0);
+  });
+
+  it("blends slant like every other number", () => {
+    const slanted = { ...EYES.pill, slant: 20 };
+    expect(mixEye(EYES.pill, slanted, 0.5).slant).toBeCloseTo(10);
+    expect(mixEye(EYES.open, slanted, 1)).toEqual(slanted);
+  });
+
+  it("slants both eyes the same way, unlike the mirrored tilt", () => {
+    const shape = { ...EYES.pill, slant: 20 };
+    const left = numbers(eyePath(shape, 18.5, 24, "left"));
+    const right = numbers(eyePath(shape, 29.5, 24, "right"));
+    // [0..1] is the start corner, [6..7] the far corner of the first curve.
+    const leftRise = left[7] - left[1];
+    const rightRise = right[7] - right[1];
+    expect(leftRise).toBeGreaterThan(0.5);
+    expect(rightRise).toBeCloseTo(leftRise);
+  });
+
   it("mirrors tilt, so a worried face raises both inner corners", () => {
     const left = numbers(eyePath(EYES.sad, 18.5, 24, "left"));
     const right = numbers(eyePath(EYES.sad, 29.5, 24, "right"));
