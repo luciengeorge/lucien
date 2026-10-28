@@ -6,9 +6,9 @@ export const STARTER_PROMPTS = [
   { label: "His resume", prompt: "Can I see Lucien's resume?" },
 ] as const;
 
-/** Labels shown in the tool-call-in-progress chip, keyed by tool name. */
+/** What Poof says it is doing while a tool runs, keyed by tool name. A work link names its entry when it can. */
 export const TOOL_PROGRESS_LABELS = {
-  contact_lucien: "Sending your message…",
+  contact_lucien: "Sending your message to Lucien…",
   download_resume: "Getting Lucien's resume…",
-  link_work_entry: "Finding the right work…",
+  link_work_entry: "Pulling up his work…",
 } as const;

@@ -1,4 +1,5 @@
 import { moodOf } from "#/lib/chat/mood";
+import { WORK_META } from "#/lib/content/work-meta";
 import { cleanVoiceText } from "#/lib/strip-audio-tags";
 import { cn } from "#/lib/utils";
 import { AudioWave01Icon } from "@hugeicons-pro/core-stroke-rounded";
@@ -69,10 +70,21 @@ function useLingering(working: boolean): boolean {
   return working || lingering;
 }
 
-function toolProgressLabelOf(type: string): string | undefined {
-  return match(type)
+function workEntryCompany(part: ChatMessage["parts"][number]): string | undefined {
+  if (!("input" in part) || typeof part.input !== "object" || part.input === null || !("slug" in part.input)) {
+    return undefined;
+  }
+  const { slug } = part.input;
+  return WORK_META.find((entry) => entry.slug === slug)?.company;
+}
+
+function toolProgressLabelOf(part: ChatMessage["parts"][number]): string | undefined {
+  return match(part.type)
     .with("tool-download_resume", () => TOOL_PROGRESS_LABELS.download_resume)
-    .with("tool-link_work_entry", () => TOOL_PROGRESS_LABELS.link_work_entry)
+    .with("tool-link_work_entry", () => {
+      const company = workEntryCompany(part);
+      return company ? `Pulling up ${company}…` : TOOL_PROGRESS_LABELS.link_work_entry;
+    })
     .with("tool-contact_lucien", () => TOOL_PROGRESS_LABELS.contact_lucien)
     .otherwise(() => undefined);
 }
@@ -197,7 +209,7 @@ export function ChatTimelineMessage({
   const toolProgressLabel = isActive
     ? message.parts
         .flatMap((part) => {
-          const label = toolProgressLabelOf(part.type);
+          const label = toolProgressLabelOf(part);
           const isHeld = !revealToolCards && !isWriting && "state" in part && part.state === "output-available";
           return label && (isToolPartPending(part) || isHeld) ? [label] : [];
         })
@@ -226,7 +238,7 @@ export function ChatTimelineMessage({
   const faceLabel =
     toolProgressLabel ??
     (isActive && status === "streaming" && textParts.length === 0 && !hasToolCard && !isStoppedReply
-      ? "Generating response…"
+      ? "Thinking…"
       : undefined);
   const showsFallback = role === "assistant" && isSettled && !messageHasRenderableContent && !isStoppedReply;
   const isUser = role === "user";

@@ -95,7 +95,7 @@ describe("ChatTimelineMessage render order", () => {
       <ChatTimelineMessage isActive message={message([workLinkInputPart("input-streaming")])} status="streaming" />,
     );
 
-    const label = screen.getByText("Finding the right work…");
+    const label = screen.getByText("Pulling up his work…");
     expect(label.getAttribute("data-slot")).toBe("shimmering-text");
     expect(container.querySelector("svg.animate-spin")).toBeNull();
     expect(container.querySelector('[data-slot="attachment"]')).toBeNull();
@@ -107,14 +107,14 @@ describe("ChatTimelineMessage render order", () => {
       <ChatTimelineMessage isActive message={message([workLinkInputPart("input-available")])} status="streaming" />,
     );
 
-    expect(screen.getByText("Finding the right work…")).not.toBeNull();
+    expect(screen.getByText("Pulling up his work…")).not.toBeNull();
     expect(container.querySelector('[data-slot="attachment"]')).toBeNull();
   });
 
   it("renders the animated thinking indicator when streaming with no content yet on the active turn", () => {
     const { container } = render(<ChatTimelineMessage isActive message={message([])} status="streaming" />);
 
-    const label = screen.getByText("Generating response…");
+    const label = screen.getByText("Thinking…");
     expect(label.getAttribute("data-slot")).toBe("shimmering-text");
     expect(container.querySelector("svg.animate-spin")).toBeNull();
   });
@@ -313,11 +313,11 @@ describe("ChatTimelineMessage user text", () => {
 describe("ChatTimelineMessage stopped replies", () => {
   it("never shows a past turn generating, even while a newer reply streams", () => {
     // A reply stopped before its first word is an empty assistant turn. Every message gets the
-    // same global status, so without the active check it read "Generating response…" again the
+    // same global status, so without the active check it read "Thinking…" again the
     // moment the next reply started streaming.
     render(<ChatTimelineMessage isActive={false} message={message([])} status="streaming" />);
 
-    expect(screen.queryByText("Generating response…")).toBeNull();
+    expect(screen.queryByText("Thinking…")).toBeNull();
   });
 
   it("marks a reply stopped before its first word as stopped, not as Poof failing to understand", () => {
@@ -422,7 +422,7 @@ describe("Poof's live status sits next to its face", () => {
   it("shows what Poof is doing beside the face, in place of its name and with no spinner", () => {
     const { container } = render(<ChatTimelineMessage isActive message={message([])} status="streaming" />);
 
-    expect(header(container).textContent).toContain("Generating response…");
+    expect(header(container).textContent).toContain("Thinking…");
     expect(screen.queryByText("Poof")).toBeNull();
     expect(container.querySelector("svg.animate-spin")).toBeNull();
   });
@@ -432,7 +432,7 @@ describe("Poof's live status sits next to its face", () => {
       <ChatTimelineMessage isActive message={message([workLinkInputPart("input-streaming")])} status="streaming" />,
     );
 
-    expect(header(container).textContent).toContain("Finding the right work…");
+    expect(header(container).textContent).toContain("Pulling up his work…");
     expect(container.querySelector("svg.animate-spin")).toBeNull();
   });
 
@@ -457,7 +457,7 @@ describe("Poof's live status sits next to its face", () => {
       />,
     );
 
-    expect(header(container).textContent).toContain("Finding the right work…");
+    expect(header(container).textContent).toContain("Pulling up his work…");
     expect(screen.queryByText("Getting Lucien's resume…")).toBeNull();
   });
 });
@@ -556,5 +556,51 @@ describe("ChatTimelineMessage bubbles", () => {
     render(<ChatTimelineMessage isActive={false} message={message([])} status="ready" />);
 
     expect(bubbleOf("Sorry, I didn't catch that. Mind rephrasing?").className).toContain("bg-neutral-100");
+  });
+});
+
+describe("Poof's status names what it is doing", () => {
+  const workLink = (id: string, slug?: string): ChatMessage["parts"][number] => ({
+    input: slug ? { slug } : {},
+    state: "input-available",
+    toolCallId: id,
+    type: "tool-link_work_entry",
+  });
+
+  it("names the work it is pulling up", () => {
+    render(<ChatTimelineMessage isActive message={message([workLink("w1", "fyxer")])} status="streaming" />);
+
+    expect(screen.getByText("Pulling up Fyxer…")).not.toBeNull();
+  });
+
+  it("moves on to the newest entry when it pulls up several", () => {
+    render(
+      <ChatTimelineMessage
+        isActive
+        message={message([workLink("w1", "fyxer"), workLink("w2", "localista")])}
+        status="streaming"
+      />,
+    );
+
+    expect(screen.getByText("Pulling up Localista…")).not.toBeNull();
+    expect(screen.queryByText("Pulling up Fyxer…")).toBeNull();
+  });
+
+  it("falls back to a general line before it knows which entry", () => {
+    render(<ChatTimelineMessage isActive message={message([workLink("w1")])} status="streaming" />);
+
+    expect(screen.getByText("Pulling up his work…")).not.toBeNull();
+  });
+
+  it("says who a message is going to", () => {
+    render(
+      <ChatTimelineMessage
+        isActive
+        message={message([{ input: {}, state: "input-available", toolCallId: "c1", type: "tool-contact_lucien" }])}
+        status="streaming"
+      />,
+    );
+
+    expect(screen.getByText("Sending your message to Lucien…")).not.toBeNull();
   });
 });
