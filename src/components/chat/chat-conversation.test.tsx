@@ -190,7 +190,7 @@ describe("ChatConversation stopping a reply", () => {
     chat.status = "streaming";
     rerender();
 
-    expect(screen.getAllByText("Generating response…")).toHaveLength(1);
+    expect(screen.getAllByText("Thinking…")).toHaveLength(1);
     expect(screen.getByText("Stopped")).not.toBeNull();
   });
 });

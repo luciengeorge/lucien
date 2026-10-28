@@ -1,9 +1,10 @@
 import { moodOf } from "#/lib/chat/mood";
+import { WORK_META } from "#/lib/content/work-meta";
 import { cleanVoiceText } from "#/lib/strip-audio-tags";
 import { cn } from "#/lib/utils";
 import { AudioWave01Icon } from "@hugeicons-pro/core-stroke-rounded";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { AnimatePresence } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import { match } from "ts-pattern";
 import { z } from "zod";
@@ -69,10 +70,21 @@ function useLingering(working: boolean): boolean {
   return working || lingering;
 }
 
-function toolProgressLabelOf(type: string): string | undefined {
-  return match(type)
+function workEntryCompany(part: ChatMessage["parts"][number]): string | undefined {
+  if (!("input" in part) || typeof part.input !== "object" || part.input === null || !("slug" in part.input)) {
+    return undefined;
+  }
+  const { slug } = part.input;
+  return WORK_META.find((entry) => entry.slug === slug)?.company;
+}
+
+function toolProgressLabelOf(part: ChatMessage["parts"][number]): string | undefined {
+  return match(part.type)
     .with("tool-download_resume", () => TOOL_PROGRESS_LABELS.download_resume)
-    .with("tool-link_work_entry", () => TOOL_PROGRESS_LABELS.link_work_entry)
+    .with("tool-link_work_entry", () => {
+      const company = workEntryCompany(part);
+      return company ? `Pulling up ${company}…` : TOOL_PROGRESS_LABELS.link_work_entry;
+    })
     .with("tool-contact_lucien", () => TOOL_PROGRESS_LABELS.contact_lucien)
     .otherwise(() => undefined);
 }
@@ -182,21 +194,23 @@ export function ChatTimelineMessage({
   });
   const hasToolCard = resumeToolParts.length > 0 || workLinkToolParts.length > 0 || contactToolParts.length > 0;
   const isSettled = status !== "streaming" && status !== "submitted";
+  const reduceMotion = useReducedMotion();
   const messageHasRenderableContent = hasRenderableContent({ hasToolCard, reasoningParts, textParts });
 
-  // Hold finished tool cards until text has started (or the turn settles), so a turn never
-  // reads card-before-text: text (or a progress label beside the face) always comes first. Only
-  // the actively streaming turn holds; `status` is global to every message in the timeline, so
-  // past (non-active) turns must always reveal immediately and never show progress, regardless of
-  // what the global status is doing for a newer turn.
-  const revealToolCards = textParts.length > 0 || isSettled || !isActive;
+  // Hold finished tool cards until the answer has finished, so they never sit under a bubble that
+  // is still growing and get pushed down line by line. Before any text, the progress label beside
+  // the face stands in for a held card. Only the actively streaming turn holds; `status` is global
+  // to every message in the timeline, so past (non-active) turns must always reveal immediately and
+  // never show progress, regardless of what the global status is doing for a newer turn.
+  const revealToolCards = isSettled || !isActive;
+  const isWriting = textParts.length > 0;
   // The latest tool still on the go, counting one whose card is held back: if several are, only
   // the newest says what Poof is doing, so the face never carries a stack of labels.
   const toolProgressLabel = isActive
     ? message.parts
         .flatMap((part) => {
-          const label = toolProgressLabelOf(part.type);
-          const isHeld = !revealToolCards && "state" in part && part.state === "output-available";
+          const label = toolProgressLabelOf(part);
+          const isHeld = !revealToolCards && !isWriting && "state" in part && part.state === "output-available";
           return label && (isToolPartPending(part) || isHeld) ? [label] : [];
         })
         .at(-1)
@@ -224,7 +238,7 @@ export function ChatTimelineMessage({
   const faceLabel =
     toolProgressLabel ??
     (isActive && status === "streaming" && textParts.length === 0 && !hasToolCard && !isStoppedReply
-      ? "Generating response…"
+      ? "Thinking…"
       : undefined);
   const showsFallback = role === "assistant" && isSettled && !messageHasRenderableContent && !isStoppedReply;
   const isUser = role === "user";
@@ -274,14 +288,28 @@ export function ChatTimelineMessage({
 
       {revealToolCards && hasToolCard ? (
         <div className="w-full space-y-2">
-          {resumeToolParts.map((part) => (
-            <ChatResumeCard key={part.key} filename={part.filename} url={part.url} />
-          ))}
-          {workLinkToolParts.map((part) => (
-            <ChatWorkLinkCard key={part.key} company={part.company} role={part.role} slug={part.slug} url={part.url} />
-          ))}
-          {contactToolParts.map((part) => (
-            <ChatContactCard key={part.key} status={part.status} />
+          {[
+            ...resumeToolParts.map((part) => <ChatResumeCard key={part.key} filename={part.filename} url={part.url} />),
+            ...workLinkToolParts.map((part) => (
+              <ChatWorkLinkCard
+                key={part.key}
+                company={part.company}
+                role={part.role}
+                slug={part.slug}
+                url={part.url}
+              />
+            )),
+            ...contactToolParts.map((part) => <ChatContactCard key={part.key} status={part.status} />),
+          ].map((card, index) => (
+            <motion.div
+              key={card.key}
+              animate={{ opacity: 1, y: 0 }}
+              // Only the answer that just finished brings its cards in; history renders as it is.
+              initial={isActive && !reduceMotion ? { opacity: 0, y: 6 } : false}
+              transition={{ delay: index * 0.05, duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
+            >
+              {card}
+            </motion.div>
           ))}
         </div>
       ) : null}
