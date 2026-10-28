@@ -7,7 +7,7 @@ type AnalyticsEventName = (typeof AnalyticsEvent)[keyof typeof AnalyticsEvent];
 
 export function entryItemClassName(isFirst: boolean) {
   // The first entry sits right under the identity row, so it needs less air above it.
-  return cn(isFirst ? "pt-3 pb-6 sm:pt-4 sm:pb-8" : "border-t border-neutral-950/8 py-6 sm:py-8");
+  return cn(isFirst ? "pt-3 pb-2 sm:pt-4 sm:pb-2.5" : "py-2 sm:py-2.5");
 }
 
 /** Tool names (e.g. "download_resume") for every tool part present in a message. */

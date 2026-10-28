@@ -26,9 +26,9 @@ function toolPart(
 }
 
 describe("entryItemClassName", () => {
-  it("still applies the border only to non-first entries", () => {
+  it("leaves entries undivided, since the bubbles already set each message apart", () => {
     expect(entryItemClassName(true)).not.toContain("border-t");
-    expect(entryItemClassName(false)).toContain("border-t");
+    expect(entryItemClassName(false)).not.toContain("border-t");
   });
 });
 

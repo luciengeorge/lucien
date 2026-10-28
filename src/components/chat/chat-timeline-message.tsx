@@ -4,7 +4,7 @@ import { cn } from "#/lib/utils";
 import { AudioWave01Icon } from "@hugeicons-pro/core-stroke-rounded";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { AnimatePresence } from "motion/react";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { match } from "ts-pattern";
 import { z } from "zod";
 
@@ -15,7 +15,7 @@ import { ChatContactCard } from "./chat-contact-card";
 import { ChatMarkdown } from "./chat-markdown";
 import { ChatReasoning } from "./chat-reasoning";
 import { ChatResumeCard } from "./chat-resume-card";
-import { ChatStatusMarker } from "./chat-status-marker";
+import { PoofStatus } from "./chat-status-marker";
 import { isVoiceMessage } from "./chat-voice.utils";
 import { ChatWorkLinkCard } from "./chat-work-link-card";
 import { TOOL_PROGRESS_LABELS } from "./chat.constants";
@@ -50,6 +50,31 @@ type ContactToolOutput = z.infer<typeof ContactToolOutputSchema>;
 
 function isContactToolOutput(value: unknown): value is ContactToolOutput {
   return ContactToolOutputSchema.safeParse(value).success;
+}
+
+/** How long Poof's face stays beside a finished answer: long enough to react to it, then it leaves. */
+export const FACE_LINGER_MS = 2500;
+
+/** True while `working`, and for a moment after it stops. Never for a reply that was already done when it mounted. */
+function useLingering(working: boolean): boolean {
+  const [lingering, setLingering] = useState(working);
+  if (working && !lingering) setLingering(true);
+
+  useEffect(() => {
+    if (working) return;
+    const timer = setTimeout(() => setLingering(false), FACE_LINGER_MS);
+    return () => clearTimeout(timer);
+  }, [working]);
+
+  return working || lingering;
+}
+
+function toolProgressLabelOf(type: string): string | undefined {
+  return match(type)
+    .with("tool-download_resume", () => TOOL_PROGRESS_LABELS.download_resume)
+    .with("tool-link_work_entry", () => TOOL_PROGRESS_LABELS.link_work_entry)
+    .with("tool-contact_lucien", () => TOOL_PROGRESS_LABELS.contact_lucien)
+    .otherwise(() => undefined);
 }
 
 /** True while a tool call's input is being streamed in or has arrived but hasn't resolved to a result yet. */
@@ -160,82 +185,72 @@ export function ChatTimelineMessage({
   const messageHasRenderableContent = hasRenderableContent({ hasToolCard, reasoningParts, textParts });
 
   // Hold finished tool cards until text has started (or the turn settles), so a turn never
-  // reads card-before-text: text (or a thinking/progress indicator) always occupies the slot
-  // above the card first. Only the actively streaming turn holds; `status` is global to every
-  // message in the timeline, so past (non-active) turns must always reveal immediately and never
-  // show an in-progress chip, regardless of what the global status is doing for a newer turn.
+  // reads card-before-text: text (or a progress label beside the face) always comes first. Only
+  // the actively streaming turn holds; `status` is global to every message in the timeline, so
+  // past (non-active) turns must always reveal immediately and never show progress, regardless of
+  // what the global status is doing for a newer turn.
   const revealToolCards = textParts.length > 0 || isSettled || !isActive;
-  const resumeIsPending = message.parts.some((part) => part.type === "tool-download_resume" && isToolPartPending(part));
-  const workLinkIsPending = message.parts.some(
-    (part) => part.type === "tool-link_work_entry" && isToolPartPending(part),
-  );
-  const contactIsPending = message.parts.some((part) => part.type === "tool-contact_lucien" && isToolPartPending(part));
-  // A non-active (past) turn never shows an in-progress chip: it always reveals its card
-  // immediately above (see `revealToolCards`), so there's nothing left to hold a chip for.
-  const toolProgressChips = isActive
-    ? [
-        resumeIsPending || (resumeToolParts.length > 0 && !revealToolCards)
-          ? [{ key: `${message.id}-resume-progress`, label: TOOL_PROGRESS_LABELS.download_resume }]
-          : [],
-        workLinkIsPending || (workLinkToolParts.length > 0 && !revealToolCards)
-          ? [{ key: `${message.id}-work-link-progress`, label: TOOL_PROGRESS_LABELS.link_work_entry }]
-          : [],
-        contactIsPending || (contactToolParts.length > 0 && !revealToolCards)
-          ? [{ key: `${message.id}-contact-progress`, label: TOOL_PROGRESS_LABELS.contact_lucien }]
-          : [],
-      ].flat()
-    : [];
-  const hasToolActivity = hasToolCard || toolProgressChips.length > 0;
+  // The latest tool still on the go, counting one whose card is held back: if several are, only
+  // the newest says what Poof is doing, so the face never carries a stack of labels.
+  const toolProgressLabel = isActive
+    ? message.parts
+        .flatMap((part) => {
+          const label = toolProgressLabelOf(part.type);
+          const isHeld = !revealToolCards && "state" in part && part.state === "output-available";
+          return label && (isToolPartPending(part) || isHeld) ? [label] : [];
+        })
+        .at(-1)
+    : undefined;
 
-  // Poof sits on the latest answer: it works on it while it streams, then stays there idling
-  // until the next turn takes over. Past turns and the user's own messages read as plain text.
-  // A tool in progress outranks streaming text, and "in progress" means whatever the chip below
-  // is showing, so the face and the chip can never tell two different stories about the same moment.
+  // Poof's face only shows while it works on the latest answer, then stays a moment to react to
+  // it before leaving. Past turns, answers that were already there, and the user's own messages
+  // have none. A tool in progress outranks streaming text, so the face and its label never tell
+  // two different stories about the same moment.
   const isLatestAssistantTurn = role === "assistant" && isActive;
+  const isWorkingOrLingering = useLingering(isLatestAssistantTurn && !isSettled);
+  const showsFace = isLatestAssistantTurn && (isWorkingOrLingering || status === "error");
   // Every message gets the same global status, so a stopped turn is told apart by `wasStopped` alone.
   const isStoppedReply = role === "assistant" && wasStopped;
-  const showsToolProgress = toolProgressChips.length > 0;
   const markState: PoofMarkState =
     status === "error"
       ? "confused"
       : isSettled
         ? "idle"
-        : showsToolProgress
+        : toolProgressLabel
           ? "working"
           : textParts.length > 0
             ? "writing"
             : "thinking";
+  const faceLabel =
+    toolProgressLabel ??
+    (isActive && status === "streaming" && textParts.length === 0 && !hasToolCard && !isStoppedReply
+      ? "Generating response…"
+      : undefined);
+  const showsFallback = role === "assistant" && isSettled && !messageHasRenderableContent && !isStoppedReply;
+  const isUser = role === "user";
+  const bubbleClassName = cn(
+    "max-w-full min-w-0 px-4 py-2.5 text-[15px] leading-relaxed wrap-break-word sm:text-base",
+    isUser
+      ? "rounded-2xl rounded-tr-md bg-primary text-white"
+      : "rounded-2xl rounded-tl-md bg-neutral-100 text-neutral-800 [&_ol]:pl-5 [&_ul]:pl-5",
+  );
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center">
-        <AnimatePresence>
-          {isLatestAssistantTurn ? (
-            <PoofMark key="poof" entrance={false} interrupted={wasStopped} mood={moodCue} state={markState} />
-          ) : null}
-        </AnimatePresence>
-        <p className="font-mono text-sm tracking-wide text-neutral-500 uppercase">{role === "user" ? "You" : "Poof"}</p>
-        {isVoiceMessage(message) ? (
-          <span className="ml-2.5 inline-flex items-center gap-1 font-mono text-xs tracking-wide text-neutral-400 uppercase">
-            <HugeiconsIcon icon={AudioWave01Icon} size={12} />
-            Voice
-          </span>
-        ) : null}
-      </div>
+    <div
+      className={cn(
+        "flex w-full max-w-[85%] flex-col gap-2 sm:max-w-[75%]",
+        isUser ? "ml-auto items-end" : "items-start",
+      )}
+      data-speaker={role}
+    >
+      <span className="sr-only">{isUser ? "You said" : "Poof said"}</span>
 
       {reasoningParts.length > 0 ? <ChatReasoning parts={reasoningParts} thinking={isThinking} /> : null}
 
       {textParts.length > 0 ? (
-        <div
-          className={cn(
-            "max-w-none [&_p]:max-w-[62ch] [&_p]:text-pretty",
-            role === "assistant"
-              ? "text-[1.02rem] text-neutral-800 sm:text-[1.08rem]"
-              : "text-base font-medium text-neutral-950 sm:text-[1.02rem]",
-          )}
-        >
+        <div className={bubbleClassName} data-slot="chat-bubble">
           {textParts.map((part) =>
-            role === "user" ? (
+            isUser ? (
               <p key={part.key} className="whitespace-pre-wrap">
                 {part.text}
               </p>
@@ -244,47 +259,43 @@ export function ChatTimelineMessage({
             ),
           )}
         </div>
-      ) : isStoppedReply ? null : role === "assistant" && isActive && status === "streaming" && !hasToolActivity ? (
-        <ChatStatusMarker label="Generating response…" />
-      ) : role === "assistant" && isSettled && !messageHasRenderableContent ? (
-        <p className="max-w-[62ch] text-sm text-pretty text-neutral-500 italic">
-          Sorry, I didn't catch that. Mind rephrasing?
-        </p>
+      ) : showsFallback ? (
+        <div className={bubbleClassName} data-slot="chat-bubble">
+          <p className="text-pretty text-neutral-500 italic">Sorry, I didn't catch that. Mind rephrasing?</p>
+        </div>
       ) : null}
 
-      {revealToolCards && resumeToolParts.length > 0 ? (
-        <div className="space-y-2">
+      {isVoiceMessage(message) ? (
+        <span className="inline-flex items-center gap-1 px-1 text-xs text-neutral-400">
+          <HugeiconsIcon icon={AudioWave01Icon} size={12} />
+          Voice
+        </span>
+      ) : null}
+
+      {revealToolCards && hasToolCard ? (
+        <div className="w-full space-y-2">
           {resumeToolParts.map((part) => (
             <ChatResumeCard key={part.key} filename={part.filename} url={part.url} />
           ))}
-        </div>
-      ) : null}
-
-      {revealToolCards && workLinkToolParts.length > 0 ? (
-        <div className="space-y-2">
           {workLinkToolParts.map((part) => (
             <ChatWorkLinkCard key={part.key} company={part.company} role={part.role} slug={part.slug} url={part.url} />
           ))}
-        </div>
-      ) : null}
-
-      {revealToolCards && contactToolParts.length > 0 ? (
-        <div className="space-y-2">
           {contactToolParts.map((part) => (
             <ChatContactCard key={part.key} status={part.status} />
           ))}
         </div>
       ) : null}
 
-      {toolProgressChips.length > 0 ? (
-        <div className="space-y-2">
-          {toolProgressChips.map((chip) => (
-            <ChatStatusMarker key={chip.key} label={chip.label} />
-          ))}
-        </div>
-      ) : null}
+      {isStoppedReply ? <p className="px-1 text-xs text-neutral-400">Stopped</p> : null}
 
-      {isStoppedReply ? <p className="font-mono text-xs tracking-wide text-neutral-400 uppercase">Stopped</p> : null}
+      <AnimatePresence>
+        {showsFace ? (
+          <div key="poof" className="flex items-center">
+            <PoofMark entrance={false} interrupted={wasStopped} mood={moodCue} state={markState} />
+            {faceLabel ? <PoofStatus label={faceLabel} /> : null}
+          </div>
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 }
