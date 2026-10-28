@@ -12,14 +12,15 @@ import { useIsCodeFenceIncomplete } from "streamdown";
 
 /**
  * A fenced block in one of Poof's answers. Loaded on demand (see ChatMarkdown), so Shiki only
- * reaches visitors whose answer actually contains code.
+ * reaches visitors whose answer actually contains code. White on the grey bubble, and bled 8px into
+ * its 16px padding so these 10px corners sit concentric with the bubble's 18px ones.
  */
 export default function ChatCodeBlock({ code, language }: { code: string; language: string }) {
   const incomplete = useIsCodeFenceIncomplete();
   const lines = useHighlightedCode(code, language);
 
   return (
-    <CodeBlock className="my-4 bg-neutral-950/3 ring-1 ring-neutral-950/8">
+    <CodeBlock className="-mx-2 my-3 w-auto bg-white ring-1 ring-neutral-950/8">
       <CodeBlockHeader>
         <CodeBlockTitle className="font-mono text-xs tracking-wide text-neutral-500 uppercase">
           {language || "code"}

@@ -432,7 +432,7 @@ describe("voice call", () => {
     fireEvent.click(screen.getByRole("button", { name: "End call" }));
 
     expect(screen.queryByRole("dialog")).toBeNull();
-    expect(screen.getByText("Saving your call…")).toBeTruthy();
+    expect(screen.getByText("Saving your call…").closest('[role="status"]')?.className).toContain("text-center");
     await waitFor(() => expect(chat.setMessages).toHaveBeenCalledWith([intro, said]), { timeout: 4000 });
     expect(getConversation).toHaveBeenCalledTimes(2);
     expect(getConversation).toHaveBeenCalledWith({ data: { conversationId: "conv-1" } });
@@ -469,7 +469,7 @@ describe("voice call", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "End call" }));
 
-    expect(await screen.findByText(/still saving/)).toBeTruthy();
+    expect((await screen.findByText(/still saving/)).closest('[role="status"]')?.className).toContain("text-center");
     expect(screen.queryByText("Saving your call…")).toBeNull();
   });
 

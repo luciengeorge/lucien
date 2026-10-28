@@ -29,7 +29,7 @@ import { ChatPendingReply } from "./chat-pending-reply";
 import { transcriptScrollBehaviour } from "./chat-scroll-position";
 import { ChatSendFailed } from "./chat-send-failed";
 import { ChatStarterPrompts } from "./chat-starter-prompts";
-import { ChatStatusMarker } from "./chat-status-marker";
+import { ChatSystemNote } from "./chat-status-marker";
 import { ChatTimelineMessage } from "./chat-timeline-message";
 import { ChatVoiceBoundary } from "./chat-voice-boundary";
 import {
@@ -364,9 +364,7 @@ export function ChatConversation({
                       </MessageScrollerItem>
                       {message.id === droppedAfterId ? (
                         <div className={entryItemClassName(false)}>
-                          <p className="text-sm text-neutral-500" role="status">
-                            The call dropped. Anything said so far is saved below.
-                          </p>
+                          <ChatSystemNote>The call dropped. Anything said so far is saved below.</ChatSystemNote>
                         </div>
                       ) : null}
                     </Fragment>
@@ -388,14 +386,12 @@ export function ChatConversation({
                   ) : null}
                   {isSavingCall ? (
                     <div className={entryItemClassName(false)}>
-                      <ChatStatusMarker label="Saving your call…" />
+                      <ChatSystemNote busy>Saving your call…</ChatSystemNote>
                     </div>
                   ) : null}
                   {isCallLate ? (
                     <div className={entryItemClassName(false)}>
-                      <p className="text-sm text-neutral-500" role="status">
-                        Your call is still saving. Reload in a minute to see it here.
-                      </p>
+                      <ChatSystemNote>Your call is still saving. Reload in a minute to see it here.</ChatSystemNote>
                     </div>
                   ) : null}
                   {status === "error" ? (

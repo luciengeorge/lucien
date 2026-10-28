@@ -1,19 +1,19 @@
 import { ShimmeringText } from "#/components/ui/shimmering-text";
-import { Spinner } from "#/components/ui/spinner";
-import { Trace, TraceIcon, TraceLine, TraceTitle } from "#/components/ui/trace";
 
-/** A step Poof is in the middle of, drawn as a Trace line so it lines up with the reasoning row. */
-export function ChatStatusMarker({ label }: { label: string }) {
+/** What Poof is doing, on the same line as its face: the moving face is the spinner. */
+export function PoofStatus({ label }: { label: string }) {
   return (
-    <Trace role="status">
-      <TraceLine status="running">
-        <TraceIcon>
-          <Spinner />
-        </TraceIcon>
-        <TraceTitle>
-          <ShimmeringText duration={1.8} startOnView={false} text={label} />
-        </TraceTitle>
-      </TraceLine>
-    </Trace>
+    <span className="text-sm text-neutral-500" role="status">
+      <ShimmeringText duration={1.8} startOnView={false} text={label} />
+    </span>
+  );
+}
+
+/** A line about the conversation rather than in it, centered between the bubbles. */
+export function ChatSystemNote({ busy = false, children }: { busy?: boolean; children: string }) {
+  return (
+    <p className="mx-auto max-w-sm text-center text-xs text-balance text-neutral-500" role="status">
+      {busy ? <ShimmeringText duration={1.8} startOnView={false} text={children} /> : children}
+    </p>
   );
 }
