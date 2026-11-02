@@ -186,11 +186,12 @@ describe("voice entry", () => {
     expect(screen.queryByRole("button", { name: "Talk to Poof" })).toBeNull();
   });
 
-  it("sits next to send when the flag is on, and waits out a streaming reply", () => {
+  it("gives way to Stop while a reply streams", () => {
     chat.messages = [intro, question];
     chat.status = "streaming";
     renderChat();
-    expect(screen.getByRole("button", { name: "Talk to Poof" })).toHaveProperty("disabled", true);
+    expect(screen.queryByRole("button", { name: "Talk to Poof" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Stop" })).toBeTruthy();
   });
 });
 
