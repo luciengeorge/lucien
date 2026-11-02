@@ -4,6 +4,7 @@ import type { UIMessage } from "ai";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MotionConfig } from "motion/react";
+import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ChatConversation } from "./chat-conversation";
@@ -127,11 +128,11 @@ const granted = {
   token: "webrtc-token",
 };
 
-function renderChat(onConversationChange = vi.fn(), { voiceResting = false } = {}) {
+function renderChat(onConversationChange = vi.fn(), { voiceResting = false, withConversation = true } = {}) {
   const { unmount } = render(
     <QueryClientProvider client={new QueryClient()}>
       <ChatConversation
-        chatState={{ conversation, serializedMessages: [], voiceResting }}
+        chatState={{ conversation: withConversation ? conversation : null, serializedMessages: [], voiceResting }}
         onConversationChange={onConversationChange}
       />
     </QueryClientProvider>,
@@ -192,6 +193,41 @@ describe("voice entry", () => {
     renderChat();
     expect(screen.queryByRole("button", { name: "Talk to Poof" })).toBeNull();
     expect(screen.getByRole("button", { name: "Stop" })).toBeTruthy();
+  });
+});
+
+describe("voice before the conversation exists", () => {
+  const talk = () => screen.getByRole("button", { name: "Talk to Poof" });
+
+  it("enables the button at once, asks for the mic, and starts the call only once the conversation arrives", async () => {
+    let arrive!: (state: ChatConversationState) => void;
+    resumeOrStartConversation.mockReturnValue(new Promise((resolve) => (arrive = resolve)));
+    function Harness() {
+      const [state, setState] = useState<ChatConversationState>({ conversation: null, serializedMessages: [] });
+      return (
+        <QueryClientProvider client={new QueryClient()}>
+          <ChatConversation chatState={state} onConversationChange={setState} />
+        </QueryClientProvider>
+      );
+    }
+    render(<Harness />);
+    expect(talk().getAttribute("aria-disabled")).toBeNull();
+
+    await startCall();
+    await waitFor(() => expect(getUserMedia).toHaveBeenCalled());
+    expect(startVoiceCall).not.toHaveBeenCalled();
+
+    await act(async () => arrive({ conversation, serializedMessages: [] }));
+    await waitFor(() => expect(startVoiceCall).toHaveBeenCalledTimes(1));
+  });
+
+  it("gives the connect_failed message and never calls the server when creation fails", async () => {
+    resumeOrStartConversation.mockRejectedValue(new Error("boom"));
+    renderChat(vi.fn(), { withConversation: false });
+    await startCall();
+
+    expect(await screen.findByText(/couldn't connect/)).toBeTruthy();
+    expect(startVoiceCall).not.toHaveBeenCalled();
   });
 });
 

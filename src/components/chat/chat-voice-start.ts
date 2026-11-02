@@ -39,11 +39,32 @@ async function requestMicrophone(): Promise<"granted" | VoiceRefusal> {
   }
 }
 
+const CONVERSATION_WAIT_MS = 15_000;
+const CONVERSATION_POLL_MS = 50;
+
+/** Resolves once the visitor's conversation exists; rejects if its creation failed or takes too long. */
+export function waitForConversation(
+  read: () => "failed" | "pending" | "ready",
+  timeoutMs = CONVERSATION_WAIT_MS,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const deadline = Date.now() + timeoutMs;
+    const check = () => {
+      const state = read();
+      if (state === "ready") return resolve();
+      if (state === "failed" || Date.now() >= deadline) return reject(new Error("conversation unavailable"));
+      setTimeout(check, CONVERSATION_POLL_MS);
+    };
+    check();
+  });
+}
+
 /**
  * Whether voice is resting first, so nobody grants the microphone only to be turned away. Then the
- * microphone: a visitor who blocks it should not spend a call from their daily allowance.
+ * microphone: a visitor who blocks it should not spend a call from their daily allowance. The server
+ * call waits for the visitor's conversation, or it would create a second one.
  */
-export async function requestVoiceCall(): Promise<VoiceCallStart> {
+export async function requestVoiceCall(whenReady: () => Promise<void>): Promise<VoiceCallStart> {
   try {
     if (await checkVoiceResting()) return { ok: false, reason: "resting" };
   } catch {
@@ -51,6 +72,11 @@ export async function requestVoiceCall(): Promise<VoiceCallStart> {
   }
   const microphone = await requestMicrophone();
   if (microphone !== "granted") return { ok: false, reason: microphone };
+  try {
+    await whenReady();
+  } catch {
+    return { ok: false, reason: "connect_failed" };
+  }
   try {
     return await startVoiceCall();
   } catch {

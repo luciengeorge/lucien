@@ -39,7 +39,7 @@ import {
   VoiceBackButton,
   VoiceEndButton,
 } from "./chat-voice-screen";
-import { isVoiceEnabled, releaseUnusedCall, requestVoiceCall } from "./chat-voice-start";
+import { isVoiceEnabled, releaseUnusedCall, requestVoiceCall, waitForConversation } from "./chat-voice-start";
 import { buildVoiceContext, waitForVoiceTranscript } from "./chat-voice.utils";
 import { createRateLimitAwareFetch, entryItemClassName, getSettledAssistantAnalyticsEvents } from "./chat.utils";
 import { createPoofSignals, PoofSignalsContext } from "./poof-signals";
@@ -162,6 +162,9 @@ export function ChatConversation({
   }, [capture, status, visibleMessages]);
 
   const isReady = Boolean(chatState.conversation);
+  // Read by a voice call that is waiting for the conversation, long after the render that started it.
+  const conversationStatusRef = useRef<"failed" | "pending" | "ready">("pending");
+  conversationStatusRef.current = isReady ? "ready" : hasConversationStartFailed ? "failed" : "pending";
   const isStreaming = status === "submitted" || status === "streaming";
   // A message sent before the conversation exists waits here, shown as sent,
   // and goes out once `useChat` is bound to the real conversation id.
@@ -268,10 +271,10 @@ export function ChatConversation({
   useEffect(() => () => transcriptWaitRef.current?.abort(), []);
 
   const handleVoiceStart = () => {
-    if (isBusy || !isReady || voiceCall || voiceResting) return;
+    if (isBusy || voiceCall || voiceResting) return;
     setIsCallLate(false);
     setDroppedAfterId(null);
-    const call = requestVoiceCall();
+    const call = requestVoiceCall(() => waitForConversation(() => conversationStatusRef.current));
     void call.then((result) => {
       if (result.ok || result.reason !== "resting") return;
       queryClient.setQueryData(VOICE_RESTING_QUERY_KEY, true);
@@ -426,7 +429,7 @@ export function ChatConversation({
                   onStop={handleStop}
                   onVoice={isVoiceEnabled() ? handleVoiceStart : undefined}
                   onVoiceIntent={() => void loadVoiceCall()}
-                  voiceDisabled={!isReady || isSavingCall}
+                  voiceDisabled={isSavingCall}
                   voiceResting={voiceResting}
                 />
               </div>
