@@ -113,10 +113,10 @@ export function ChatComposer({
 
   return (
     <form className="py-2" onSubmit={onSubmit}>
-      <InputGroup className="rounded-[20px] border-0 bg-white shadow-[0_1px_2px_rgb(0_0_0/0.04),0_2px_8px_rgb(0_0_0/0.04)] ring-1 ring-neutral-950/8 has-[[data-slot=input-group-control]:focus-visible]:border-transparent has-[[data-slot=input-group-control]:focus-visible]:ring-2 has-[[data-slot=input-group-control]:focus-visible]:ring-neutral-950/15">
+      <InputGroup className="rounded-[20px] border-0 bg-white shadow-[0_0_0_1px_rgb(0_0_0/0.05),0_1px_2px_rgb(0_0_0/0.04),0_4px_16px_rgb(0_0_0/0.05)] transition-shadow duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] hover:shadow-[0_0_0_1px_rgb(0_0_0/0.07),0_1px_2px_rgb(0_0_0/0.04),0_4px_16px_rgb(0_0_0/0.06)] has-[[data-slot=input-group-control]:focus-visible]:border-transparent has-[[data-slot=input-group-control]:focus-visible]:shadow-[0_0_0_1px_rgb(0_0_0/0.1),0_1px_2px_rgb(0_0_0/0.05),0_6px_24px_rgb(0_0_0/0.08)] has-[[data-slot=input-group-control]:focus-visible]:ring-0">
         <InputGroupTextarea
           aria-label="Ask Poof about Lucien"
-          className="max-h-40 min-h-0 resize-none overflow-y-auto py-2 pl-4 text-base leading-6 placeholder:text-neutral-500 sm:text-[15px]"
+          className="max-h-40 min-h-0 resize-none overflow-y-auto py-2 pl-4 text-base leading-6 placeholder:text-neutral-500 placeholder:transition-colors placeholder:duration-150 focus:placeholder:text-neutral-400 sm:text-[15px]"
           enterKeyHint="send"
           name="message"
           onBlur={onBlur}

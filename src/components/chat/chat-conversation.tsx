@@ -39,7 +39,7 @@ import {
   VoiceBackButton,
   VoiceEndButton,
 } from "./chat-voice-screen";
-import { isVoiceEnabled, releaseUnusedCall, requestVoiceCall } from "./chat-voice-start";
+import { isVoiceEnabled, releaseUnusedCall, requestVoiceCall, waitForConversation } from "./chat-voice-start";
 import { buildVoiceContext, waitForVoiceTranscript } from "./chat-voice.utils";
 import { createRateLimitAwareFetch, entryItemClassName, getSettledAssistantAnalyticsEvents } from "./chat.utils";
 import { createPoofSignals, PoofSignalsContext } from "./poof-signals";
@@ -162,6 +162,12 @@ export function ChatConversation({
   }, [capture, status, visibleMessages]);
 
   const isReady = Boolean(chatState.conversation);
+  // Read by a voice call that is waiting for the conversation, long after the render that started it.
+  const conversationStatusRef = useRef<"failed" | "pending" | "ready">("pending");
+  const conversationStatus = isReady ? "ready" : hasConversationStartFailed ? "failed" : "pending";
+  useEffect(() => {
+    conversationStatusRef.current = conversationStatus;
+  }, [conversationStatus]);
   const isStreaming = status === "submitted" || status === "streaming";
   // A message sent before the conversation exists waits here, shown as sent,
   // and goes out once `useChat` is bound to the real conversation id.
@@ -265,13 +271,26 @@ export function ChatConversation({
   });
   const voiceResting = mayBeResting && stillResting;
 
-  useEffect(() => () => transcriptWaitRef.current?.abort(), []);
+  // Aborted when the visitor leaves the call screen, so a call still waiting for the conversation never starts.
+  const voiceStartRef = useRef<AbortController | null>(null);
+  useEffect(
+    () => () => {
+      transcriptWaitRef.current?.abort();
+      voiceStartRef.current?.abort();
+    },
+    [],
+  );
 
   const handleVoiceStart = () => {
-    if (isBusy || !isReady || voiceCall || voiceResting) return;
+    if (isBusy || voiceCall || voiceResting) return;
     setIsCallLate(false);
     setDroppedAfterId(null);
-    const call = requestVoiceCall();
+    const start = new AbortController();
+    voiceStartRef.current = start;
+    const call = requestVoiceCall(
+      () => waitForConversation(() => conversationStatusRef.current, undefined, start.signal),
+      start.signal,
+    );
     void call.then((result) => {
       if (result.ok || result.reason !== "resting") return;
       queryClient.setQueryData(VOICE_RESTING_QUERY_KEY, true);
@@ -281,6 +300,7 @@ export function ChatConversation({
   };
 
   const handleVoiceEnd = (ended: EndedCall | null) => {
+    voiceStartRef.current?.abort();
     setVoiceCall(null);
     requestAnimationFrame(() => composerRef.current?.focusVoice());
     if (!ended) return;
@@ -426,7 +446,7 @@ export function ChatConversation({
                   onStop={handleStop}
                   onVoice={isVoiceEnabled() ? handleVoiceStart : undefined}
                   onVoiceIntent={() => void loadVoiceCall()}
-                  voiceDisabled={!isReady || isSavingCall}
+                  voiceDisabled={isSavingCall}
                   voiceResting={voiceResting}
                 />
               </div>
