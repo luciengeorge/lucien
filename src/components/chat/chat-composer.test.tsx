@@ -130,3 +130,59 @@ describe("ChatComposer Stop button", () => {
     expect(onSubmit).not.toHaveBeenCalled();
   });
 });
+
+describe("ChatComposer actions", () => {
+  function renderComposer(overrides: Partial<React.ComponentProps<typeof ChatComposer>> = {}) {
+    const onSubmit = vi.fn((event: React.SubmitEvent<HTMLFormElement>) => event.preventDefault());
+    const utils = render(
+      <ChatComposer
+        canSubmit
+        isStreaming={false}
+        isSubmitting={false}
+        message="What does he build?"
+        onBlur={vi.fn()}
+        onChange={vi.fn()}
+        onResumeRequest={vi.fn()}
+        onStop={vi.fn()}
+        onSubmit={onSubmit}
+        onVoice={vi.fn()}
+        {...overrides}
+      />,
+    );
+    return { ...utils, onSubmit };
+  }
+
+  it("has no send button: Enter sends, Shift+Enter starts a new line", () => {
+    const { getByRole, onSubmit, queryByRole } = renderComposer();
+    const textarea = getByRole("textbox");
+
+    expect(queryByRole("button", { name: "Send" })).toBeNull();
+    fireEvent.keyDown(textarea, { key: "Enter", shiftKey: true });
+    expect(onSubmit).not.toHaveBeenCalled();
+    fireEvent.keyDown(textarea, { key: "Enter" });
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+  });
+
+  it("turns the phone keyboard's return key into Send", () => {
+    const { getByRole } = renderComposer();
+
+    expect(getByRole("textbox").getAttribute("enterkeyhint")).toBe("send");
+  });
+
+  it("leads with voice: resume first, then Talk to Poof as the main action", () => {
+    const { getByRole } = renderComposer();
+    const resume = getByRole("button", { name: "Resume" });
+    const voice = getByRole("button", { name: "Talk to Poof" });
+
+    expect(resume.compareDocumentPosition(voice) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(voice.getAttribute("data-emphasis")).toBe("primary");
+    expect(resume.getAttribute("data-emphasis")).toBe("secondary");
+  });
+
+  it("puts Stop in the main slot while a reply streams", () => {
+    const { getByRole, queryByRole } = renderComposer({ isStreaming: true });
+
+    expect(queryByRole("button", { name: "Talk to Poof" })).toBeNull();
+    expect(getByRole("button", { name: "Stop" }).getAttribute("data-emphasis")).toBe("primary");
+  });
+});

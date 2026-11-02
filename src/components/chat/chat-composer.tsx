@@ -1,13 +1,15 @@
 import { Button } from "#/components/ui/button";
 import { InputGroup, InputGroupAddon, InputGroupTextarea } from "#/components/ui/input-group";
-import { Spinner } from "#/components/ui/spinner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "#/components/ui/tooltip";
+import { cn } from "#/lib/utils";
 import { StopIcon } from "@hugeicons-pro/core-solid-rounded";
-import { AudioWave01Icon, File01Icon, Navigation03Icon } from "@hugeicons-pro/core-stroke-rounded";
+import { AudioWave01Icon, File01Icon } from "@hugeicons-pro/core-stroke-rounded";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useEffect, useEffectEvent, useRef } from "react";
 
 import { usePoofSignals } from "./poof-signals";
+
+const PRIMARY_ACTION_CLASS = "size-9 shrink-0 rounded-full active:scale-[0.96] sm:size-10";
 
 /** Touch-primary devices, where autofocus would raise the keyboard over the page. */
 function isCoarsePointer(): boolean {
@@ -115,6 +117,7 @@ export function ChatComposer({
         <InputGroupTextarea
           aria-label="Ask Poof about Lucien"
           className="max-h-40 min-h-0 resize-none overflow-y-auto py-3 pl-4 text-base placeholder:text-neutral-500 sm:py-3.5 sm:pl-5 sm:text-base"
+          enterKeyHint="send"
           name="message"
           onBlur={onBlur}
           onChange={(event) => {
@@ -135,15 +138,17 @@ export function ChatComposer({
           rows={1}
           value={message}
         />
-        {/* Beside the text, not under it: an empty composer is one line, and it grows as you type. */}
-        <InputGroupAddon align="inline-end" className="gap-1 self-end pr-1.5 pb-1.5 sm:pr-2 sm:pb-2">
+        {/* Beside the text, not under it: an empty composer is one line, and it grows as you type.
+            No send button: Enter sends. Voice is the main action, and Stop takes its place while a reply streams. */}
+        <InputGroupAddon align="inline-end" className="gap-1.5 self-end pr-1.5 pb-1.5 sm:pr-2 sm:pb-2">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger
                 render={
                   <Button
                     aria-label="Resume"
-                    className="size-9 shrink-0 rounded-full text-neutral-700 hover:bg-neutral-950/6 hover:text-neutral-950 sm:size-10"
+                    className="size-9 shrink-0 rounded-full bg-neutral-950/6 text-neutral-700 hover:bg-neutral-950/10 hover:text-neutral-950 active:scale-[0.96] sm:size-10"
+                    data-emphasis="secondary"
                     disabled={isStreaming}
                     onClick={onResumeRequest}
                     size="icon"
@@ -156,22 +161,38 @@ export function ChatComposer({
               />
               <TooltipContent>Get Lucien's resume</TooltipContent>
             </Tooltip>
-            {onVoice ? (
-              <Tooltip>
+            {/* Distinct keys: one <button> reused across Stop and voice would carry the Stop click into a call. */}
+            {isStreaming ? (
+              <Button
+                key="stop"
+                className={PRIMARY_ACTION_CLASS}
+                data-emphasis="primary"
+                onClick={onStop}
+                size="icon"
+                type="button"
+              >
+                <HugeiconsIcon icon={StopIcon} size={16} />
+                <span className="sr-only">Stop</span>
+              </Button>
+            ) : onVoice ? (
+              <Tooltip key="voice">
                 <TooltipTrigger
                   render={
                     <Button
                       ref={voiceButtonRef}
                       aria-label="Talk to Poof"
-                      className="size-9 shrink-0 rounded-full text-neutral-700 hover:bg-neutral-950/6 hover:text-neutral-950 aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:hover:bg-transparent sm:size-10"
-                      disabled={isStreaming || voiceDisabled || voiceResting}
+                      className={cn(
+                        PRIMARY_ACTION_CLASS,
+                        "aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:hover:bg-primary",
+                      )}
+                      data-emphasis="primary"
+                      disabled={voiceDisabled || voiceResting}
                       focusableWhenDisabled={voiceResting}
                       onClick={onVoice}
                       onFocus={onVoiceIntent}
                       onPointerEnter={onVoiceIntent}
                       size="icon"
                       type="button"
-                      variant="ghost"
                     >
                       <HugeiconsIcon icon={AudioWave01Icon} size={18} />
                     </Button>
@@ -181,30 +202,6 @@ export function ChatComposer({
               </Tooltip>
             ) : null}
           </TooltipProvider>
-          {/* Distinct keys: one reused <button> flipped to type=submit mid-click would send from the Stop click. */}
-          {isStreaming ? (
-            <Button
-              key="stop"
-              className="size-9 shrink-0 rounded-full sm:size-10"
-              onClick={onStop}
-              size="icon"
-              type="button"
-            >
-              <HugeiconsIcon icon={StopIcon} size={16} />
-              <span className="sr-only">Stop</span>
-            </Button>
-          ) : (
-            <Button
-              key="send"
-              className="size-9 shrink-0 rounded-full sm:size-10"
-              disabled={!canSend}
-              size="icon"
-              type="submit"
-            >
-              {isSubmitting ? <Spinner /> : <HugeiconsIcon icon={Navigation03Icon} />}
-              <span className="sr-only">Send</span>
-            </Button>
-          )}
         </InputGroupAddon>
       </InputGroup>
     </form>
