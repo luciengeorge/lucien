@@ -3,6 +3,12 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { ChatMarkdown, isTrustedLink } from "./chat-markdown";
 
+// ChatMarkdown lazy-loads Streamdown and the highlighter. Compiling them is slow under a full,
+// parallel run, and the first render to need them paid that inside its 5s wait; load them once here.
+beforeAll(async () => {
+  await Promise.all([import("streamdown"), import("./chat-code-block")]);
+}, 30_000);
+
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
@@ -53,12 +59,6 @@ describe("ChatMarkdown links", () => {
 });
 
 describe("ChatMarkdown code", () => {
-  // ChatMarkdown lazy-loads Streamdown and the highlighter. Compiling them is slow under a full,
-  // parallel run, and the first render to need them paid that inside its 5s wait; load them here.
-  beforeAll(async () => {
-    await Promise.all([import("streamdown"), import("./chat-code-block")]);
-  }, 30_000);
-
   it("renders a fenced block as code with a copy button", async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { writeText } });
