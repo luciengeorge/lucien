@@ -1,7 +1,13 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { ChatMarkdown, isTrustedLink } from "./chat-markdown";
+
+// ChatMarkdown lazy-loads Streamdown and the highlighter. Compiling them is slow under a full,
+// parallel run, and the first render to need them paid that inside its 5s wait; load them once here.
+beforeAll(async () => {
+  await Promise.all([import("streamdown"), import("./chat-code-block")]);
+}, 30_000);
 
 afterEach(() => {
   cleanup();
