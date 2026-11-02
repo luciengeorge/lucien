@@ -242,11 +242,13 @@ export function ChatTimelineMessage({
       : undefined);
   const showsFallback = role === "assistant" && isSettled && !messageHasRenderableContent && !isStoppedReply;
   const isUser = role === "user";
+  // The radius is half a one-line bubble's height (22px line + 2 x 6px), so a short message is a full
+  // pill and a long one keeps soft corners instead of turning into an oval.
   const bubbleClassName = cn(
-    "max-w-full min-w-0 px-4 py-2.5 text-[15px] leading-relaxed wrap-break-word sm:text-base",
+    "max-w-full min-w-0 rounded-[17px] px-3 py-1.5 text-[15px] leading-[22px] wrap-break-word",
     isUser
-      ? "rounded-2xl rounded-tr-md bg-primary text-white"
-      : "rounded-2xl rounded-tl-md bg-neutral-100 text-neutral-800 [&_ol]:pl-5 [&_ul]:pl-5",
+      ? "bg-primary text-white"
+      : "bg-neutral-100 text-neutral-800 [&_.space-y-4]:space-y-2 [&_ol]:pl-5 [&_ul]:pl-5",
   );
 
   return (
