@@ -112,13 +112,12 @@ test.describe("when a message fails to send", () => {
 
 test.describe("composer with an empty message", () => {
   /**
-   * `InputGroup` washed the whole group out via `has-disabled:opacity-50`,
-   * which is `:has(:disabled)` and so matched the send button too. The send
-   * button is disabled exactly when the message is empty, so an empty composer
-   * dimmed its own border, background and the resume button. Only the send
-   * button should look unavailable.
+   * `InputGroup` washed the whole group out via `has-disabled:opacity-50`, which is
+   * `:has(:disabled)` and so matched any disabled button inside it. There is no send
+   * button any more (Enter sends), but a disabled action inside the group must still
+   * never dim the composer itself or the other action.
    */
-  test("dims the send button only, not the whole composer", async ({ page }) => {
+  test("has no send button and never dims the composer", async ({ page }) => {
     await page.goto("/");
     const composer = page.getByRole("textbox").first();
     await expect(composer).toBeVisible({ timeout: 10_000 });
@@ -128,9 +127,8 @@ test.describe("composer with an empty message", () => {
     const group = page.locator("[data-slot=input-group]");
     // Exact: the "His resume" starter chip would match a looser query.
     const resume = page.getByRole("button", { exact: true, name: "Resume" });
-    const send = page.getByRole("button", { name: "Send" });
 
-    await expect(send).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Send" })).toHaveCount(0);
     await expect(resume).toBeEnabled();
 
     const opacityOf = async (target: typeof group) => target.evaluate((node) => window.getComputedStyle(node).opacity);
@@ -138,9 +136,7 @@ test.describe("composer with an empty message", () => {
     expect(await opacityOf(group), "the composer itself must not be dimmed").toBe("1");
     expect(await opacityOf(resume), "the resume button must not be dimmed").toBe("1");
 
-    // Typing must not be what restores a normal-looking composer.
     await composer.fill("hello");
-    await expect(send).toBeEnabled();
     expect(await opacityOf(group)).toBe("1");
   });
 });
@@ -281,7 +277,7 @@ test.describe("stopping a reply", () => {
     await page.route("**/api/chat", () => new Promise(() => {}));
   }
 
-  test("swaps Send for Stop while a reply is pending, and Stop ends it", async ({ page }) => {
+  test("shows Stop while a reply is pending, and Stop ends it", async ({ page }) => {
     const created = waitForConversation(page);
     await page.goto("/");
     const composer = page.getByRole("textbox").first();
@@ -293,10 +289,9 @@ test.describe("stopping a reply", () => {
 
     const stop = page.getByRole("button", { name: "Stop" });
     await expect(stop).toBeVisible();
-    await expect(page.getByRole("button", { name: "Send" })).toBeHidden();
 
     await stop.click();
-    await expect(page.getByRole("button", { name: "Send" })).toBeVisible();
+    await expect(stop).toBeHidden();
     await expect(page.getByText("Thinking…")).toBeHidden();
   });
 
@@ -312,7 +307,7 @@ test.describe("stopping a reply", () => {
     await expect(page.getByRole("button", { name: "Stop" })).toBeVisible();
 
     await page.keyboard.press("Escape");
-    await expect(page.getByRole("button", { name: "Send" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Stop" })).toBeHidden();
   });
 });
 
@@ -420,9 +415,9 @@ test.describe("coming back to the chat", () => {
     await composer.fill("Where is Lucien based?");
     await composer.press("Enter");
     await sent;
-    // Send is still on screen for a moment after Enter; wait for Stop, then for Send to return when the reply ends.
+    // Wait for Stop to appear, then to go once the reply ends.
     await expect(page.getByRole("button", { name: "Stop" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Send" })).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByRole("button", { name: "Stop" })).toBeHidden({ timeout: 60_000 });
 
     await page.reload();
     await expect(page.getByText("Where is Lucien based?")).toBeVisible({ timeout: 15_000 });
