@@ -113,10 +113,10 @@ export function ChatComposer({
 
   return (
     <form className="py-2" onSubmit={onSubmit}>
-      <InputGroup className="rounded-[20px] border-0 bg-white shadow-[0_0_0_1px_rgb(0_0_0/0.05),0_1px_2px_rgb(0_0_0/0.04),0_4px_16px_rgb(0_0_0/0.05)] transition-shadow duration-150 ease-out has-[[data-slot=input-group-control]:focus-visible]:border-transparent has-[[data-slot=input-group-control]:focus-visible]:shadow-[0_0_0_1px_color-mix(in_oklab,var(--primary)_40%,transparent),0_0_0_4px_color-mix(in_oklab,var(--primary)_12%,transparent),0_4px_16px_rgb(0_0_0/0.06)] has-[[data-slot=input-group-control]:focus-visible]:ring-0">
+      <InputGroup className="rounded-[20px] border-0 bg-white shadow-[0_0_0_1px_rgb(0_0_0/0.05),0_1px_2px_rgb(0_0_0/0.04),0_4px_16px_rgb(0_0_0/0.05)] has-[[data-slot=input-group-control]:focus-visible]:border-transparent has-[[data-slot=input-group-control]:focus-visible]:ring-0">
         <InputGroupTextarea
           aria-label="Ask Poof about Lucien"
-          className="max-h-40 min-h-0 resize-none overflow-y-auto py-2 pl-4 text-base leading-6 caret-primary placeholder:text-neutral-500 sm:text-[15px]"
+          className="max-h-40 min-h-0 resize-none overflow-y-auto py-2 pl-4 text-base leading-6 placeholder:text-neutral-500 sm:text-[15px]"
           enterKeyHint="send"
           name="message"
           onBlur={onBlur}

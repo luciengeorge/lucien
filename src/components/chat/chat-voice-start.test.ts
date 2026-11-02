@@ -33,6 +33,17 @@ describe("requestVoiceCall", () => {
     expect(startVoiceCall).toHaveBeenCalledTimes(1);
   });
 
+  it("never starts the call once the visitor has left, even when the conversation arrives after", async () => {
+    const leave = new AbortController();
+    let ready!: () => void;
+    const result = requestVoiceCall(() => new Promise<void>((resolve) => (ready = resolve)), leave.signal);
+    await vi.waitFor(() => expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalled());
+    leave.abort();
+    ready();
+    expect(await result).toEqual({ ok: false, reason: "connect_failed" });
+    expect(startVoiceCall).not.toHaveBeenCalled();
+  });
+
   it("refuses with connect_failed and makes no server call when the conversation never comes", async () => {
     const result = await requestVoiceCall(() => Promise.reject(new Error("no conversation")));
     expect(result).toEqual({ ok: false, reason: "connect_failed" });
@@ -58,6 +69,19 @@ describe("waitForConversation", () => {
 
   it("rejects when creation failed", async () => {
     await expect(waitForConversation(() => "failed")).rejects.toThrow();
+  });
+
+  it("stops polling as soon as the visitor leaves", async () => {
+    vi.useFakeTimers();
+    const leave = new AbortController();
+    const read = vi.fn((): "pending" => "pending");
+    const done = waitForConversation(read, 10_000, leave.signal);
+    const assertion = expect(done).rejects.toThrow();
+    leave.abort();
+    await assertion;
+    const readsAtAbort = read.mock.calls.length;
+    await vi.advanceTimersByTimeAsync(500);
+    expect(read).toHaveBeenCalledTimes(readsAtAbort);
   });
 
   it("rejects after the timeout", async () => {

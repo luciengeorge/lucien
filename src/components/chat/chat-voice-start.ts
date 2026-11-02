@@ -42,18 +42,31 @@ async function requestMicrophone(): Promise<"granted" | VoiceRefusal> {
 const CONVERSATION_WAIT_MS = 15_000;
 const CONVERSATION_POLL_MS = 50;
 
-/** Resolves once the visitor's conversation exists; rejects if its creation failed or takes too long. */
+/**
+ * Resolves once the visitor's conversation exists; rejects if its creation failed, takes too long, or
+ * the visitor leaves (`signal`), and stops polling then.
+ */
 export function waitForConversation(
   read: () => "failed" | "pending" | "ready",
   timeoutMs = CONVERSATION_WAIT_MS,
+  signal?: AbortSignal,
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     const deadline = Date.now() + timeoutMs;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const stop = () => {
+      clearTimeout(timer);
+      reject(new Error("visitor left"));
+    };
+    signal?.addEventListener("abort", stop, { once: true });
     const check = () => {
+      if (signal?.aborted) return stop();
       const state = read();
-      if (state === "ready") return resolve();
-      if (state === "failed" || Date.now() >= deadline) return reject(new Error("conversation unavailable"));
-      setTimeout(check, CONVERSATION_POLL_MS);
+      if (state === "ready" || state === "failed" || Date.now() >= deadline) {
+        signal?.removeEventListener("abort", stop);
+        return state === "ready" ? resolve() : reject(new Error("conversation unavailable"));
+      }
+      timer = setTimeout(check, CONVERSATION_POLL_MS);
     };
     check();
   });
@@ -64,7 +77,7 @@ export function waitForConversation(
  * microphone: a visitor who blocks it should not spend a call from their daily allowance. The server
  * call waits for the visitor's conversation, or it would create a second one.
  */
-export async function requestVoiceCall(whenReady: () => Promise<void>): Promise<VoiceCallStart> {
+export async function requestVoiceCall(whenReady: () => Promise<void>, signal?: AbortSignal): Promise<VoiceCallStart> {
   try {
     if (await checkVoiceResting()) return { ok: false, reason: "resting" };
   } catch {
@@ -77,6 +90,8 @@ export async function requestVoiceCall(whenReady: () => Promise<void>): Promise<
   } catch {
     return { ok: false, reason: "connect_failed" };
   }
+  // Left while it waited: no reservation, so no daily call is spent.
+  if (signal?.aborted) return { ok: false, reason: "connect_failed" };
   try {
     return await startVoiceCall();
   } catch {

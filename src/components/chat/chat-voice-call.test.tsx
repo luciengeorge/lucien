@@ -221,6 +221,28 @@ describe("voice before the conversation exists", () => {
     await waitFor(() => expect(startVoiceCall).toHaveBeenCalledTimes(1));
   });
 
+  it("never reserves a call when the visitor leaves before the conversation arrives", async () => {
+    let arrive!: (state: ChatConversationState) => void;
+    resumeOrStartConversation.mockReturnValue(new Promise((resolve) => (arrive = resolve)));
+    function Harness() {
+      const [state, setState] = useState<ChatConversationState>({ conversation: null, serializedMessages: [] });
+      return (
+        <QueryClientProvider client={new QueryClient()}>
+          <ChatConversation chatState={state} onConversationChange={setState} />
+        </QueryClientProvider>
+      );
+    }
+    render(<Harness />);
+
+    await startCall();
+    await waitFor(() => expect(getUserMedia).toHaveBeenCalled());
+    fireEvent.keyDown(document, { key: "Escape" });
+    await act(async () => arrive({ conversation, serializedMessages: [] }));
+    await new Promise((resolve) => setTimeout(resolve, 150));
+
+    expect(startVoiceCall).not.toHaveBeenCalled();
+  });
+
   it("gives the connect_failed message and never calls the server when creation fails", async () => {
     resumeOrStartConversation.mockRejectedValue(new Error("boom"));
     renderChat(vi.fn(), { withConversation: false });
