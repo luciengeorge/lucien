@@ -9,7 +9,7 @@ import { useEffect, useEffectEvent, useRef } from "react";
 
 import { usePoofSignals } from "./poof-signals";
 
-const PRIMARY_ACTION_CLASS = "size-9 shrink-0 rounded-full active:scale-[0.96] sm:size-10";
+const PRIMARY_ACTION_CLASS = "size-8 shrink-0 rounded-full active:scale-[0.96] sm:size-7";
 
 /** Touch-primary devices, where autofocus would raise the keyboard over the page. */
 function isCoarsePointer(): boolean {
@@ -112,11 +112,11 @@ export function ChatComposer({
   const canSend = !isStreaming && !isSubmitting && canSubmit && message.length > 0;
 
   return (
-    <form className="pt-2 pb-2 sm:pt-3 sm:pb-3" onSubmit={onSubmit}>
-      <InputGroup className="rounded-3xl border-transparent bg-neutral-950/3 ring-1 ring-neutral-950/10 has-[[data-slot=input-group-control]:focus-visible]:border-transparent has-[[data-slot=input-group-control]:focus-visible]:ring-2 has-[[data-slot=input-group-control]:focus-visible]:ring-neutral-950/15">
+    <form className="py-2" onSubmit={onSubmit}>
+      <InputGroup className="rounded-[20px] border-0 bg-white shadow-[0_1px_2px_rgb(0_0_0/0.04),0_2px_8px_rgb(0_0_0/0.04)] ring-1 ring-neutral-950/8 has-[[data-slot=input-group-control]:focus-visible]:border-transparent has-[[data-slot=input-group-control]:focus-visible]:ring-2 has-[[data-slot=input-group-control]:focus-visible]:ring-neutral-950/15">
         <InputGroupTextarea
           aria-label="Ask Poof about Lucien"
-          className="max-h-40 min-h-0 resize-none overflow-y-auto py-3 pl-4 text-base placeholder:text-neutral-500 sm:py-3.5 sm:pl-5 sm:text-base"
+          className="max-h-40 min-h-0 resize-none overflow-y-auto py-2 pl-4 text-base leading-6 placeholder:text-neutral-500 sm:text-[15px]"
           enterKeyHint="send"
           name="message"
           onBlur={onBlur}
@@ -140,14 +140,17 @@ export function ChatComposer({
         />
         {/* Beside the text, not under it: an empty composer is one line, and it grows as you type.
             No send button: Enter sends. Voice is the main action, and Stop takes its place while a reply streams. */}
-        <InputGroupAddon align="inline-end" className="gap-1.5 self-end pr-1.5 pb-1.5 sm:pr-2 sm:pb-2">
+        <InputGroupAddon
+          align="inline-end"
+          className="gap-1 self-end py-0 pr-1 pb-1 has-[>button]:mr-0 sm:gap-1.5 sm:pr-1.5 sm:pb-1.5"
+        >
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger
                 render={
                   <Button
                     aria-label="Resume"
-                    className="size-9 shrink-0 rounded-full bg-neutral-950/6 text-neutral-700 hover:bg-neutral-950/10 hover:text-neutral-950 active:scale-[0.96] sm:size-10"
+                    className="size-8 shrink-0 rounded-full bg-neutral-950/6 text-neutral-700 hover:bg-neutral-950/10 hover:text-neutral-950 active:scale-[0.96] sm:size-7"
                     data-emphasis="secondary"
                     disabled={isStreaming}
                     onClick={onResumeRequest}
@@ -155,7 +158,7 @@ export function ChatComposer({
                     type="button"
                     variant="ghost"
                   >
-                    <HugeiconsIcon icon={File01Icon} size={18} />
+                    <HugeiconsIcon icon={File01Icon} size={16} />
                   </Button>
                 }
               />
@@ -171,7 +174,7 @@ export function ChatComposer({
                 size="icon"
                 type="button"
               >
-                <HugeiconsIcon icon={StopIcon} size={16} />
+                <HugeiconsIcon icon={StopIcon} size={14} />
                 <span className="sr-only">Stop</span>
               </Button>
             ) : onVoice ? (
@@ -194,7 +197,7 @@ export function ChatComposer({
                       size="icon"
                       type="button"
                     >
-                      <HugeiconsIcon icon={AudioWave01Icon} size={18} />
+                      <HugeiconsIcon icon={AudioWave01Icon} size={16} />
                     </Button>
                   }
                 />
