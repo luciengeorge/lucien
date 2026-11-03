@@ -16,6 +16,17 @@ describe("ChatStarterPrompts", () => {
     expect(onStarterPrompt).toHaveBeenCalledWith("Can I see Lucien's resume?");
   });
 
+  it("disables the chips while a prompt is already on its way", () => {
+    const onStarterPrompt = vi.fn().mockResolvedValue(undefined);
+    render(<ChatStarterPrompts disabled onStarterPrompt={onStarterPrompt} />);
+
+    const chip = screen.getByRole("button", { name: "His resume" });
+    fireEvent.click(chip);
+
+    expect(chip.hasAttribute("disabled")).toBe(true);
+    expect(onStarterPrompt).not.toHaveBeenCalled();
+  });
+
   it("still names the section for screen readers and the page outline", () => {
     render(<ChatStarterPrompts onStarterPrompt={vi.fn()} />);
 
