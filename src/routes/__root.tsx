@@ -6,6 +6,7 @@ import { GlobalLoading } from "#/components/global-loading";
 import { NotFound } from "#/components/not-found";
 import { SiteNav } from "#/components/site-nav";
 import { Toaster } from "#/components/ui/sonner";
+import { WebMcpTools } from "#/components/webmcp-tools";
 import { useToast } from "#/hooks/use-toast";
 import { HOME_META } from "#/lib/content/page-meta";
 import { getToast } from "#/lib/functions/get-toast";
@@ -178,7 +179,12 @@ function RootComponent() {
 
   useToast(serverToast);
 
-  return <Outlet />;
+  return (
+    <>
+      <WebMcpTools />
+      <Outlet />
+    </>
+  );
 }
 
 function RootDocument({ children }: { children: ReactNode }) {
