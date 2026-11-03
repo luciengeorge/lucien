@@ -2,7 +2,13 @@ import { Button } from "#/components/ui/button";
 
 import { STARTER_PROMPTS } from "./chat.constants";
 
-export function ChatStarterPrompts({ onStarterPrompt }: { onStarterPrompt: (prompt: string) => Promise<void> }) {
+export function ChatStarterPrompts({
+  disabled = false,
+  onStarterPrompt,
+}: {
+  disabled?: boolean;
+  onStarterPrompt: (prompt: string) => Promise<void>;
+}) {
   /*
    * The label is a heading, not a styled paragraph: it names the section the
    * chips belong to, so it belongs in the outline (one of the homepage's H2s
@@ -24,6 +30,7 @@ export function ChatStarterPrompts({ onStarterPrompt }: { onStarterPrompt: (prom
           <Button
             key={prompt}
             className="h-auto rounded-full border border-neutral-950/10 px-3 py-1.5 text-[13px] whitespace-nowrap hover:bg-neutral-950/4 sm:px-3.5 sm:py-2 sm:text-sm"
+            disabled={disabled}
             size="sm"
             type="button"
             variant="ghost"

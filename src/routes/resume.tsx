@@ -1,16 +1,14 @@
 import type { ResumeRole } from "#/lib/resume/schema";
 
+import { DownloadCvButton } from "#/components/download-cv-button";
 import { PageScroll } from "#/components/page-scroll";
 import { CompanyLogo } from "#/components/resume/company-logo";
-import { buttonVariants } from "#/components/ui/button";
 import { RESUME_META } from "#/lib/content/page-meta";
 import { formatExperienceDuration, formatPeriod, loadResume } from "#/lib/resume/load";
 import { buildSeoHead } from "#/lib/seo";
 import { OG_IMAGE_URL, SITE_URL } from "#/lib/site-config";
 import { cn } from "#/lib/utils";
 import { workSlugForCompany } from "#/lib/work-slug-for-company";
-import { Download01Icon } from "@hugeicons-pro/core-stroke-rounded";
-import { HugeiconsIcon } from "@hugeicons/react";
 import { Link, createFileRoute } from "@tanstack/react-router";
 
 const RESUME_URL = `${SITE_URL}/resume`;
@@ -120,19 +118,7 @@ function ResumePage() {
             </div>
           </div>
 
-          <a
-            className={cn(
-              buttonVariants({ size: "default", variant: "default" }),
-              "shrink-0 rounded-full print:hidden",
-            )}
-            download="lucien-george-resume.pdf"
-            href="/api/resume/pdf"
-            rel="noreferrer"
-            target="_blank"
-          >
-            <HugeiconsIcon icon={Download01Icon} size={16} />
-            Download PDF
-          </a>
+          <DownloadCvButton label="Download PDF" size="default" variant="default" />
         </header>
 
         <div className="mt-10 grid gap-10 sm:grid-cols-[210px_1fr]">
