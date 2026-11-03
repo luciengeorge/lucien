@@ -16,8 +16,6 @@ const clickedDownloads: Array<{ download: string; href: string }> = [];
 
 beforeEach(() => {
   vi.useFakeTimers();
-  URL.createObjectURL = vi.fn(() => "blob:resume");
-  URL.revokeObjectURL = vi.fn();
   vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (this: HTMLAnchorElement) {
     clickedDownloads.push({ download: this.download, href: this.href });
   });
@@ -56,9 +54,26 @@ describe("DownloadCvButton", () => {
       await vi.runAllTimersAsync();
     });
 
-    expect(clickedDownloads).toEqual([{ download: "lucien-george-resume.pdf", href: "blob:resume" }]);
+    // The warm-up fetch filled the HTTP cache; a native link click then saves the file, so in-app
+    // webviews that ignore blob downloads still open the PDF.
+    expect(clickedDownloads).toEqual([
+      { download: "lucien-george-resume.pdf", href: new URL("/api/resume/pdf", location.href).href },
+    ]);
     expect(button.getAttribute("aria-disabled")).toBeNull();
     expect(screen.queryByRole("status", { name: "Loading" })).toBeNull();
+  });
+
+  it("leaves modifier clicks to the browser", () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    render(<DownloadCvButton />);
+    const button = screen.getByRole("link", { name: /Download CV/ });
+
+    const notCancelled = fireEvent.click(button, { metaKey: true });
+
+    expect(notCancelled).toBe(true);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(button.getAttribute("aria-disabled")).toBeNull();
   });
 
   it("shows an error and unlocks when the download fails", async () => {

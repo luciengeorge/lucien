@@ -4,8 +4,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ChatResumeCard } from "./chat-resume-card";
 
 beforeEach(() => {
-  URL.createObjectURL = vi.fn(() => "blob:resume");
-  URL.revokeObjectURL = vi.fn();
   vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
 });
 

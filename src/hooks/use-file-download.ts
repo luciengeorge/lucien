@@ -5,9 +5,13 @@ import { toast } from "sonner";
 import { useSpinDelay } from "spin-delay";
 
 /**
- * Downloads a file through fetch so the trigger can show a pending state: a
- * plain `<a download>` gives no signal while a slow response is on its way.
- * The trigger stays a real link, so it still works before hydration.
+ * Gives a download link a pending state: a plain `<a download>` shows nothing
+ * while a slow response is on its way. The click fetches the file first (which
+ * fills the HTTP cache), then a native link click saves it. A blob URL would
+ * skip the second request, but iOS in-app browsers (LinkedIn, Gmail) silently
+ * ignore blob downloads; a real link still opens the PDF there.
+ * The trigger stays a real link, so it works before hydration and with
+ * modifier clicks.
  */
 export function useFileDownload(url: string, filename: string) {
   const [isDownloading, setIsDownloading] = useState(false);
@@ -15,6 +19,7 @@ export function useFileDownload(url: string, filename: string) {
   const showSpinner = useSpinDelay(isDownloading, { delay: 200, minDuration: 300 });
 
   const onClick = async (event: MouseEvent<HTMLAnchorElement>) => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
     event.preventDefault();
     if (inFlightRef.current) return;
     inFlightRef.current = true;
@@ -22,13 +27,11 @@ export function useFileDownload(url: string, filename: string) {
     try {
       const response = await fetch(url);
       if (!response.ok) throw new Error(`Download failed with ${response.status}`);
-      const objectUrl = URL.createObjectURL(await response.blob());
+      await response.blob();
       const link = document.createElement("a");
-      link.href = objectUrl;
+      link.href = url;
       link.download = filename;
       link.click();
-      // Safari reads the blob after click() returns, so revoking straight away can cancel the save.
-      setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
     } catch {
       toast.error("Couldn't download the PDF. Try again.");
     } finally {
