@@ -188,6 +188,22 @@ describe("ChatComposer actions", () => {
     }
   });
 
+  it("never sends a whitespace-only draft from Enter", () => {
+    const { getByRole, onSubmit } = renderComposer({ message: "   " });
+
+    fireEvent.keyDown(getByRole("textbox"), { key: "Enter" });
+
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("keeps the focus in the textarea when Send is pressed, so a phone keyboard stays open", () => {
+    const { getByRole } = renderComposer();
+
+    const notCancelled = fireEvent.mouseDown(getByRole("button", { name: "Send" }));
+
+    expect(notCancelled).toBe(false);
+  });
+
   it("turns the phone keyboard's return key into Send", () => {
     const { getByRole } = renderComposer();
 

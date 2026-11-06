@@ -113,9 +113,9 @@ test.describe("when a message fails to send", () => {
 test.describe("composer with an empty message", () => {
   /**
    * `InputGroup` washed the whole group out via `has-disabled:opacity-50`, which is
-   * `:has(:disabled)` and so matched any disabled button inside it. There is no send
-   * button any more (Enter sends), but a disabled action inside the group must still
-   * never dim the composer itself or the other action.
+   * `:has(:disabled)` and so matched any disabled button inside it. Send only shows
+   * once there is text, but a disabled action inside the group must still never dim
+   * the composer itself or the other action.
    */
   test("shows Send only once there is text, and never dims the composer", async ({ page }) => {
     await page.goto("/");

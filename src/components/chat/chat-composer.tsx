@@ -109,8 +109,8 @@ export function ChatComposer({
     document.addEventListener("keydown", onKeyDown, true);
     return () => document.removeEventListener("keydown", onKeyDown, true);
   }, [isStreaming]);
-  const canSend = !isStreaming && !isSubmitting && canSubmit && message.length > 0;
   const hasText = message.trim().length > 0;
+  const canSend = !isStreaming && !isSubmitting && canSubmit && hasText;
   // Only a swap animates: the button the page loads with just appears.
   const [prevHasText, setPrevHasText] = useState(hasText);
   const [hasSwapped, setHasSwapped] = useState(false);
@@ -194,6 +194,8 @@ export function ChatComposer({
                 className={cn(PRIMARY_ACTION_CLASS, swapClass)}
                 data-emphasis="primary"
                 disabled={!canSend}
+                // Keeps focus in the textarea, so a tapped send doesn't close the phone keyboard.
+                onMouseDown={(event) => event.preventDefault()}
                 size="icon"
                 type="submit"
               >
