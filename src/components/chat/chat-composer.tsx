@@ -3,9 +3,9 @@ import { InputGroup, InputGroupAddon, InputGroupTextarea } from "#/components/ui
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "#/components/ui/tooltip";
 import { cn } from "#/lib/utils";
 import { StopIcon } from "@hugeicons-pro/core-solid-rounded";
-import { AudioWave01Icon, File01Icon } from "@hugeicons-pro/core-stroke-rounded";
+import { ArrowUp02Icon, AudioWave01Icon, File01Icon } from "@hugeicons-pro/core-stroke-rounded";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useEffect, useEffectEvent, useRef } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 
 import { usePoofSignals } from "./poof-signals";
 
@@ -110,6 +110,17 @@ export function ChatComposer({
     return () => document.removeEventListener("keydown", onKeyDown, true);
   }, [isStreaming]);
   const canSend = !isStreaming && !isSubmitting && canSubmit && message.length > 0;
+  const hasText = message.trim().length > 0;
+  // Only a swap animates: the button the page loads with just appears.
+  const [prevHasText, setPrevHasText] = useState(hasText);
+  const [hasSwapped, setHasSwapped] = useState(false);
+  if (prevHasText !== hasText) {
+    setPrevHasText(hasText);
+    setHasSwapped(true);
+  }
+  const swapClass = hasSwapped
+    ? "animate-in fade-in-0 zoom-in-75 duration-150 ease-out motion-reduce:animate-none"
+    : undefined;
 
   return (
     <form className="py-2" onSubmit={onSubmit}>
@@ -139,7 +150,7 @@ export function ChatComposer({
           value={message}
         />
         {/* Beside the text, not under it: an empty composer is one line, and it grows as you type.
-            No send button: Enter sends. Voice is the main action, and Stop takes its place while a reply streams. */}
+            The main slot is voice while the composer is empty, Send once there is text, and Stop while a reply streams. */}
         <InputGroupAddon
           align="inline-end"
           className="gap-1 self-end py-0 pr-1 pb-1 has-[>button]:mr-0 sm:gap-1.5 sm:pr-1.5 sm:pb-1.5"
@@ -177,6 +188,18 @@ export function ChatComposer({
                 <HugeiconsIcon icon={StopIcon} size={14} />
                 <span className="sr-only">Stop</span>
               </Button>
+            ) : hasText ? (
+              <Button
+                key="send"
+                className={cn(PRIMARY_ACTION_CLASS, swapClass)}
+                data-emphasis="primary"
+                disabled={!canSend}
+                size="icon"
+                type="submit"
+              >
+                <HugeiconsIcon icon={ArrowUp02Icon} size={16} strokeWidth={2} />
+                <span className="sr-only">Send</span>
+              </Button>
             ) : onVoice ? (
               <Tooltip key="voice">
                 <TooltipTrigger
@@ -187,6 +210,7 @@ export function ChatComposer({
                       className={cn(
                         PRIMARY_ACTION_CLASS,
                         "aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:hover:bg-primary",
+                        swapClass,
                       )}
                       data-emphasis="primary"
                       disabled={voiceDisabled || voiceResting}

@@ -117,7 +117,7 @@ test.describe("composer with an empty message", () => {
    * button any more (Enter sends), but a disabled action inside the group must still
    * never dim the composer itself or the other action.
    */
-  test("has no send button and never dims the composer", async ({ page }) => {
+  test("shows Send only once there is text, and never dims the composer", async ({ page }) => {
     await page.goto("/");
     const composer = page.getByRole("textbox").first();
     await expect(composer).toBeVisible({ timeout: 10_000 });
@@ -137,6 +137,7 @@ test.describe("composer with an empty message", () => {
     expect(await opacityOf(resume), "the resume button must not be dimmed").toBe("1");
 
     await composer.fill("hello");
+    await expect(page.getByRole("button", { name: "Send" })).toBeVisible();
     expect(await opacityOf(group)).toBe("1");
   });
 });
