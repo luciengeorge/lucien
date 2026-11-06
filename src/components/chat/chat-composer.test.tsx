@@ -152,15 +152,56 @@ describe("ChatComposer actions", () => {
     return { ...utils, onSubmit };
   }
 
-  it("has no send button: Enter sends, Shift+Enter starts a new line", () => {
-    const { getByRole, onSubmit, queryByRole } = renderComposer();
+  it("Enter sends, Shift+Enter starts a new line", () => {
+    const { getByRole, onSubmit } = renderComposer();
     const textarea = getByRole("textbox");
 
-    expect(queryByRole("button", { name: "Send" })).toBeNull();
     fireEvent.keyDown(textarea, { key: "Enter", shiftKey: true });
     expect(onSubmit).not.toHaveBeenCalled();
     fireEvent.keyDown(textarea, { key: "Enter" });
     expect(onSubmit).toHaveBeenCalledTimes(1);
+  });
+
+  it("turns the main action into Send once there is text", () => {
+    const { getByRole, onSubmit, queryByRole } = renderComposer();
+    const send = getByRole("button", { name: "Send" });
+
+    expect(queryByRole("button", { name: "Talk to Poof" })).toBeNull();
+    expect(send.getAttribute("data-emphasis")).toBe("primary");
+    fireEvent.click(send);
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps Send locked while the message is on its way", () => {
+    const { getByRole } = renderComposer({ isSubmitting: true });
+
+    expect(getByRole("button", { name: "Send" }).hasAttribute("disabled")).toBe(true);
+  });
+
+  it("shows voice, not Send, while the composer is empty or only whitespace", () => {
+    for (const message of ["", "   "]) {
+      const { getByRole, queryByRole, unmount } = renderComposer({ message });
+
+      expect(getByRole("button", { name: "Talk to Poof" })).not.toBeNull();
+      expect(queryByRole("button", { name: "Send" })).toBeNull();
+      unmount();
+    }
+  });
+
+  it("never sends a whitespace-only draft from Enter", () => {
+    const { getByRole, onSubmit } = renderComposer({ message: "   " });
+
+    fireEvent.keyDown(getByRole("textbox"), { key: "Enter" });
+
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("keeps the focus in the textarea when Send is pressed, so a phone keyboard stays open", () => {
+    const { getByRole } = renderComposer();
+
+    const notCancelled = fireEvent.mouseDown(getByRole("button", { name: "Send" }));
+
+    expect(notCancelled).toBe(false);
   });
 
   it("turns the phone keyboard's return key into Send", () => {
@@ -170,7 +211,7 @@ describe("ChatComposer actions", () => {
   });
 
   it("leads with voice: resume first, then Talk to Poof as the main action", () => {
-    const { getByRole } = renderComposer();
+    const { getByRole } = renderComposer({ message: "" });
     const resume = getByRole("button", { name: "Resume" });
     const voice = getByRole("button", { name: "Talk to Poof" });
 
